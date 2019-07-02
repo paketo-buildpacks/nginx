@@ -18,9 +18,11 @@ package nginx
 
 import (
 	"github.com/cloudfoundry/libcfbuildpack/buildpack"
+	"github.com/cloudfoundry/libcfbuildpack/logger"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/cloudfoundry/libcfbuildpack/helper"
 	yaml "gopkg.in/yaml.v2"
@@ -72,10 +74,10 @@ func LoadBuildpackYAML(appRoot string) (BuildpackYAML, error) {
 func LoadMainlineVersion(metadata buildpack.Metadata) string {
 	versionLines, ok := metadata["version-lines"]
 	if ok {
-		versionLines := versionLines.(map[string]string)
+		versionLines := versionLines.(map[string]interface{})
 		mainlineVersion, ok := versionLines[Mainline]
 		if ok {
-			return mainlineVersion
+			return mainlineVersion.(string)
 		}
 	}
 	return ""
@@ -85,11 +87,25 @@ func LoadMainlineVersion(metadata buildpack.Metadata) string {
 func LoadStableVersion(metadata buildpack.Metadata) string {
 	versionLines, ok := metadata["version-lines"]
 	if ok {
-		versionLines := versionLines.(map[string]string)
+		versionLines := versionLines.(map[string]interface{})
 		mainlineVersion, ok := versionLines[Stable]
 		if ok {
-			return mainlineVersion
+			return mainlineVersion.(string)
 		}
 	}
 	return ""
+}
+
+// CheckPortExistsInConf will validate that a `listen {{port}}` directive has been added by the user, if not it prints a warning to the user
+func CheckPortExistsInConf(nginxConfPath string, log logger.Logger) error {
+	conf, err := ioutil.ReadFile(nginxConfPath)
+	if err != nil {
+		return err
+	}
+
+	if ! strings.Contains(string(conf), "listen {{port}}") && ! strings.Contains(string(conf), "listen 8080") {
+		log.BodyWarning("No `listen {{port}}` directive in nginx.conf, your app may not start.")
+	}
+
+	return nil
 }

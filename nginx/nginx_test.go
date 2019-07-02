@@ -17,7 +17,10 @@
 package nginx
 
 import (
+	"bytes"
 	"github.com/buildpack/libbuildpack/buildplan"
+	"github.com/cloudfoundry/libcfbuildpack/logger"
+	bplogger "github.com/buildpack/libbuildpack/logger"
 	"path/filepath"
 	"testing"
 
@@ -69,13 +72,38 @@ func testNGINX(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("can load mainline version", func() {
-			found := LoadMainlineVersion(buildplan.Metadata{"version-lines": map[string]string{"mainline": "1.0.0"}})
+			found := LoadMainlineVersion(buildplan.Metadata{"version-lines": map[string]interface{}{"mainline": "1.0.0"}})
 			Expect(found).To(Equal("1.0.0"))
 		})
 
 		it("can load stable version", func() {
-			found := LoadStableVersion(buildplan.Metadata{"version-lines": map[string]string{"stable": "1.0.0"}})
+			found := LoadStableVersion(buildplan.Metadata{"version-lines": map[string]interface{}{"stable": "1.0.0"}})
 			Expect(found).To(Equal("1.0.0"))
+		})
+	})
+
+	when("nginx.conf doesn't contain a port", func() {
+		var f *test.DetectFactory
+
+		it.Before(func() {
+			f = test.NewDetectFactory(t)
+		})
+
+		it("logs a warning", func() {
+			nginxConfPath := filepath.Join(f.Detect.Application.Root, "nginx.conf")
+			test.WriteFile(t, nginxConfPath, " ")
+
+			debug := bytes.Buffer{}
+			info := bytes.Buffer{}
+
+			log := logger.Logger{
+				Logger: bplogger.NewLogger(
+					&debug,
+					&info),
+			}
+
+			Expect(CheckPortExistsInConf(nginxConfPath, log)).ToNot(HaveOccurred())
+			Expect(info.String()).To(ContainSubstring("No `listen {{port}}` directive in nginx.conf, your app may not start."))
 		})
 	})
 }

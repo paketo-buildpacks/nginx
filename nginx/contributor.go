@@ -87,6 +87,10 @@ func (c Contributor) Contribute() error {
 		}
 
 		nginxConfPath := filepath.Join(c.app.Root, "nginx.conf")
+		if err := CheckPortExistsInConf(nginxConfPath, layer.Logger); err != nil {
+			return err
+		}
+
 		appModsPath := filepath.Join(c.app.Root, "modules")
 		pkgModsPath := filepath.Join(layer.Root, "modules")
 		varifyCmd := fmt.Sprintf(`verify "%s" "%s" "%s"`, nginxConfPath, appModsPath, pkgModsPath)

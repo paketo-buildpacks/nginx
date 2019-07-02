@@ -123,7 +123,7 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 		it("should support using version == mainline", func() {
 			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "buildpack.yml"), "{nginx: {version: mainline}}")
 
-			factory.Detect.Buildpack.Metadata = buildplan.Metadata{"version-lines": map[string]string{"mainline": "1.0.0"}}
+			factory.Detect.Buildpack.Metadata = buildplan.Metadata{"version-lines": map[string]interface{}{"mainline": "1.0.0"}}
 
 			code, err := runDetect(factory.Detect)
 			Expect(err).NotTo(HaveOccurred())
@@ -140,7 +140,7 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 		it("should support using version == stable", func() {
 			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "buildpack.yml"), "{nginx: {version: stable}}")
 
-			factory.Detect.Buildpack.Metadata = buildplan.Metadata{"version-lines": map[string]string{"stable": "1.0.0"}}
+			factory.Detect.Buildpack.Metadata = buildplan.Metadata{"version-lines": map[string]interface{}{"stable": "1.0.0"}}
 
 			code, err := runDetect(factory.Detect)
 			Expect(err).NotTo(HaveOccurred())

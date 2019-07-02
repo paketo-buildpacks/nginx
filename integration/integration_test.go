@@ -75,4 +75,37 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			Expect(app.Destroy()).To(Succeed())
 		})
 	})
+
+	when("an Nginx app uses the stream module", func() {
+		it("starts successfully", func() {
+			app, err := dagger.PackBuild(filepath.Join("testdata", "with_stream_module"), uri)
+			Expect(err).ToNot(HaveOccurred())
+
+			app.SetHealthCheck("", "3s", "1s")
+
+			err = app.Start()
+			if err != nil {
+				_, err = fmt.Fprintf(os.Stderr, "App failed to start: %v\n", err)
+				containerID, imageName, volumeIDs, err := app.Info()
+				Expect(err).NotTo(HaveOccurred())
+				fmt.Printf("ContainerID: %s\nImage Name: %s\nAll leftover cached volumes: %v\n", containerID, imageName, volumeIDs)
+
+				containerLogs, err := app.Logs()
+				Expect(err).NotTo(HaveOccurred())
+				fmt.Printf("Container Logs:\n %s\n", containerLogs)
+				t.FailNow()
+			}
+
+			_, _, err = app.HTTPGet("/index.html")
+			Expect(err).ToNot(HaveOccurred())
+
+			logs, err := app.Logs()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(logs).ToNot(ContainSubstring("dlopen()"))
+			Expect(logs).ToNot(ContainSubstring("cannot open shared object file"))
+			Expect(logs).ToNot(ContainSubstring("No such file or directory"))
+
+			Expect(app.Destroy()).To(Succeed())
+		})
+	})
 }

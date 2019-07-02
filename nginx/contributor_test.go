@@ -67,6 +67,7 @@ func testNGINXContributor(t *testing.T, when spec.G, it spec.S) {
 			f := test.NewBuildFactory(t)
 
 			Expect(helper.WriteFile(filepath.Join(f.Build.Buildpack.Root, "bin", "verify"), os.ModePerm, "")).To(Succeed())
+			Expect(helper.WriteFile(filepath.Join(f.Build.Application.Root, "nginx.conf"), os.ModePerm, "")).To(Succeed())
 
 			f.AddBuildPlan(Dependency, buildplan.Dependency{
 				Metadata: buildplan.Metadata{"launch": true},
