@@ -1,0 +1,6 @@
+.DS_Store
+.idea
+.bin
+bin
+*.tgz
+httpd-cnb_*
