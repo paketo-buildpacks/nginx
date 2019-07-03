@@ -26,17 +26,17 @@ import (
 
 	"github.com/cloudfoundry/libcfbuildpack/test"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gexec"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
-	"github.com/onsi/gomega/gexec"
 )
 
 var (
 	pathToCli string
 )
 
-func TestUnitVerify(t *testing.T) {
-	spec.Run(t, "Verify", testVerify, spec.Report(report.Terminal{}))
+func TestUnitConfigure(t *testing.T) {
+	spec.Run(t, "Configure", testConfigure, spec.Report(report.Terminal{}))
 }
 
 func runCli(tmpDir, body string, env []string, localModulePath, globalModulePath string) string {
@@ -54,7 +54,7 @@ func runCli(tmpDir, body string, env []string, localModulePath, globalModulePath
 	return string(output)
 }
 
-func testVerify(t *testing.T, when spec.G, it spec.S) {
+func testConfigure(t *testing.T, when spec.G, it spec.S) {
 	var factory *test.DetectFactory
 	var (
 		localModulePath, globalModulePath string
@@ -65,7 +65,7 @@ func testVerify(t *testing.T, when spec.G, it spec.S) {
 
 		RegisterTestingT(t)
 		factory = test.NewDetectFactory(t)
-		pathToCli, err = gexec.Build("github.com/cloudfoundry/nginx-cnb/cmd/verify")
+		pathToCli, err = gexec.Build("github.com/cloudfoundry/nginx-cnb/cmd/configure")
 		Expect(err).ToNot(HaveOccurred())
 	})
 

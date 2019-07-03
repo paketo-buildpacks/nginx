@@ -3,4 +3,4 @@
 .bin
 bin
 *.tgz
-httpd-cnb_*
+nginx-cnb_*

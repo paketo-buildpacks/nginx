@@ -18,18 +18,19 @@ package nginx
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+
 	"github.com/buildpack/libbuildpack/application"
 	"github.com/cloudfoundry/libcfbuildpack/build"
 	"github.com/cloudfoundry/libcfbuildpack/helper"
 	"github.com/cloudfoundry/libcfbuildpack/layers"
-	"os"
-	"path/filepath"
 )
 
 // Contributor is responsible for deciding what this buildpack will contribute during build
 type Contributor struct {
 	app                application.Application
-	verifyPath         string
+	configurePath      string
 	launchContribution bool
 	launchLayer        layers.Layers
 	nginxLayer         layers.DependencyLayer
@@ -53,10 +54,10 @@ func NewContributor(context build.Build) (c Contributor, willContribute bool, er
 	}
 
 	contributor := Contributor{
-		app:         context.Application,
-		verifyPath:  filepath.Join(context.Buildpack.Root, "bin", "verify"),
-		launchLayer: context.Layers,
-		nginxLayer:  context.Layers.DependencyLayer(dep),
+		app:           context.Application,
+		configurePath: filepath.Join(context.Buildpack.Root, "bin", "configure"),
+		launchLayer:   context.Layers,
+		nginxLayer:    context.Layers.DependencyLayer(dep),
 	}
 
 	if _, ok := plan.Metadata["launch"]; ok {
@@ -74,7 +75,7 @@ func (c Contributor) Contribute() error {
 			return err
 		}
 
-		if err := helper.CopyFile(c.verifyPath, filepath.Join(layer.Root, "bin", "verify")); err != nil {
+		if err := helper.CopyFile(c.configurePath, filepath.Join(layer.Root, "bin", "configure")); err != nil {
 			return err
 		}
 
@@ -93,11 +94,11 @@ func (c Contributor) Contribute() error {
 
 		appModsPath := filepath.Join(c.app.Root, "modules")
 		pkgModsPath := filepath.Join(layer.Root, "modules")
-		varifyCmd := fmt.Sprintf(`verify "%s" "%s" "%s"`, nginxConfPath, appModsPath, pkgModsPath)
+		configureCmd := fmt.Sprintf(`configure "%s" "%s" "%s"`, nginxConfPath, appModsPath, pkgModsPath)
 		nginxCmd := fmt.Sprintf(`nginx -p $PWD -c "%s"`, nginxConfPath)
 
 		return c.launchLayer.WriteApplicationMetadata(layers.Metadata{
-			Processes: []layers.Process{{"web", fmt.Sprintf(`%s && %s`, varifyCmd, nginxCmd)}},
+			Processes: []layers.Process{{"web", fmt.Sprintf(`%s && %s`, configureCmd, nginxCmd)}},
 		})
 	}, c.flags()...)
 }

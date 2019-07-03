@@ -18,10 +18,11 @@ package nginx
 
 import (
 	"fmt"
-	"github.com/cloudfoundry/libcfbuildpack/helper"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/cloudfoundry/libcfbuildpack/helper"
 
 	"github.com/cloudfoundry/libcfbuildpack/layers"
 
@@ -66,7 +67,7 @@ func testNGINXContributor(t *testing.T, when spec.G, it spec.S) {
 		it("should contribute nginx to launch when launch is true", func() {
 			f := test.NewBuildFactory(t)
 
-			Expect(helper.WriteFile(filepath.Join(f.Build.Buildpack.Root, "bin", "verify"), os.ModePerm, "")).To(Succeed())
+			Expect(helper.WriteFile(filepath.Join(f.Build.Buildpack.Root, "bin", "configure"), os.ModePerm, "")).To(Succeed())
 			Expect(helper.WriteFile(filepath.Join(f.Build.Application.Root, "nginx.conf"), os.ModePerm, "")).To(Succeed())
 
 			f.AddBuildPlan(Dependency, buildplan.Dependency{
@@ -87,7 +88,7 @@ func testNGINXContributor(t *testing.T, when spec.G, it spec.S) {
 			nginxConfPath := filepath.Join(f.Build.Application.Root, "nginx.conf")
 			appModsPath := filepath.Join(f.Build.Application.Root, "modules")
 			pkgModsPath := filepath.Join(layer.Root, "modules")
-			varifyCmd := fmt.Sprintf(`verify "%s" "%s" "%s"`, nginxConfPath, appModsPath, pkgModsPath)
+			varifyCmd := fmt.Sprintf(`configure "%s" "%s" "%s"`, nginxConfPath, appModsPath, pkgModsPath)
 			nginxCmd := fmt.Sprintf(`nginx -p $PWD -c "%s"`, nginxConfPath)
 
 			Expect(f.Build.Layers).To(test.HaveApplicationMetadata(
