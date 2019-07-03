@@ -4,3 +4,4 @@
 bin
 *.tgz
 nginx-cnb_*
+/dependency-cache
