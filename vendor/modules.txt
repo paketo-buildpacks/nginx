@@ -16,7 +16,7 @@ github.com/buildpack/libbuildpack/buildpack
 github.com/buildpack/libbuildpack/stack
 github.com/buildpack/libbuildpack/platform
 github.com/buildpack/libbuildpack/services
-# github.com/cloudfoundry/dagger v0.0.0-20190618191508-11a2fd493334
+# github.com/cloudfoundry/dagger v0.0.0-20190702204901-6f86432fd00d
 github.com/cloudfoundry/dagger
 # github.com/cloudfoundry/libbuildpack v0.0.0-20190618191545-b7f732060e74
 github.com/cloudfoundry/libbuildpack
@@ -69,13 +69,13 @@ github.com/sclevine/spec
 github.com/sclevine/spec/report
 # github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8
 github.com/xi2/xz
-# golang.org/x/net v0.0.0-20190620200207-3b0461eec859
+# golang.org/x/net v0.0.0-20190628185345-da137c7871d7
 golang.org/x/net/html/charset
 golang.org/x/net/html
 golang.org/x/net/context/ctxhttp
 golang.org/x/net/html/atom
 golang.org/x/net/context
-# golang.org/x/oauth2 v0.0.0-20190319182350-c85d3e98c914
+# golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 golang.org/x/oauth2
 golang.org/x/oauth2/internal
 # golang.org/x/sys v0.0.0-20190626221950-04f50cda93cb
@@ -98,7 +98,7 @@ golang.org/x/text/runes
 golang.org/x/text/internal/language
 golang.org/x/text/internal/language/compact
 golang.org/x/text/internal/tag
-# google.golang.org/appengine v1.4.0
+# google.golang.org/appengine v1.6.1
 google.golang.org/appengine/urlfetch
 google.golang.org/appengine/internal
 google.golang.org/appengine/internal/urlfetch
