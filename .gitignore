@@ -1,7 +1,8 @@
 .DS_Store
 .idea
 .bin
-bin
+/bin
 *.tgz
 nginx-cnb_*
 /dependency-cache
+/buildpack.toml

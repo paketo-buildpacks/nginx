@@ -40,7 +40,7 @@ func TestIntegration(t *testing.T) {
 	Expect(err).ToNot(HaveOccurred())
 	uri, err = dagger.PackageBuildpack(root)
 	Expect(err).NotTo(HaveOccurred())
-	defer os.RemoveAll(uri)
+	defer dagger.DeleteBuildpack(uri)
 	spec.Run(t, "Integration", testIntegration, spec.Report(report.Terminal{}))
 }
 
