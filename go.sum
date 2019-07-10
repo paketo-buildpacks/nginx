@@ -8,6 +8,8 @@ github.com/blang/semver v3.5.1+incompatible/go.mod h1:kRBLl5iJ+tD4TcOOxsy/0fnweb
 github.com/buildpack/libbuildpack v1.11.0/go.mod h1:tKGgGnBYfOL23Ma4JWM8ucBcGX6Im3p1WTmKPixDPPM=
 github.com/buildpack/libbuildpack v1.19.0 h1:HUkaIwuGmPbQhujBjYNpd+E4f0NdAgAgHq7skydiL5s=
 github.com/buildpack/libbuildpack v1.19.0/go.mod h1:oxgSTzPbWscHs27iuYrctEZpSak2m/qPThA+9JM0Boo=
+github.com/buildpack/libbuildpack v1.20.0 h1:0Jxd8UaZsIjUR/7b2FAyqYYof1Gk5GesuhHKxFKDv4I=
+github.com/buildpack/libbuildpack v1.20.0/go.mod h1:GNN9x3mIGqolLBXj5z1K5kA22WvrC7uU7zYWt0d/GUs=
 github.com/cloudfoundry/dagger v0.0.0-20190708210935-79ba5190b629 h1:Ij34QrApV5nmYopclohIhB3EFFV76faK+7bhNGpkGRs=
 github.com/cloudfoundry/dagger v0.0.0-20190708210935-79ba5190b629/go.mod h1:PXeUHc4d2vAVO/31jFE6uD09w/yFfzs4kcayAVEvnEI=
 github.com/cloudfoundry/libbuildpack v0.0.0-20190618191545-b7f732060e74 h1:0iMys42zM0gXA/PWiBNJUOuwUelodQyusHhdmhqnCo8=
@@ -15,6 +17,8 @@ github.com/cloudfoundry/libbuildpack v0.0.0-20190618191545-b7f732060e74/go.mod h
 github.com/cloudfoundry/libcfbuildpack v1.48.0/go.mod h1:Dq7Sg12rmsfJld22pGTvHRKHNGBfauXqgIzcPrPGbD4=
 github.com/cloudfoundry/libcfbuildpack v1.76.0 h1:oMTv35mjk5Jogzy2sshVXHyolDWnWHMfANQ0UooXJq0=
 github.com/cloudfoundry/libcfbuildpack v1.76.0/go.mod h1:QGm+nzixn579dvQNlS7ZQET541y2hEpZ0/5uNxkQ04Y=
+github.com/cloudfoundry/libcfbuildpack v1.77.0 h1:0efgQEcrRhbzp9vQAwik7HDNqudcqbjJ4qI7rRhEqL8=
+github.com/cloudfoundry/libcfbuildpack v1.77.0/go.mod h1:nqxdAEdvcSYRZqsFL+uV1+coatU1pqz3EyPST4/e8Ls=
 github.com/cloudfoundry/php-cnb v0.0.2 h1:9K+mqBT0f+yxKac0bfj/okD3H2R6dbFG269c0jiZHSU=
 github.com/cloudfoundry/php-cnb v0.0.2/go.mod h1:wmL8/TWUhD4B6ssS3Lh+JuQLCNtqFxXC78cNF7T0Zuo=
 github.com/elazarl/goproxy v0.0.0-20181111060418-2ce16c963a8a/go.mod h1:/Zj4wYkgs4iZTTu3o/KG3Itv/qCCa8VVMlb3i9OVuzc=
@@ -30,6 +34,8 @@ github.com/golang/protobuf v1.2.0/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5y
 github.com/golang/protobuf v1.3.0/go.mod h1:Qd/q+1AKNOZr9uGQzbzCmRO6sUih6GTPZv6a1/R87v0=
 github.com/golang/protobuf v1.3.1 h1:YF8+flBXS5eO826T4nzqPrxfhQThhXl0YzfuUPu4SBg=
 github.com/golang/protobuf v1.3.1/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
+github.com/golang/protobuf v1.3.2 h1:6nsPYzhq5kReh6QImI3k5qWzO4PEbvbIW2cwSfR/6xs=
+github.com/golang/protobuf v1.3.2/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
 github.com/google/go-github v17.0.0+incompatible h1:N0LgJ1j65A7kfXrZnUDaYCs/Sf4rEjNlfyDHW9dolSY=
 github.com/google/go-github v17.0.0+incompatible/go.mod h1:zLgOLi98H3fifZn+44m+umXrS52loVEgC2AApnigrVQ=
 github.com/google/go-querystring v1.0.0 h1:Xkwi/a1rcvNg1PPYe5vI8GbeBY/jrVuDX5ASuANWTrk=
@@ -98,6 +104,8 @@ golang.org/x/sys v0.0.0-20190422165155-953cdadca894/go.mod h1:h1NjWce9XRLGQEsW7w
 golang.org/x/sys v0.0.0-20190606165138-5da285871e9c/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20190626221950-04f50cda93cb h1:fgwFCsaw9buMuxNd6+DQfAuSFqbNiQZpcgJQAgJsK6k=
 golang.org/x/sys v0.0.0-20190626221950-04f50cda93cb/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+golang.org/x/sys v0.0.0-20190710143415-6ec70d6a5542 h1:6ZQFf1D2YYDDI7eSwW8adlkkavTB9sw5I24FVtEvNUQ=
+golang.org/x/sys v0.0.0-20190710143415-6ec70d6a5542/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
 golang.org/x/text v0.3.1-0.20180807135948-17ff2d5776d2/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
 golang.org/x/text v0.3.2 h1:tW2bmiBqwgJj/UpqtC8EpXEZVYOwU0yG4iWbprSVAcs=
