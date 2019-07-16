@@ -89,11 +89,13 @@ func testNGINXContributor(t *testing.T, when spec.G, it spec.S) {
 			appModsPath := filepath.Join(f.Build.Application.Root, "modules")
 			pkgModsPath := filepath.Join(layer.Root, "modules")
 			varifyCmd := fmt.Sprintf(`configure "%s" "%s" "%s"`, nginxConfPath, appModsPath, pkgModsPath)
-			nginxCmd := fmt.Sprintf(`nginx -p $PWD -c "%s"`, nginxConfPath)
+			Expect(layer).To(test.HaveProfile("configure", varifyCmd))
 
+			nginxCmd := fmt.Sprintf(`nginx -p $PWD -c "%s"`, nginxConfPath)
 			Expect(f.Build.Layers).To(test.HaveApplicationMetadata(
-				layers.Metadata{Processes: []layers.Process{{"web", fmt.Sprintf(`%s && %s`, varifyCmd, nginxCmd)}}},
+				layers.Metadata{Processes: []layers.Process{{"web", nginxCmd}}},
 			))
+
 		})
 	})
 }

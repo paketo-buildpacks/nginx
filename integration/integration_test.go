@@ -45,8 +45,9 @@ func TestIntegration(t *testing.T) {
 }
 
 func testIntegration(t *testing.T, when spec.G, it spec.S) {
+	var Expect func(interface{}, ...interface{}) Assertion
 	it.Before(func() {
-		RegisterTestingT(t)
+		Expect = NewWithT(t).Expect
 	})
 
 	when("push simple app", func() {

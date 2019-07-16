@@ -88,18 +88,29 @@ func (c Contributor) Contribute() error {
 		}
 
 		nginxConfPath := filepath.Join(c.app.Root, "nginx.conf")
-		if err := CheckPortExistsInConf(nginxConfPath, layer.Logger); err != nil {
+		appModsPath := filepath.Join(c.app.Root, "modules")
+		pkgModsPath := filepath.Join(layer.Root, "modules")
+		if err := layer.WriteProfile("configure", `configure "%s" "%s" "%s"`, nginxConfPath, appModsPath, pkgModsPath); err != nil {
 			return err
 		}
 
-		appModsPath := filepath.Join(c.app.Root, "modules")
-		pkgModsPath := filepath.Join(layer.Root, "modules")
-		configureCmd := fmt.Sprintf(`configure "%s" "%s" "%s"`, nginxConfPath, appModsPath, pkgModsPath)
-		nginxCmd := fmt.Sprintf(`nginx -p $PWD -c "%s"`, nginxConfPath)
+		exists, err := helper.FileExists(nginxConfPath)
+		if err != nil {
+			return err
+		}
 
-		return c.launchLayer.WriteApplicationMetadata(layers.Metadata{
-			Processes: []layers.Process{{"web", fmt.Sprintf(`%s && %s`, configureCmd, nginxCmd)}},
-		})
+		if exists {
+			if err := CheckPortExistsInConf(nginxConfPath, layer.Logger); err != nil {
+				return err
+			}
+
+			nginxCmd := fmt.Sprintf(`nginx -p $PWD -c "%s"`, nginxConfPath)
+			return c.launchLayer.WriteApplicationMetadata(layers.Metadata{
+				Processes: []layers.Process{{"web", nginxCmd}},
+			})
+		}
+
+		return nil
 	}, c.flags()...)
 }
 
