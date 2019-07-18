@@ -17,7 +17,9 @@
 package php
 
 import (
+	"errors"
 	"path/filepath"
+	"strings"
 
 	"github.com/cloudfoundry/libcfbuildpack/build"
 	"github.com/cloudfoundry/libcfbuildpack/helper"
@@ -40,16 +42,7 @@ func NewContributor(context build.Build) (c Contributor, willContribute bool, er
 		return Contributor{}, false, nil
 	}
 
-	deps, err := context.Buildpack.Dependencies()
-	if err != nil {
-		return Contributor{}, false, err
-	}
-
-	if plan.Version == "" {
-		context.Logger.SubsequentLine("Dependency version not specified, but is required")
-		return Contributor{}, false, nil
-	}
-	dep, err := deps.Best(Dependency, plan.Version, context.Stack)
+	dep, err := context.Buildpack.RuntimeDependency(Dependency, plan.Version, context.Stack)
 	if err != nil {
 		return Contributor{}, false, err
 	}
@@ -59,13 +52,8 @@ func NewContributor(context build.Build) (c Contributor, willContribute bool, er
 		phpLayer: context.Layers.DependencyLayer(dep),
 	}
 
-	if _, ok := plan.Metadata["launch"]; ok {
-		contributor.launchContribution = true
-	}
-
-	if _, ok := plan.Metadata["build"]; ok {
-		contributor.buildContribution = true
-	}
+	contributor.buildContribution, _ = plan.Metadata["build"].(bool)
+	contributor.launchContribution, _ = plan.Metadata["launch"].(bool)
 
 	return contributor, true, nil
 }
@@ -86,6 +74,23 @@ func (c Contributor) Contribute() error {
 			return err
 		}
 
+		if err := layer.OverrideSharedEnv("PHP_HOME", layer.Root); err != nil {
+			return err
+		}
+
+		extensionsFolder, apiVersion, err := extensions(layer.Root)
+		if err != nil {
+			return err
+		}
+
+		if err := layer.OverrideSharedEnv("PHP_EXTENSION_DIR", extensionsFolder); err != nil {
+			return err
+		}
+
+		if err := layer.OverrideSharedEnv("PHP_API", apiVersion); err != nil {
+			return err
+		}
+
 		return nil
 	}, c.flags()...)
 }
@@ -102,4 +107,22 @@ func (c Contributor) flags() []layers.Flag {
 	}
 
 	return flags
+}
+
+
+func extensions(root string) (extensionsFolder, apiVersion string, err error) {
+	folders, err := filepath.Glob(filepath.Join(root, "lib/php/extensions/no-debug-non-zts*"))
+	if err != nil {
+		return "", "", err
+	}
+
+	if len(folders) == 0 {
+		return "", "", errors.New("php extensions folder not found")
+	}
+
+	extensionsFolder = folders[0]
+	extensionFolderChunks := strings.Split(extensionsFolder, "-")
+	apiVersion = extensionFolderChunks[len(extensionFolderChunks) - 1]
+
+	return extensionsFolder, apiVersion, nil
 }
