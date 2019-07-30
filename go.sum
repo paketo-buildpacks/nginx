@@ -13,12 +13,10 @@ github.com/cloudfoundry/dagger v0.0.0-20190708210935-79ba5190b629/go.mod h1:PXeU
 github.com/cloudfoundry/libbuildpack v0.0.0-20190708161550-16cf920add31 h1:oHaUz5H3QM7n7F8EIyLrAPJ06eGXEfsKpKcS6jdXg4g=
 github.com/cloudfoundry/libbuildpack v0.0.0-20190708161550-16cf920add31/go.mod h1:9dmLtgQ6GrLr2ryO9ioYGpbc5eYL+8JBWtPj0r7HaZY=
 github.com/cloudfoundry/libcfbuildpack v1.76.0/go.mod h1:QGm+nzixn579dvQNlS7ZQET541y2hEpZ0/5uNxkQ04Y=
-github.com/cloudfoundry/libcfbuildpack v1.77.0 h1:0efgQEcrRhbzp9vQAwik7HDNqudcqbjJ4qI7rRhEqL8=
-github.com/cloudfoundry/libcfbuildpack v1.77.0/go.mod h1:nqxdAEdvcSYRZqsFL+uV1+coatU1pqz3EyPST4/e8Ls=
 github.com/cloudfoundry/libcfbuildpack v1.79.1-0.20190730020126-e0a6cc8afb24 h1:3Ovh6qeGAMJvRFCWQTt8cUOHsb2D9srA3sqYIWJtfg8=
 github.com/cloudfoundry/libcfbuildpack v1.79.1-0.20190730020126-e0a6cc8afb24/go.mod h1:nqxdAEdvcSYRZqsFL+uV1+coatU1pqz3EyPST4/e8Ls=
-github.com/cloudfoundry/php-cnb v0.0.6 h1:BDTqS4Efpul0zLcV0KrewPvTKhAU99GAEtFAYIwfkrY=
-github.com/cloudfoundry/php-cnb v0.0.6/go.mod h1:mLyCyoHFhNprkf1ynKK6cJQCXmFY8Vk2NMYcmwQHauo=
+github.com/cloudfoundry/php-dist-cnb v0.0.15 h1:jA351Fdi2yOvXJF4+HUVkEi75ngnA+7KTRzxqIrhqlg=
+github.com/cloudfoundry/php-dist-cnb v0.0.15/go.mod h1:sZEOcXI+kZ4vfcS1MiPmhyglMFKR6A/NVzlGzzr3x5w=
 github.com/elazarl/goproxy v0.0.0-20181111060418-2ce16c963a8a/go.mod h1:/Zj4wYkgs4iZTTu3o/KG3Itv/qCCa8VVMlb3i9OVuzc=
 github.com/fatih/color v1.7.0 h1:DkWD4oS2D8LGGgTQ6IvwJJXSL5Vp2ffcQg58nFV38Ys=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=

@@ -22,7 +22,7 @@ import (
 
 	"github.com/buildpack/libbuildpack/buildplan"
 	"github.com/cloudfoundry/nginx-cnb/nginx"
-	"github.com/cloudfoundry/php-cnb/php"
+	"github.com/cloudfoundry/php-dist-cnb/php"
 
 	"github.com/cloudfoundry/libcfbuildpack/detect"
 	"github.com/cloudfoundry/libcfbuildpack/test"
