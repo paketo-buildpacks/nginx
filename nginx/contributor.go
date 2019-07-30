@@ -87,6 +87,11 @@ func (c Contributor) Contribute() error {
 			return err
 		}
 
+		// Remove as we use `/workspace/logs` instead
+		if err := os.RemoveAll(filepath.Join(layer.Root, "logs")); err != nil {
+			return err
+		}
+
 		nginxConfPath := filepath.Join(c.app.Root, "nginx.conf")
 		appModsPath := filepath.Join(c.app.Root, "modules")
 		pkgModsPath := filepath.Join(layer.Root, "modules")
