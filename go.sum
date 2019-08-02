@@ -15,6 +15,8 @@ github.com/cloudfoundry/libbuildpack v0.0.0-20190708161550-16cf920add31/go.mod h
 github.com/cloudfoundry/libcfbuildpack v1.76.0/go.mod h1:QGm+nzixn579dvQNlS7ZQET541y2hEpZ0/5uNxkQ04Y=
 github.com/cloudfoundry/libcfbuildpack v1.79.1-0.20190730020126-e0a6cc8afb24 h1:3Ovh6qeGAMJvRFCWQTt8cUOHsb2D9srA3sqYIWJtfg8=
 github.com/cloudfoundry/libcfbuildpack v1.79.1-0.20190730020126-e0a6cc8afb24/go.mod h1:nqxdAEdvcSYRZqsFL+uV1+coatU1pqz3EyPST4/e8Ls=
+github.com/cloudfoundry/libcfbuildpack v1.79.1-0.20190802164909-f8808a55c67b h1:31pm9V2fuYis6L9GibFRNjTKtGL0GRcEeb6Jb6BLHOY=
+github.com/cloudfoundry/libcfbuildpack v1.79.1-0.20190802164909-f8808a55c67b/go.mod h1:nqxdAEdvcSYRZqsFL+uV1+coatU1pqz3EyPST4/e8Ls=
 github.com/cloudfoundry/php-dist-cnb v0.0.15 h1:jA351Fdi2yOvXJF4+HUVkEi75ngnA+7KTRzxqIrhqlg=
 github.com/cloudfoundry/php-dist-cnb v0.0.15/go.mod h1:sZEOcXI+kZ4vfcS1MiPmhyglMFKR6A/NVzlGzzr3x5w=
 github.com/elazarl/goproxy v0.0.0-20181111060418-2ce16c963a8a/go.mod h1:/Zj4wYkgs4iZTTu3o/KG3Itv/qCCa8VVMlb3i9OVuzc=
