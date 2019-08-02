@@ -5,4 +5,3 @@
 *.tgz
 nginx-cnb_*
 /dependency-cache
-/buildpack.toml
