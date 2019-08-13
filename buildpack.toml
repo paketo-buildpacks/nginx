@@ -49,6 +49,15 @@ stacks = ["org.cloudfoundry.stacks.cflinuxfs3","io.buildpacks.stacks.bionic"]
 uri = "https://buildpacks.cloudfoundry.org/dependencies/nginx/nginx-1.17.1-linux-x64-cflinuxfs3-b9cfea16.tgz"
 version = "1.17.1"
 
+[[metadata.dependencies]]
+id = "nginx"
+sha256 = "d55951c6fa128412d1519eb0c5d8c28d2300a963ffbbad7289b3d178222288af"
+source = "http://nginx.org/download/nginx-1.17.3.tar.gz"
+source_sha256 = "3b84fe1c2cf9ca22fde370e486a9ab16b6427df1b6ea62cdb61978c9f34d0f3c"
+stacks = ["org.cloudfoundry.stacks.cflinuxfs3"]
+uri = "https://buildpacks.cloudfoundry.org/dependencies/nginx/nginx-1.17.3-linux-x64-cflinuxfs3-d55951c6.tgz"
+version = "1.17.3"
+
 [[metadata.dependency_deprecation_dates]]
 date = 2019-05-21T00:00:00Z
 link = "https://nginx.org/2018.html"
@@ -60,6 +69,12 @@ date = 2020-04-01T00:00:00Z
 link = "https://nginx.org/"
 name = "nginx"
 version_line = "1.16.x"
+
+[[metadata.dependency_deprecation_dates]]
+date = 2020-05-01T00:00:00Z
+link = "https://nginx.org/"
+name = "nginx"
+version_line = "1.17.x"
 
 [metadata.version-lines]
 mainline = "1.17.*"
