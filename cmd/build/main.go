@@ -22,8 +22,6 @@ import (
 
 	"github.com/cloudfoundry/nginx-cnb/nginx"
 
-	"github.com/buildpack/libbuildpack/buildplan"
-
 	"github.com/cloudfoundry/libcfbuildpack/build"
 )
 
@@ -58,5 +56,5 @@ func runBuild(context build.Build) (int, error) {
 		}
 	}
 
-	return context.Success(buildplan.BuildPlan{})
+	return context.Success()
 }

@@ -25,7 +25,6 @@ import (
 
 	"github.com/buildpack/libbuildpack/buildplan"
 	"github.com/cloudfoundry/libcfbuildpack/helper"
-	"github.com/cloudfoundry/php-dist-cnb/php"
 
 	"github.com/cloudfoundry/libcfbuildpack/detect"
 )
@@ -34,11 +33,6 @@ func main() {
 	detectionContext, err := detect.DefaultDetect()
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "failed to run detection: %s", err)
-		os.Exit(101)
-	}
-
-	if err := detectionContext.BuildPlan.Init(); err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "Failed to initialize Build Plan: %s\n", err)
 		os.Exit(101)
 	}
 
@@ -51,19 +45,9 @@ func main() {
 }
 
 func runDetect(context detect.Detect) (int, error) {
-	_, phpIsPossible := context.BuildPlan[php.Dependency]
-	if phpIsPossible {
-		context.Logger.SubsequentLine("PHP is in the buildplan, so preparing to serve PHP.")
-		return context.Pass(buildplan.BuildPlan{})
-	}
-
 	nginxConfExists, err := helper.FileExists(filepath.Join(context.Application.Root, "nginx.conf"))
 	if err != nil {
 		return context.Fail(), err
-	}
-
-	if !nginxConfExists {
-		return context.Fail(), fmt.Errorf("unable to find nginx.conf")
 	}
 
 	buildpackYAML, err := nginx.LoadBuildpackYAML(context.Application.Root)
@@ -83,10 +67,19 @@ func runDetect(context detect.Detect) (int, error) {
 		}
 	}
 
-	return context.Pass(buildplan.BuildPlan{
-		nginx.Dependency: buildplan.Dependency{
-			Version:  buildpackYAML.Config.Version,
-			Metadata: buildplan.Metadata{"launch": true},
-		},
-	})
+	plan := buildplan.Plan{
+		Provides: []buildplan.Provided{{nginx.Dependency}},
+	}
+
+	if nginxConfExists {
+		plan.Requires = []buildplan.Required{
+			{
+				Name:     nginx.Dependency,
+				Version:  buildpackYAML.Config.Version,
+				Metadata: buildplan.Metadata{"launch": true},
+			},
+		}
+	}
+
+	return context.Pass(plan)
 }

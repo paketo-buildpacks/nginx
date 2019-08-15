@@ -22,11 +22,12 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/cloudfoundry/libcfbuildpack/buildpackplan"
+
 	"github.com/cloudfoundry/libcfbuildpack/helper"
 
 	"github.com/cloudfoundry/libcfbuildpack/layers"
 
-	"github.com/buildpack/libbuildpack/buildplan"
 	"github.com/sclevine/spec/report"
 
 	"github.com/cloudfoundry/libcfbuildpack/test"
@@ -48,7 +49,7 @@ func testNGINXContributor(t *testing.T, when spec.G, it spec.S) {
 
 		it("returns true if a build plan exists", func() {
 			f := test.NewBuildFactory(t)
-			f.AddBuildPlan(Dependency, buildplan.Dependency{})
+			f.AddPlan(buildpackplan.Plan{Name: Dependency})
 			f.AddDependency(Dependency, stubNGINXFixture)
 
 			_, willContribute, err := NewContributor(f.Build)
@@ -70,8 +71,9 @@ func testNGINXContributor(t *testing.T, when spec.G, it spec.S) {
 			Expect(helper.WriteFile(filepath.Join(f.Build.Buildpack.Root, "bin", "configure"), os.ModePerm, "")).To(Succeed())
 			Expect(helper.WriteFile(filepath.Join(f.Build.Application.Root, "nginx.conf"), os.ModePerm, "")).To(Succeed())
 
-			f.AddBuildPlan(Dependency, buildplan.Dependency{
-				Metadata: buildplan.Metadata{"launch": true},
+			f.AddPlan(buildpackplan.Plan{
+				Name:     Dependency,
+				Metadata: buildpackplan.Metadata{"launch": true},
 			})
 			f.AddDependency(Dependency, stubNGINXFixture)
 

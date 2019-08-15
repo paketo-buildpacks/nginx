@@ -20,9 +20,10 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/cloudfoundry/libcfbuildpack/buildpack"
+
 	"github.com/buildpack/libbuildpack/buildplan"
 	"github.com/cloudfoundry/nginx-cnb/nginx"
-	"github.com/cloudfoundry/php-dist-cnb/php"
 
 	"github.com/cloudfoundry/libcfbuildpack/detect"
 	"github.com/cloudfoundry/libcfbuildpack/test"
@@ -54,9 +55,15 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 
 			Expect(code).To(Equal(detect.PassStatusCode))
 
-			Expect(factory.Output).To(Equal(buildplan.BuildPlan{
-				nginx.Dependency: buildplan.Dependency{
-					Metadata: buildplan.Metadata{"launch": true},
+			Expect(factory.Plans.Plan).To(Equal(buildplan.Plan{
+				Requires: []buildplan.Required{
+					{
+						Name:     nginx.Dependency,
+						Metadata: buildplan.Metadata{"launch": true},
+					},
+				},
+				Provides: []buildplan.Provided{
+					{Name: nginx.Dependency},
 				},
 			}))
 		})
@@ -71,10 +78,16 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 
 				Expect(code).To(Equal(detect.PassStatusCode))
 
-				Expect(factory.Output).To(Equal(buildplan.BuildPlan{
-					nginx.Dependency: buildplan.Dependency{
-						Version:  "1.2.3",
-						Metadata: buildplan.Metadata{"launch": true},
+				Expect(factory.Plans.Plan).To(Equal(buildplan.Plan{
+					Requires: []buildplan.Required{
+						{
+							Name:     nginx.Dependency,
+							Version:  "1.2.3",
+							Metadata: buildplan.Metadata{"launch": true},
+						},
+					},
+					Provides: []buildplan.Provided{
+						{Name: nginx.Dependency},
 					},
 				}))
 			})
@@ -87,9 +100,15 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 
 				Expect(code).To(Equal(detect.PassStatusCode))
 
-				Expect(factory.Output).To(Equal(buildplan.BuildPlan{
-					nginx.Dependency: buildplan.Dependency{
-						Metadata: buildplan.Metadata{"launch": true},
+				Expect(factory.Plans.Plan).To(Equal(buildplan.Plan{
+					Requires: []buildplan.Required{
+						{
+							Name:     nginx.Dependency,
+							Metadata: buildplan.Metadata{"launch": true},
+						},
+					},
+					Provides: []buildplan.Provided{
+						{Name: nginx.Dependency},
 					},
 				}))
 			})
@@ -97,21 +116,14 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	when("there is NOT an nginx.conf", func() {
-		it("should pass if `php-binary` is in the build plan", func() {
-			factory.AddBuildPlan(php.Dependency, buildplan.Dependency{})
-
+		it("should provide nginx but not require it", func() {
 			code, err := runDetect(factory.Detect)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(code).To(Equal(detect.PassStatusCode))
-			Expect(factory.Output).To(Equal(buildplan.BuildPlan{}))
-		})
-
-		it("should fail if `php-binary` is not in the build plan", func() {
-			code, err := runDetect(factory.Detect)
-			Expect(err).To(HaveOccurred())
-
-			Expect(code).To(Equal(detect.FailStatusCode))
+			Expect(factory.Plans.Plan).To(Equal(buildplan.Plan{
+				Provides: []buildplan.Provided{{Name: nginx.Dependency}},
+			}))
 		})
 	})
 
@@ -123,16 +135,22 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 		it("should support using version == mainline", func() {
 			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "buildpack.yml"), "{nginx: {version: mainline}}")
 
-			factory.Detect.Buildpack.Metadata = buildplan.Metadata{"version-lines": map[string]interface{}{"mainline": "1.0.0"}}
+			factory.Detect.Buildpack.Metadata = buildpack.Metadata{"version-lines": map[string]interface{}{"mainline": "1.0.0"}}
 
 			code, err := runDetect(factory.Detect)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(code).To(Equal(detect.PassStatusCode))
-			Expect(factory.Output).To(Equal(buildplan.BuildPlan{
-				nginx.Dependency: buildplan.Dependency{
-					Version:  "1.0.0",
-					Metadata: buildplan.Metadata{"launch": true},
+			Expect(factory.Plans.Plan).To(Equal(buildplan.Plan{
+				Requires: []buildplan.Required{
+					{
+						Name:     nginx.Dependency,
+						Version:  "1.0.0",
+						Metadata: buildplan.Metadata{"launch": true},
+					},
+				},
+				Provides: []buildplan.Provided{
+					{Name: nginx.Dependency},
 				},
 			}))
 		})
@@ -140,16 +158,22 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 		it("should support using version == stable", func() {
 			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "buildpack.yml"), "{nginx: {version: stable}}")
 
-			factory.Detect.Buildpack.Metadata = buildplan.Metadata{"version-lines": map[string]interface{}{"stable": "1.0.0"}}
+			factory.Detect.Buildpack.Metadata = buildpack.Metadata{"version-lines": map[string]interface{}{"stable": "1.0.0"}}
 
 			code, err := runDetect(factory.Detect)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(code).To(Equal(detect.PassStatusCode))
-			Expect(factory.Output).To(Equal(buildplan.BuildPlan{
-				nginx.Dependency: buildplan.Dependency{
-					Version:  "1.0.0",
-					Metadata: buildplan.Metadata{"launch": true},
+			Expect(factory.Plans.Plan).To(Equal(buildplan.Plan{
+				Requires: []buildplan.Required{
+					{
+						Name:     nginx.Dependency,
+						Version:  "1.0.0",
+						Metadata: buildplan.Metadata{"launch": true},
+					},
+				},
+				Provides: []buildplan.Provided{
+					{Name: nginx.Dependency},
 				},
 			}))
 		})
@@ -161,10 +185,16 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(code).To(Equal(detect.PassStatusCode))
-			Expect(factory.Output).To(Equal(buildplan.BuildPlan{
-				nginx.Dependency: buildplan.Dependency{
-					Version:  "1.17.*",
-					Metadata: buildplan.Metadata{"launch": true},
+			Expect(factory.Plans.Plan).To(Equal(buildplan.Plan{
+				Requires: []buildplan.Required{
+					{
+						Name:     nginx.Dependency,
+						Version:  "1.17.*",
+						Metadata: buildplan.Metadata{"launch": true},
+					},
+				},
+				Provides: []buildplan.Provided{
+					{Name: nginx.Dependency},
 				},
 			}))
 		})
@@ -176,9 +206,15 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(code).To(Equal(detect.PassStatusCode))
-			Expect(factory.Output).To(Equal(buildplan.BuildPlan{
-				nginx.Dependency: buildplan.Dependency{
-					Metadata: buildplan.Metadata{"launch": true},
+			Expect(factory.Plans.Plan).To(Equal(buildplan.Plan{
+				Requires: []buildplan.Required{
+					{
+						Name:     nginx.Dependency,
+						Metadata: buildplan.Metadata{"launch": true},
+					},
+				},
+				Provides: []buildplan.Provided{
+					{Name: nginx.Dependency},
 				},
 			}))
 		})

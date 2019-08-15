@@ -18,11 +18,12 @@ package nginx
 
 import (
 	"bytes"
-	"github.com/buildpack/libbuildpack/buildplan"
-	"github.com/cloudfoundry/libcfbuildpack/logger"
-	bplogger "github.com/buildpack/libbuildpack/logger"
 	"path/filepath"
 	"testing"
+
+	bplogger "github.com/buildpack/libbuildpack/logger"
+	"github.com/cloudfoundry/libcfbuildpack/buildpack"
+	"github.com/cloudfoundry/libcfbuildpack/logger"
 
 	"github.com/cloudfoundry/libcfbuildpack/test"
 	"github.com/sclevine/spec/report"
@@ -72,12 +73,12 @@ func testNGINX(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("can load mainline version", func() {
-			found := LoadMainlineVersion(buildplan.Metadata{"version-lines": map[string]interface{}{"mainline": "1.0.0"}})
+			found := LoadMainlineVersion(buildpack.Metadata{"version-lines": map[string]interface{}{"mainline": "1.0.0"}})
 			Expect(found).To(Equal("1.0.0"))
 		})
 
 		it("can load stable version", func() {
-			found := LoadStableVersion(buildplan.Metadata{"version-lines": map[string]interface{}{"stable": "1.0.0"}})
+			found := LoadStableVersion(buildpack.Metadata{"version-lines": map[string]interface{}{"stable": "1.0.0"}})
 			Expect(found).To(Equal("1.0.0"))
 		})
 	})
