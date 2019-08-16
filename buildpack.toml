@@ -13,6 +13,7 @@ nginx = "1.17.*"
 
 [[metadata.dependencies]]
 id = "nginx"
+name = "Nginx Server"
 sha256 = "79170f9a71673582ecf2cf0d3dcfbf110e42599b140882b6314bb3d097ee4f2a"
 source = "http://nginx.org/download/nginx-1.15.12.tar.gz"
 source_sha256 = "3d5b90aa17de1700709ae4ec6c4d73d87c888b06c510391bf7104b006fdb2abe"
@@ -32,6 +33,7 @@ version = "1.16.0"
 
 [[metadata.dependencies]]
 id = "nginx"
+name = "Nginx Server"
 sha256 = "1c09ac0ccf5e66599419ac8e2917992b04db79756fc2c8b8ea5c9ca75b8118e3"
 source = "http://nginx.org/download/nginx-1.16.1.tar.gz"
 source_sha256 = "f11c2a6dd1d3515736f0324857957db2de98be862461b5a542a3ac6188dbe32b"
@@ -51,6 +53,7 @@ version = "1.17.1"
 
 [[metadata.dependencies]]
 id = "nginx"
+name = "Nginx Server"
 sha256 = "d55951c6fa128412d1519eb0c5d8c28d2300a963ffbbad7289b3d178222288af"
 source = "http://nginx.org/download/nginx-1.17.3.tar.gz"
 source_sha256 = "3b84fe1c2cf9ca22fde370e486a9ab16b6427df1b6ea62cdb61978c9f34d0f3c"
