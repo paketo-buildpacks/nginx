@@ -7,9 +7,9 @@ github.com/blang/semver
 # github.com/buildpack/libbuildpack v1.21.0
 github.com/buildpack/libbuildpack/buildplan
 github.com/buildpack/libbuildpack/application
-github.com/buildpack/libbuildpack/internal
 github.com/buildpack/libbuildpack/build
 github.com/buildpack/libbuildpack/layers
+github.com/buildpack/libbuildpack/internal
 github.com/buildpack/libbuildpack/detect
 github.com/buildpack/libbuildpack/logger
 github.com/buildpack/libbuildpack/buildpack
@@ -17,7 +17,7 @@ github.com/buildpack/libbuildpack/stack
 github.com/buildpack/libbuildpack/buildpackplan
 github.com/buildpack/libbuildpack/platform
 github.com/buildpack/libbuildpack/services
-# github.com/cloudfoundry/dagger v0.0.0-20190813205748-e53989179538
+# github.com/cloudfoundry/dagger v0.0.0-20190819163648-1608b353a41a
 github.com/cloudfoundry/dagger
 # github.com/cloudfoundry/libbuildpack v0.0.0-20190708161550-16cf920add31
 github.com/cloudfoundry/libbuildpack
@@ -33,8 +33,6 @@ github.com/cloudfoundry/libcfbuildpack/runner
 github.com/cloudfoundry/libcfbuildpack/services
 github.com/cloudfoundry/libcfbuildpack/test
 github.com/cloudfoundry/libcfbuildpack/internal
-# github.com/cloudfoundry/php-dist-cnb v0.0.15
-github.com/cloudfoundry/php-dist-cnb/php
 # github.com/fatih/color v1.7.0
 github.com/fatih/color
 # github.com/golang/protobuf v1.3.2
