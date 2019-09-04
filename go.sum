@@ -8,8 +8,8 @@ github.com/blang/semver v3.5.1+incompatible/go.mod h1:kRBLl5iJ+tD4TcOOxsy/0fnweb
 github.com/buildpack/libbuildpack v1.19.0/go.mod h1:oxgSTzPbWscHs27iuYrctEZpSak2m/qPThA+9JM0Boo=
 github.com/buildpack/libbuildpack v1.22.0 h1:rwavXaBksbJ3K+vvtpUSsmrxwpIkwvEBPTnJYno1/pI=
 github.com/buildpack/libbuildpack v1.22.0/go.mod h1:ZQhXsfWdbeglOBaeF3Ea5TSppKih/bVVJxNLX5yg2pg=
-github.com/cloudfoundry/dagger v0.0.0-20190903212040-da6cedf1fbcb h1:5oAtaOdqr3V+3Q1RUq9zDnomY+i0EydlYshKbBH5aGg=
-github.com/cloudfoundry/dagger v0.0.0-20190903212040-da6cedf1fbcb/go.mod h1:PXeUHc4d2vAVO/31jFE6uD09w/yFfzs4kcayAVEvnEI=
+github.com/cloudfoundry/dagger v0.0.0-20190904150052-ccbcb1be08ca h1:fiwxfQhQ0z7koDbbjiufwh5igq8zM0VOTfAsEBsfkBo=
+github.com/cloudfoundry/dagger v0.0.0-20190904150052-ccbcb1be08ca/go.mod h1:PXeUHc4d2vAVO/31jFE6uD09w/yFfzs4kcayAVEvnEI=
 github.com/cloudfoundry/libbuildpack v0.0.0-20190708161550-16cf920add31 h1:oHaUz5H3QM7n7F8EIyLrAPJ06eGXEfsKpKcS6jdXg4g=
 github.com/cloudfoundry/libbuildpack v0.0.0-20190708161550-16cf920add31/go.mod h1:9dmLtgQ6GrLr2ryO9ioYGpbc5eYL+8JBWtPj0r7HaZY=
 github.com/cloudfoundry/libcfbuildpack v1.76.0/go.mod h1:QGm+nzixn579dvQNlS7ZQET541y2hEpZ0/5uNxkQ04Y=
