@@ -2,13 +2,13 @@ package main
 
 import (
 	"fmt"
+	"github.com/cloudfoundry/libcfbuildpack/helper"
 	"html/template"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 
-	"github.com/cloudfoundry/libbuildpack"
 )
 
 func main() {
@@ -34,7 +34,7 @@ func main() {
 		},
 		"module": func(name string) string {
 			pathToModules := globalModulePath
-			foundLocally, err := libbuildpack.FileExists(filepath.Join(localModulePath, name+".so"))
+			foundLocally, err := helper.FileExists(filepath.Join(localModulePath, name+".so"))
 			if err != nil {
 				log.Fatalf("Error looking for module in user provided modules directory: %s", err)
 			}
