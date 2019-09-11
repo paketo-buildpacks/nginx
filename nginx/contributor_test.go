@@ -95,7 +95,7 @@ func testNGINXContributor(t *testing.T, when spec.G, it spec.S) {
 
 			nginxCmd := fmt.Sprintf(`nginx -p $PWD -c "%s"`, nginxConfPath)
 			Expect(f.Build.Layers).To(test.HaveApplicationMetadata(
-				layers.Metadata{Processes: []layers.Process{{"web", nginxCmd}}},
+				layers.Metadata{Processes: []layers.Process{{"web", nginxCmd, false}}},
 			))
 
 		})
