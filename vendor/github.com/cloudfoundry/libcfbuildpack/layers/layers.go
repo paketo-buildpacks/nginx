@@ -44,11 +44,11 @@ type Layers struct {
 
 // DependencyLayer returns a DependencyLayer unique to a dependency.
 func (l Layers) DependencyLayer(dependency buildpack.Dependency) DependencyLayer {
-	return l.DependencyLayerWithId(dependency.ID, dependency)
+	return l.DependencyLayerWithID(dependency.ID, dependency)
 }
 
-// DependencyLayerWithId returns a DependencyLayer unique to a dependency with an explicit id.
-func (l Layers) DependencyLayerWithId(id string, dependency buildpack.Dependency) DependencyLayer {
+// DependencyLayerWithID returns a DependencyLayer unique to a dependency with an explicit id.
+func (l Layers) DependencyLayerWithID(id string, dependency buildpack.Dependency) DependencyLayer {
 	return DependencyLayer{
 		l.Layer(id),
 		dependency,
@@ -84,6 +84,23 @@ func (l Layers) HelperLayer(id string, name string) HelperLayer {
 // Layer creates a Layer with a specified name.
 func (l Layers) Layer(name string) Layer {
 	return Layer{l.Layers.Layer(name), l.logger, l.TouchedLayers}
+}
+
+// MultiDependencyLayer returns a MultiDependencyLayer unique to a collection of dependencies.
+func (l Layers) MultiDependencyLayer(id string, dependencies ...buildpack.Dependency) MultiDependencyLayer {
+	dl := make(map[string]DownloadLayer, len(dependencies))
+
+	for _, d := range dependencies {
+		dl[d.ID] = l.DownloadLayer(d)
+	}
+
+	return MultiDependencyLayer{
+		l.Layer(id),
+		dependencies,
+		dl,
+		l.logger,
+		l.Plans,
+	}
 }
 
 // WriteApplicationMetadata writes application metadata to the filesystem.
