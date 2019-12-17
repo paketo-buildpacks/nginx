@@ -111,7 +111,13 @@ func (c Contributor) Contribute() error {
 
 			nginxCmd := fmt.Sprintf(`nginx -p $PWD -c "%s"`, nginxConfPath)
 			return c.launchLayer.WriteApplicationMetadata(layers.Metadata{
-				Processes: []layers.Process{{"web", nginxCmd, false}},
+				Processes: []layers.Process{
+					{
+						Type:    "web",
+						Command: nginxCmd,
+						Direct:  false,
+					},
+				},
 			})
 		}
 
