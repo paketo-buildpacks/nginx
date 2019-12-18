@@ -67,8 +67,47 @@ func NewContributor(context build.Build) (c Contributor, willContribute bool, er
 	return contributor, true, nil
 }
 
+func (c Contributor) Setup() error {
+
+	if err := os.MkdirAll(filepath.Join(c.app.Root, "logs"), 0755); err != nil {
+		return err
+	}
+
+	nginxConfPath := filepath.Join(c.app.Root, "nginx.conf")
+	exists, err := helper.FileExists(nginxConfPath)
+	if err != nil {
+		return err
+	}
+
+	if exists {
+		if err := CheckPortExistsInConf(nginxConfPath, c.nginxLayer.Logger); err != nil {
+			return err
+		}
+
+		nginxCmd := fmt.Sprintf(`nginx -p $PWD -c "%s"`, nginxConfPath)
+		err := c.launchLayer.WriteApplicationMetadata(layers.Metadata{
+			Processes: []layers.Process{
+				{
+					Type:    "web",
+					Command: nginxCmd,
+					Direct:  false,
+				},
+			},
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // Contribute will install NGINX, configure required env variables & set a start command
 func (c Contributor) Contribute() error {
+
+	if err := c.Setup(); err != nil {
+		return err
+	}
+
 	return c.nginxLayer.Contribute(func(artifact string, layer layers.DependencyLayer) error {
 		layer.Logger.Body("Expanding to %s", layer.Root)
 		if err := helper.ExtractTarGz(artifact, layer.Root, 2); err != nil {
@@ -83,10 +122,6 @@ func (c Contributor) Contribute() error {
 			return err
 		}
 
-		if err := os.MkdirAll(filepath.Join(c.app.Root, "logs"), 0755); err != nil {
-			return err
-		}
-
 		// Remove as we use `/workspace/logs` instead
 		if err := os.RemoveAll(filepath.Join(layer.Root, "logs")); err != nil {
 			return err
@@ -97,28 +132,6 @@ func (c Contributor) Contribute() error {
 		pkgModsPath := filepath.Join(layer.Root, "modules")
 		if err := layer.WriteProfile("configure", `configure "%s" "%s" "%s"`, nginxConfPath, appModsPath, pkgModsPath); err != nil {
 			return err
-		}
-
-		exists, err := helper.FileExists(nginxConfPath)
-		if err != nil {
-			return err
-		}
-
-		if exists {
-			if err := CheckPortExistsInConf(nginxConfPath, layer.Logger); err != nil {
-				return err
-			}
-
-			nginxCmd := fmt.Sprintf(`nginx -p $PWD -c "%s"`, nginxConfPath)
-			return c.launchLayer.WriteApplicationMetadata(layers.Metadata{
-				Processes: []layers.Process{
-					{
-						Type:    "web",
-						Command: nginxCmd,
-						Direct:  false,
-					},
-				},
-			})
 		}
 
 		return nil

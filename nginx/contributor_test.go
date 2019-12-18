@@ -77,10 +77,10 @@ func testNGINXContributor(t *testing.T, when spec.G, it spec.S) {
 			})
 			f.AddDependency(Dependency, stubNGINXFixture)
 
-			nodeContributor, _, err := NewContributor(f.Build)
+			nginxContributor, _, err := NewContributor(f.Build)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(nodeContributor.Contribute()).To(Succeed())
+			Expect(nginxContributor.Contribute()).To(Succeed())
 
 			layer := f.Build.Layers.Layer(Dependency)
 

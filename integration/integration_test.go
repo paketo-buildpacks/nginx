@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	"github.com/cloudfoundry/dagger"
+	"github.com/cloudfoundry/dagger/utils"
 
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
@@ -57,32 +58,47 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 
 	it.After(func() {
 		if app != nil {
-			app.Destroy()
+			//app.Destroy()
 		}
 	})
 
-	when("push simple app", func() {
-		it("serves up staticfile", func() {
-			app, err = dagger.PackBuild(filepath.Join("testdata", "simple_app"), uri)
-			Expect(err).ToNot(HaveOccurred())
+	when("pushing simple app", func() {
+		when("rebuilding app", func() {
+			it("serves up staticfile", func() {
+				appImage := "nginx_test" + utils.RandStringRunes(4)
+				p := dagger.NewPack(
+					filepath.Join("testdata", "simple_app"),
+					dagger.SetImage(appImage),
+					dagger.SetBuildpacks(uri),
+				)
 
-			app.SetHealthCheck("", "3s", "1s")
+				_, err := p.Build()
+				Expect(err).ToNot(HaveOccurred())
 
-			err = app.Start()
-			if err != nil {
-				_, err = fmt.Fprintf(os.Stderr, "App failed to start: %v\n", err)
-				containerID, imageName, volumeIDs, err := app.Info()
-				Expect(err).NotTo(HaveOccurred())
-				fmt.Printf("ContainerID: %s\nImage Name: %s\nAll leftover cached volumes: %v\n", containerID, imageName, volumeIDs)
+				// perform rebuild
+				app, err = p.Build()
 
-				containerLogs, err := app.Logs()
-				Expect(err).NotTo(HaveOccurred())
-				fmt.Printf("Container Logs:\n %s\n", containerLogs)
-				t.FailNow()
-			}
+				app.SetHealthCheck("", "3s", "1s")
 
-			_, _, err = app.HTTPGet("/index.html")
-			Expect(err).ToNot(HaveOccurred())
+				err = app.Start()
+				if err != nil {
+					_, err = fmt.Fprintf(os.Stderr, "App failed to start: %v\n", err)
+					containerID, imageName, volumeIDs, err := app.Info()
+					Expect(err).NotTo(HaveOccurred())
+					fmt.Printf("ContainerID: %s\nImage Name: %s\nAll leftover cached volumes: %v\n", containerID, imageName, volumeIDs)
+
+					containerLogs, err := app.Logs()
+					Expect(err).NotTo(HaveOccurred())
+					fmt.Printf("Container Logs:\n %s\n", containerLogs)
+					t.FailNow()
+				}
+
+				containerLogs := app.BuildLogs()
+				Expect(containerLogs).To(ContainSubstring("Reusing layer 'org.cloudfoundry.nginx:nginx"))
+
+				_, _, err = app.HTTPGet("/index.html")
+				Expect(err).ToNot(HaveOccurred())
+			})
 		})
 	})
 
