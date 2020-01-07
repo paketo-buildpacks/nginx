@@ -34,11 +34,11 @@ api = "0.2"
   [[metadata.dependencies]]
     id = "nginx"
     name = "Nginx Server"
-    sha256 = "4d482d17a25693d1ab7665ceb21bd298f4d78cabd1ffcb58ca332233b0162dc0"
+    sha256 = "06b8cb8a298c55340c8b36efd9ee0a5fcbe07216a05bb6527847383a4ed68cdf"
     source = "http://nginx.org/download/nginx-1.17.6.tar.gz"
     source_sha256 = "3cb4a5314dc0ab0a4e8a7b51ae17c027133417a45cc6c5a96e3dd80141c237b6"
     stacks = ["org.cloudfoundry.stacks.cflinuxfs3"]
-    uri = "https://buildpacks.cloudfoundry.org/dependencies/nginx/nginx-1.17.6-linux-x64-cflinuxfs3-4d482d17.tgz"
+    uri = "https://buildpacks.cloudfoundry.org/dependencies/nginx/nginx-1.17.6-linux-x64-cflinuxfs3-06b8cb8a.tgz"
     version = "1.17.6"
 
   [[metadata.dependencies]]
