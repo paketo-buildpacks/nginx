@@ -94,7 +94,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 				}
 
 				containerLogs := app.BuildLogs()
-				Expect(containerLogs).To(ContainSubstring("Reusing layer 'org.cloudfoundry.nginx:nginx"))
+				Expect(containerLogs).To(ContainSubstring("Reusing layer 'paketo-buildpacks/nginx:nginx"))
 
 				_, _, err = app.HTTPGet("/index.html")
 				Expect(err).ToNot(HaveOccurred())

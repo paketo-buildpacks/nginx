@@ -1,7 +1,7 @@
 api = "0.2"
 
 [buildpack]
-  id = "org.cloudfoundry.nginx"
+  id = "paketo-buildpacks/nginx"
   name = "Nginx Server Buildpack"
   version = "{{ .Version }}"
 
