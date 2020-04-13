@@ -65,7 +65,7 @@ func testConfigure(t *testing.T, when spec.G, it spec.S) {
 
 		RegisterTestingT(t)
 		factory = test.NewDetectFactory(t)
-		pathToCli, err = gexec.Build("github.com/cloudfoundry/nginx-cnb/cmd/configure")
+		pathToCli, err = gexec.Build("github.com/paketo-buildpacks/nginx/cmd/configure")
 		Expect(err).ToNot(HaveOccurred())
 	})
 

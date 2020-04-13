@@ -23,7 +23,7 @@ import (
 	"github.com/cloudfoundry/libcfbuildpack/buildpack"
 
 	"github.com/buildpack/libbuildpack/buildplan"
-	"github.com/cloudfoundry/nginx-cnb/nginx"
+	"github.com/paketo-buildpacks/nginx/nginx"
 
 	"github.com/cloudfoundry/libcfbuildpack/detect"
 	"github.com/cloudfoundry/libcfbuildpack/test"

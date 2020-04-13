@@ -21,7 +21,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/cloudfoundry/nginx-cnb/nginx"
+	"github.com/paketo-buildpacks/nginx/nginx"
 
 	"github.com/buildpack/libbuildpack/buildplan"
 	"github.com/cloudfoundry/libcfbuildpack/helper"

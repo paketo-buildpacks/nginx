@@ -1,4 +1,4 @@
-module github.com/cloudfoundry/nginx-cnb
+module github.com/paketo-buildpacks/nginx
 
 go 1.12
 
