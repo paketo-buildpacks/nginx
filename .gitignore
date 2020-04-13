@@ -3,5 +3,5 @@
 .bin
 /bin
 *.tgz
-nginx-cnb_*
+nginx_*
 /dependency-cache
