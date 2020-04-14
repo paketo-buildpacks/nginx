@@ -3,7 +3,7 @@
 ## Integration
 
 The NGINX CNB provides nginx as a dependency. Downstream buildpacks, like
-[php-web](https://github.com/paketo-buildpacks/php-web) can require the nginx
+[PHP Web CNB](https://github.com/paketo-buildpacks/php-web) can require the nginx
 dependency by generating a [Build Plan
 TOML](https://github.com/buildpacks/spec/blob/master/buildpack.md#build-plan-toml)
 file that looks like the following:
