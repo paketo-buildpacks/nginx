@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/cloudfoundry/nginx-cnb/nginx"
+	"github.com/paketo-buildpacks/nginx/nginx"
 
 	"github.com/cloudfoundry/libcfbuildpack/build"
 )
