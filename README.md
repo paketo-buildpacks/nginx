@@ -1,5 +1,9 @@
 # NGINX Server Cloud Native Buildpack
 
+The NGINX CNB provides the [NGINX](https://www.nginx.com/) binary distribution. The buildpack installs
+the NGINX binary distribution onto the `$PATH` which makes it available for
+subsequent buildpacks.
+
 ## Integration
 
 The NGINX CNB provides nginx as a dependency. Downstream buildpacks, like
