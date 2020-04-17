@@ -47,3 +47,15 @@ $ ./scripts/package.sh
 ```
 
 This builds the buildpack's Go source using `GOOS=linux` by default. You can supply another value as the first argument to `package.sh`.
+
+
+## `buildpack.yml` Configurations
+
+```yaml
+nginx:
+  # this allows you to specify a version constaint for the `NGINX` dependency
+  # any valid semver constaints (e.g. 1.* and 1.17.*) are also acceptable
+  #
+  # you can also specify "mainline" or "stable"
+  version: 1.17.9
+```
