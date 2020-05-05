@@ -1,37 +1,30 @@
 package pexec
 
 import (
-	"bytes"
 	"io"
 	"os/exec"
-
-	"code.cloudfoundry.org/lager"
 )
 
+// Executable represents an executable on the $PATH.
 type Executable struct {
-	name   string
-	logger lager.Logger
+	name string
 }
 
-type Execution struct {
-	Args   []string
-	Dir    string
-	Env    []string
-	Stdout io.Writer
-	Stderr io.Writer
-}
-
-func NewExecutable(name string, logger lager.Logger) Executable {
+// NewExecutable returns an instance of an Executable given the name of that
+// executable. When given simply a name, the execuable will be looked up on the
+// $PATH before execution. Alternatively, when given a path, the executable
+// will use that path to invoke the executable file directly.
+func NewExecutable(name string) Executable {
 	return Executable{
-		name:   name,
-		logger: logger,
+		name: name,
 	}
 }
 
-func (e Executable) Execute(execution Execution) (string, string, error) {
+// Execute invokes the executable with a set of Execution arguments.
+func (e Executable) Execute(execution Execution) error {
 	path, err := exec.LookPath(e.name)
 	if err != nil {
-		return "", "", err
+		return err
 	}
 
 	cmd := exec.Command(path, execution.Args...)
@@ -44,27 +37,30 @@ func (e Executable) Execute(execution Execution) (string, string, error) {
 		cmd.Env = execution.Env
 	}
 
-	stdout := &bytes.Buffer{}
-	cmd.Stdout = stdout
-	if execution.Stdout != nil {
-		cmd.Stdout = io.MultiWriter(stdout, execution.Stdout)
-	}
+	cmd.Stdout = execution.Stdout
+	cmd.Stderr = execution.Stderr
 
-	stderr := &bytes.Buffer{}
-	cmd.Stderr = stderr
-	if execution.Stderr != nil {
-		cmd.Stderr = io.MultiWriter(stderr, execution.Stderr)
-	}
+	return cmd.Run()
+}
 
-	data := lager.Data{"execution": execution, "path": path}
-	session := e.logger.Session("execute", data)
+// Execution is the set of configurable options for a given execution of the
+// executable.
+type Execution struct {
+	// Args is a list of the arguments to be passed to the executable.
+	Args []string
 
-	session.Debug("running")
-	err = cmd.Run()
-	if err != nil {
-		session.Error("errored", err)
-	}
+	// Dir is the path to a directory from with the executable should be invoked.
+	// If Dir is not set, the current working directory will be used.
+	Dir string
 
-	session.Debug("done")
-	return stdout.String(), stderr.String(), err
+	// Env is the set of environment variables that make up the environment for
+	// the execution. If Env is not set, the existing os.Environ value will be
+	// used.
+	Env []string
+
+	// Stdout is where the output of stdout will be written during the execution.
+	Stdout io.Writer
+
+	// Stderr is where the output of stderr will be written during the execution.
+	Stderr io.Writer
 }

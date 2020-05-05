@@ -1,0 +1,153 @@
+package nginx
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"time"
+
+	"github.com/cloudfoundry/packit"
+	"github.com/cloudfoundry/packit/postal"
+)
+
+//go:generate faux --interface EntryResolver --output fakes/entry_resolver.go
+type EntryResolver interface {
+	Resolve([]packit.BuildpackPlanEntry) packit.BuildpackPlanEntry
+}
+
+//go:generate faux --interface DependencyService --output fakes/dependency_service.go
+type DependencyService interface {
+	Resolve(path, name, version, stack string) (postal.Dependency, error)
+	Install(dependency postal.Dependency, cnbPath, layerPath string) error
+}
+
+//go:generate faux --interface ProfileDWriter --output fakes/profiled_writer.go
+type ProfileDWriter interface {
+	Write(layerDir, scriptName, scriptContents string) error
+}
+
+//go:generate faux --interface Calculator --output fakes/calculator.go
+type Calculator interface {
+	Sum(path string) (string, error)
+}
+
+func Build(entryResolver EntryResolver, dependencyService DependencyService, profileDWriter ProfileDWriter, calculator Calculator, logger LogEmitter, clock Clock) packit.BuildFunc {
+	return func(context packit.BuildContext) (packit.BuildResult, error) {
+		logger.Title(context.BuildpackInfo)
+
+		logger.Process("Resolving Nginx Server version")
+		logger.Candidates(context.Plan.Entries)
+
+		entry := entryResolver.Resolve(context.Plan.Entries)
+
+		dependency, err := dependencyService.Resolve(filepath.Join(context.CNBPath, "buildpack.toml"), entry.Name, entry.Version, context.Stack)
+		if err != nil {
+			panic(err)
+		}
+
+		logger.SelectedDependency(entry, dependency.Version)
+
+		err = os.MkdirAll(filepath.Join(context.WorkingDir, "logs"), os.ModePerm)
+		if err != nil {
+			panic(err)
+		}
+
+		nginxLayer, err := context.Layers.Get(NGINX, packit.LaunchLayer)
+		if err != nil {
+			panic(err)
+		}
+
+		nginxConfPath := filepath.Join(context.WorkingDir, ConfFile)
+		defaultStartProcesses := []packit.Process{
+			{
+				Type:    "web",
+				Command: fmt.Sprintf(`nginx -p $PWD -c "%s"`, nginxConfPath),
+			},
+		}
+
+		currConfigureBinSHA256, err := calculator.Sum(filepath.Join(context.CNBPath, "bin", "configure"))
+		if err != nil {
+			panic(err)
+		}
+
+		run := shouldInstall(nginxLayer.Metadata, currConfigureBinSHA256, dependency.SHA256)
+		if !run {
+			return packit.BuildResult{
+				Plan: context.Plan,
+				Layers: []packit.Layer{
+					nginxLayer,
+				},
+				Processes: defaultStartProcesses,
+			}, nil
+		}
+
+		logger.Break()
+		logger.Process("Executing build process")
+
+		err = nginxLayer.Reset()
+		if err != nil {
+			panic(err)
+		}
+
+		err = CopyBinFile(filepath.Join(nginxLayer.Path, "bin", "configure"), filepath.Join(context.CNBPath, "bin", "configure"))
+		if err != nil {
+			panic(err)
+		}
+
+		logger.Subprocess("Installing Nginx Server %s", dependency.Version)
+		then := clock.Now()
+		err = dependencyService.Install(dependency, context.CNBPath, nginxLayer.Path)
+		if err != nil {
+			panic(err)
+		}
+
+		logger.Action("Completed in %s", time.Since(then).Round(time.Millisecond))
+		logger.Break()
+
+		logger.Process("Configuring environment")
+		nginxLayer.SharedEnv.Append("PATH", filepath.Join(nginxLayer.Path, "sbin"), ":")
+		logger.Environment(nginxLayer.SharedEnv)
+
+		profileDWriter.Write(
+			nginxLayer.Path,
+			"configure.sh",
+			fmt.Sprintf(`configure "%s" "%s" "%s"`,
+				nginxConfPath,
+				filepath.Join(context.WorkingDir, "modules"),
+				filepath.Join(nginxLayer.Path, "modules"),
+			),
+		)
+
+		nginxLayer.Metadata = map[string]interface{}{
+			DepKey:          dependency.SHA256,
+			ConfigureBinKey: currConfigureBinSHA256,
+			"built_at":      clock.Now().Format(time.RFC3339Nano),
+		}
+
+		return packit.BuildResult{
+			Plan: context.Plan,
+			Layers: []packit.Layer{
+				nginxLayer,
+			},
+			Processes: defaultStartProcesses,
+		}, nil
+	}
+}
+
+func shouldInstall(layerMetadata map[string]interface{}, configBinSHA256, dependencySHA256 string) bool {
+	prevDepSHA256, depOk := layerMetadata[DepKey].(string)
+	prevBinSHA256, binOk := layerMetadata[ConfigureBinKey].(string)
+	if !depOk || !binOk {
+		return true
+	}
+
+	if dependencySHA256 != prevDepSHA256 {
+		return true
+	}
+
+	if configBinSHA256 != prevBinSHA256 {
+		return true
+	}
+
+	return false
+}
