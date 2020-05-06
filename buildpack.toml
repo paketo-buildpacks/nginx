@@ -74,6 +74,13 @@ api = "0.2"
     link = "https://nginx.org/"
     name = "nginx"
     version_line = "1.17.x"
+
+  [[metadata.dependency_deprecation_dates]]
+    date = 2021-05-01T00:00:00Z
+    link = "https://nginx.org/"
+    name = "nginx"
+    version_line = "1.18.x"
+
   [metadata.version-lines]
     mainline = "1.17.*"
     stable = "1.16.*"
