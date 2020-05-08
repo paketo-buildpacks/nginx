@@ -15,8 +15,8 @@ func main() {
 	transport := cargo.NewTransport()
 	dependencyService := postal.NewService(transport)
 	entryResolver := nginx.NewPlanEntryResolver()
-	profileWriter := nginx.NewProfileWriter()
 	logger := nginx.NewLogEmitter(os.Stdout)
+	profileWriter := nginx.NewProfileWriter(logger)
 	clock := nginx.NewClock(time.Now)
 
 	calculator := fs.NewChecksumCalculator()

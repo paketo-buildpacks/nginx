@@ -42,19 +42,19 @@ func Build(entryResolver EntryResolver, dependencyService DependencyService, pro
 
 		dependency, err := dependencyService.Resolve(filepath.Join(context.CNBPath, "buildpack.toml"), entry.Name, entry.Version, context.Stack)
 		if err != nil {
-			panic(err)
+			return packit.BuildResult{}, err
 		}
 
 		logger.SelectedDependency(entry, dependency.Version)
 
 		err = os.MkdirAll(filepath.Join(context.WorkingDir, "logs"), os.ModePerm)
 		if err != nil {
-			panic(err)
+			return packit.BuildResult{}, fmt.Errorf("failed to create logs dir : %w", err)
 		}
 
 		nginxLayer, err := context.Layers.Get(NGINX, packit.LaunchLayer)
 		if err != nil {
-			panic(err)
+			return packit.BuildResult{}, err
 		}
 
 		nginxConfPath := filepath.Join(context.WorkingDir, ConfFile)
@@ -65,13 +65,13 @@ func Build(entryResolver EntryResolver, dependencyService DependencyService, pro
 			},
 		}
 
-		currConfigureBinSHA256, err := calculator.Sum(filepath.Join(context.CNBPath, "bin", "configure"))
+		configureBinPath := filepath.Join(context.CNBPath, "bin", "configure")
+		currConfigureBinSHA256, err := calculator.Sum(configureBinPath)
 		if err != nil {
-			panic(err)
+			return packit.BuildResult{}, fmt.Errorf("checksum failed for file %s: %w", configureBinPath, err)
 		}
 
-		run := shouldInstall(nginxLayer.Metadata, currConfigureBinSHA256, dependency.SHA256)
-		if !run {
+		if !shouldInstall(nginxLayer.Metadata, currConfigureBinSHA256, dependency.SHA256) {
 			return packit.BuildResult{
 				Plan: context.Plan,
 				Layers: []packit.Layer{
@@ -86,19 +86,19 @@ func Build(entryResolver EntryResolver, dependencyService DependencyService, pro
 
 		err = nginxLayer.Reset()
 		if err != nil {
-			panic(err)
+			return packit.BuildResult{}, err
 		}
 
-		err = CopyBinFile(filepath.Join(nginxLayer.Path, "bin", "configure"), filepath.Join(context.CNBPath, "bin", "configure"))
+		err = CopyBinFile(filepath.Join(nginxLayer.Path, "bin", "configure"), configureBinPath)
 		if err != nil {
-			panic(err)
+			return packit.BuildResult{}, err
 		}
 
 		logger.Subprocess("Installing Nginx Server %s", dependency.Version)
 		then := clock.Now()
 		err = dependencyService.Install(dependency, context.CNBPath, nginxLayer.Path)
 		if err != nil {
-			panic(err)
+			return packit.BuildResult{}, err
 		}
 
 		logger.Action("Completed in %s", time.Since(then).Round(time.Millisecond))

@@ -64,6 +64,8 @@ func testLogging(t *testing.T, when spec.G, it spec.S) {
 				"",
 				"  Configuring environment",
 				`    PATH -> "$PATH:/layers/paketo-buildpacks_nginx/nginx/sbin"`,
+				MatchRegexp(`    Writing profile.d/configure.sh`),
+				MatchRegexp(`      Calls executable that parses templates in nginx conf`),
 			))
 
 		})

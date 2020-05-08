@@ -114,6 +114,28 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 			})
 		})
 	})
+
+	context("nginx.conf is absent", func() {
+		// This is for cases where nginx cnb's role is to simply provide the
+		// dependency thus facilitating a downstream buildpack to 'require' nginx
+		// and provide its own config
+		it.Before(func() {
+			Expect(filepath.Join(workingDir, "nginx.conf")).NotTo(BeAnExistingFile())
+		})
+		it("provides nginx", func() {
+			result, err := detect(packit.DetectContext{
+				WorkingDir: workingDir,
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.Plan).To(Equal(packit.BuildPlan{
+				Provides: []packit.BuildPlanProvision{
+					{Name: "nginx"},
+				},
+				Requires: nil,
+			}))
+		})
+	})
+
 	context("failure cases", func() {
 		var confPath string
 		it.Before(func() {

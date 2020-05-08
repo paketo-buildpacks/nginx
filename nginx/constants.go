@@ -1,8 +1,7 @@
 package nginx
 
 const (
-	NGINX      = "nginx"
-	Dependency = NGINX // NOTE: alias for old constant name
+	NGINX = "nginx"
 
 	DepKey             = "dependency-sha"
 	ConfigureBinKey    = "configure-bin-sha"

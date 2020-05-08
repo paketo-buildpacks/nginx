@@ -7,10 +7,14 @@ import (
 	"path/filepath"
 )
 
-type ProfileWriter struct{}
+type ProfileWriter struct {
+	logger LogEmitter
+}
 
-func NewProfileWriter() ProfileWriter {
-	return ProfileWriter{}
+func NewProfileWriter(logger LogEmitter) ProfileWriter {
+	return ProfileWriter{
+		logger: logger,
+	}
 }
 
 func (p ProfileWriter) Write(layerDir, scriptName, scriptContents string) error {
@@ -21,9 +25,12 @@ func (p ProfileWriter) Write(layerDir, scriptName, scriptContents string) error 
 	}
 	scriptFilePath := filepath.Join(profileDir, scriptName)
 
+	p.logger.Subprocess("    Writing profile.d/configure.sh")
+	p.logger.Action("Calls executable that parses templates in nginx conf")
 	err = ioutil.WriteFile(scriptFilePath, []byte(scriptContents), 0644)
 	if err != nil {
 		return fmt.Errorf("failed to write profile script: %w", err)
 	}
+
 	return nil
 }

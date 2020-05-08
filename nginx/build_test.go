@@ -2,6 +2,7 @@ package nginx_test
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -246,6 +247,45 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			Expect(dependencyService.InstallCall.CallCount).To(Equal(0))
 			Expect(profileDWriter.WriteCall.CallCount).To(Equal(0))
 
+		})
+	})
+
+	context("failure cases", func() {
+		context("unable to create log directory", func() {
+			it.Before(func() {
+				Expect(os.Chmod(workspaceDir, 0000))
+			})
+			it.After(func() {
+				Expect(os.Chmod(workspaceDir, os.ModePerm))
+			})
+			it("fails with descriptive error", func() {
+				_, err := build(packit.BuildContext{
+					CNBPath:    cnbPath,
+					WorkingDir: workspaceDir,
+					Stack:      "some-stack",
+				})
+
+				Expect(err).To(HaveOccurred())
+				logsDir := filepath.Join(workspaceDir, "logs")
+				Expect(err).To(MatchError(ContainSubstring(fmt.Sprintf("failed to create logs dir : mkdir %s", logsDir))))
+			})
+		})
+
+		context("configure bin checksum fails", func() {
+			it.Before(func() {
+				calculator.SumCall.Returns.Error = errors.New("some-error")
+			})
+			it("fails with descriptive error", func() {
+				_, err := build(packit.BuildContext{
+					CNBPath:    cnbPath,
+					WorkingDir: workspaceDir,
+					Stack:      "some-stack",
+					Layers:     packit.Layers{Path: layersDir},
+				})
+
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(MatchError(ContainSubstring("checksum failed for file")))
+			})
 		})
 	})
 }
