@@ -34,6 +34,7 @@ func TestIntegration(t *testing.T) {
 	suite("SimpleApp", testSimpleApp)
 	suite("Caching", testCaching)
 	suite("Logging", testLogging)
+	suite("NoConfApp", testNoConfApp)
 	suite.Run(t)
 }
 
