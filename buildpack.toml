@@ -12,13 +12,14 @@ api = "0.2"
     nginx = "1.17.*"
 
   [[metadata.dependencies]]
+    deprecation_date = "2020-04-01T00:00:00Z"
     id = "nginx"
     name = "Nginx Server"
-    sha256 = "87dcb4a7cdd46cb0cb8843a0159bfdd39083c5dc18acc944e35dc501f07d5a90"
+    sha256 = "5d156152a83d174681d6138db717a017faf67433a516dfe70798ec3103066246"
     source = "http://nginx.org/download/nginx-1.16.0.tar.gz"
     source_sha256 = "4fd376bad78797e7f18094a00f0f1088259326436b537eb5af69b01be2ca1345"
     stacks = ["org.cloudfoundry.stacks.cflinuxfs3"]
-    uri = "https://buildpacks.cloudfoundry.org/dependencies/nginx/nginx-1.16.0-linux-x64-cflinuxfs3-87dcb4a7.tgz"
+    uri = "https://buildpacks.cloudfoundry.org/dependencies/nginx/nginx_1.16.0_linux_x64_cflinuxfs3_5d156152.tgz"
     version = "1.16.0"
 
   [[metadata.dependencies]]
@@ -33,13 +34,14 @@ api = "0.2"
     version = "1.16.1"
 
   [[metadata.dependencies]]
+    deprecation_date = "2020-05-01T00:00:00Z"
     id = "nginx"
     name = "Nginx Server"
-    sha256 = "9efdb55180b30ee47b9fb9d91d8c80ce4150ae551785954730cd7831c82142ea"
+    sha256 = "35edadb92b7ceb69f10170c1a9eb4634d5b462706273c4ef747bae7ac01567bf"
     source = "http://nginx.org/download/nginx-1.17.9.tar.gz"
     source_sha256 = "7dd65d405c753c41b7fdab9415cfb4bdbaf093ec6d9f7432072d52cb7bcbb689"
     stacks = ["org.cloudfoundry.stacks.cflinuxfs3"]
-    uri = "https://buildpacks.cloudfoundry.org/dependencies/nginx/nginx-1.17.9-linux-x64-cflinuxfs3-9efdb551.tgz"
+    uri = "https://buildpacks.cloudfoundry.org/dependencies/nginx/nginx_1.17.9_linux_x64_cflinuxfs3_35edadb9.tgz"
     version = "1.17.9"
 
   [[metadata.dependencies]]
