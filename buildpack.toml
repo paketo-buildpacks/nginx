@@ -12,13 +12,14 @@ api = "0.2"
     nginx = "1.17.*"
 
   [[metadata.dependencies]]
+    deprecation_date = "2020-04-01T00:00:00Z"
     id = "nginx"
     name = "Nginx Server"
-    sha256 = "87dcb4a7cdd46cb0cb8843a0159bfdd39083c5dc18acc944e35dc501f07d5a90"
+    sha256 = "5d156152a83d174681d6138db717a017faf67433a516dfe70798ec3103066246"
     source = "http://nginx.org/download/nginx-1.16.0.tar.gz"
     source_sha256 = "4fd376bad78797e7f18094a00f0f1088259326436b537eb5af69b01be2ca1345"
     stacks = ["org.cloudfoundry.stacks.cflinuxfs3"]
-    uri = "https://buildpacks.cloudfoundry.org/dependencies/nginx/nginx-1.16.0-linux-x64-cflinuxfs3-87dcb4a7.tgz"
+    uri = "https://buildpacks.cloudfoundry.org/dependencies/nginx/nginx_1.16.0_linux_x64_cflinuxfs3_5d156152.tgz"
     version = "1.16.0"
 
   [[metadata.dependencies]]
