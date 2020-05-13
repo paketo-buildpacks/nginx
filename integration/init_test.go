@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/cloudfoundry/dagger"
-	"github.com/cloudfoundry/packit/pexec"
+	"github.com/paketo-buildpacks/packit/pexec"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 

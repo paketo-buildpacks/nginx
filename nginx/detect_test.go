@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/cloudfoundry/packit"
+	"github.com/paketo-buildpacks/packit"
 	"github.com/paketo-buildpacks/nginx/nginx"
 	"github.com/paketo-buildpacks/nginx/nginx/fakes"
 	"github.com/sclevine/spec"
