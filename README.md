@@ -1,8 +1,11 @@
 # NGINX Server Cloud Native Buildpack
 
-The NGINX CNB provides the [NGINX](https://www.nginx.com/) binary distribution. The buildpack installs
-the NGINX binary distribution onto the `$PATH` which makes it available for
-subsequent buildpacks.
+The NGINX CNB provides the [NGINX](https://www.nginx.com/) binary distribution.
+The buildpack installs the NGINX binary distribution onto the `$PATH` which
+makes it available for subsequent buildpacks.
+
+The NGINX CNB also supports data driven templates for nginx config. You may use
+variables like `{{port}}`, `{{env "FOO"}}` and `{{module "ngx_stream_module"}}`.
 
 ## Integration
 
