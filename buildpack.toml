@@ -4,7 +4,6 @@ api = "0.2"
   id = "paketo-buildpacks/nginx"
   name = "Nginx Server Buildpack"
   version = "{{ .Version }}"
-  homepage = "https://github.com/paketo-buildpacks/nginx"
 
 [metadata]
   include_files = ["bin/build", "bin/detect", "bin/configure", "buildpack.toml"]
@@ -52,7 +51,7 @@ api = "0.2"
     sha256 = "2fe87dae65967cfbbc570f986aa52fc574d6555c71799f2a781487d96c59d26d"
     source = "http://nginx.org/download/nginx-1.17.10.tar.gz"
     source_sha256 = "a9aa73f19c352a6b166d78e2a664bb3ef1295bbe6d3cc5aa7404bd4664ab4b83"
-    stacks = ["org.cloudfoundry.stacks.cflinuxfs3"]
+    stacks = ["io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.cflinuxfs3"]
     uri = "https://buildpacks.cloudfoundry.org/dependencies/nginx/nginx_1.17.10_linux_x64_cflinuxfs3_2fe87dae.tgz"
     version = "1.17.10"
 
