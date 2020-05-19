@@ -16,11 +16,11 @@ api = "0.2"
     deprecation_date = "2020-04-01T00:00:00Z"
     id = "nginx"
     name = "Nginx Server"
-    sha256 = "5d156152a83d174681d6138db717a017faf67433a516dfe70798ec3103066246"
+    sha256 = "fce2cee288aa6177af2094cf43d9e2245e201c6075f3030e4a4faa5cbeb20bf7"
     source = "http://nginx.org/download/nginx-1.16.0.tar.gz"
     source_sha256 = "4fd376bad78797e7f18094a00f0f1088259326436b537eb5af69b01be2ca1345"
-    stacks = ["org.cloudfoundry.stacks.cflinuxfs3"]
-    uri = "https://buildpacks.cloudfoundry.org/dependencies/nginx/nginx_1.16.0_linux_x64_cflinuxfs3_5d156152.tgz"
+    stacks = ["io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.cflinuxfs3"]
+    uri = "https://buildpacks.cloudfoundry.org/dependencies/nginx/nginx_1.16.0_linux_x64_cflinuxfs3_fce2cee2.tgz"
     version = "1.16.0"
 
   [[metadata.dependencies]]
