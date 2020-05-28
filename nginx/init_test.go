@@ -10,7 +10,6 @@ import (
 func TestUnitNGINX(t *testing.T) {
 	suite := spec.New("nginx", spec.Report(report.Terminal{}))
 	suite("Build", testBuild)
-	suite("Copy", testCopy)
 	suite("Clock", testClock)
 	suite("Detect", testDetect)
 	suite("LogEmitter", testLogEmitter)
