@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/paketo-buildpacks/packit"
+	"github.com/paketo-buildpacks/packit/fs"
 	"github.com/paketo-buildpacks/packit/postal"
 )
 
@@ -89,7 +90,12 @@ func Build(entryResolver EntryResolver, dependencyService DependencyService, pro
 			return packit.BuildResult{}, err
 		}
 
-		err = CopyBinFile(filepath.Join(nginxLayer.Path, "bin", "configure"), configureBinPath)
+		err = os.MkdirAll(filepath.Join(nginxLayer.Path, "bin"), os.ModePerm)
+		if err != nil {
+			return packit.BuildResult{}, err
+		}
+
+		err = fs.Copy(configureBinPath, filepath.Join(nginxLayer.Path, "bin", "configure"))
 		if err != nil {
 			return packit.BuildResult{}, err
 		}

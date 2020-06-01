@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/paketo-buildpacks/packit"
-	"github.com/paketo-buildpacks/packit/postal"
 	"github.com/paketo-buildpacks/nginx/nginx"
 	"github.com/paketo-buildpacks/nginx/nginx/fakes"
+	"github.com/paketo-buildpacks/packit"
+	"github.com/paketo-buildpacks/packit/postal"
 	"github.com/sclevine/spec"
 
 	. "github.com/onsi/gomega"
@@ -104,7 +104,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			},
 			Layers: packit.Layers{Path: layersDir},
 		})
-
 		Expect(err).NotTo(HaveOccurred())
 		Expect(result).To(Equal(packit.BuildResult{
 			Plan: packit.BuildpackPlan{
