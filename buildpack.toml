@@ -3,7 +3,6 @@ api = "0.2"
 [buildpack]
   id = "paketo-buildpacks/nginx"
   name = "Nginx Server Buildpack"
-  version = "{{ .Version }}"
   homepage = "https://github.com/paketo-buildpacks/nginx"
 
 [metadata]
