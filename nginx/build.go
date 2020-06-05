@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/paketo-buildpacks/packit"
+	"github.com/paketo-buildpacks/packit/chronos"
 	"github.com/paketo-buildpacks/packit/fs"
 	"github.com/paketo-buildpacks/packit/postal"
 )
@@ -32,7 +33,7 @@ type Calculator interface {
 	Sum(path string) (string, error)
 }
 
-func Build(entryResolver EntryResolver, dependencyService DependencyService, profileDWriter ProfileDWriter, calculator Calculator, logger LogEmitter, clock Clock) packit.BuildFunc {
+func Build(entryResolver EntryResolver, dependencyService DependencyService, profileDWriter ProfileDWriter, calculator Calculator, logger LogEmitter, clock chronos.Clock) packit.BuildFunc {
 	return func(context packit.BuildContext) (packit.BuildResult, error) {
 		logger.Title(context.BuildpackInfo)
 
@@ -101,13 +102,14 @@ func Build(entryResolver EntryResolver, dependencyService DependencyService, pro
 		}
 
 		logger.Subprocess("Installing Nginx Server %s", dependency.Version)
-		then := clock.Now()
-		err = dependencyService.Install(dependency, context.CNBPath, nginxLayer.Path)
+		duration, err := clock.Measure(func() error {
+			return dependencyService.Install(dependency, context.CNBPath, nginxLayer.Path)
+		})
 		if err != nil {
 			return packit.BuildResult{}, err
 		}
 
-		logger.Action("Completed in %s", time.Since(then).Round(time.Millisecond))
+		logger.Action("Completed in %s", duration.Round(time.Millisecond))
 		logger.Break()
 
 		logger.Process("Configuring environment")
