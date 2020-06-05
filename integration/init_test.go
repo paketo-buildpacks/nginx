@@ -3,6 +3,7 @@ package integration
 import (
 	"bytes"
 	"fmt"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -19,7 +20,7 @@ var uri string
 func TestIntegration(t *testing.T) {
 	var Expect = NewWithT(t).Expect
 
-	root, err := dagger.FindBPRoot()
+	root, err := filepath.Abs("./..")
 	Expect(err).ToNot(HaveOccurred())
 
 	uri, err = dagger.PackageBuildpack(root)

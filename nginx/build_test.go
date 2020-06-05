@@ -13,6 +13,7 @@ import (
 	"github.com/paketo-buildpacks/nginx/nginx"
 	"github.com/paketo-buildpacks/nginx/nginx/fakes"
 	"github.com/paketo-buildpacks/packit"
+	"github.com/paketo-buildpacks/packit/chronos"
 	"github.com/paketo-buildpacks/packit/postal"
 	"github.com/sclevine/spec"
 
@@ -33,7 +34,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		profileDWriter    *fakes.ProfileDWriter
 		calculator        *fakes.Calculator
 
-		clock     nginx.Clock
+		clock     chronos.Clock
 		timeStamp time.Time
 
 		build packit.BuildFunc
@@ -79,7 +80,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(ioutil.WriteFile(filepath.Join(cnbPath, "bin", "configure"), []byte("binary-contents"), 0755)).To(Succeed())
 
 		timeStamp = time.Now()
-		clock = nginx.NewClock(func() time.Time {
+		clock = chronos.NewClock(func() time.Time {
 			return timeStamp
 		})
 
