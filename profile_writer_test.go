@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/paketo-buildpacks/nginx/nginx"
+	"github.com/paketo-buildpacks/nginx"
 	"github.com/sclevine/spec"
 
 	. "github.com/onsi/gomega"

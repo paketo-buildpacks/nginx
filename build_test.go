@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/paketo-buildpacks/nginx/nginx"
-	"github.com/paketo-buildpacks/nginx/nginx/fakes"
+	"github.com/paketo-buildpacks/nginx"
+	"github.com/paketo-buildpacks/nginx/fakes"
 	"github.com/paketo-buildpacks/packit"
 	"github.com/paketo-buildpacks/packit/chronos"
 	"github.com/paketo-buildpacks/packit/postal"
