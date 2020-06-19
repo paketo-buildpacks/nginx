@@ -2,6 +2,7 @@ package integration
 
 import (
 	"path/filepath"
+	"fmt"
 	"testing"
 
 	"github.com/paketo-buildpacks/occam"
@@ -35,7 +36,7 @@ func testNoConfApp(t *testing.T, when spec.G, it spec.S) {
 				WithNoPull().
 				Execute(name, filepath.Join("testdata", "no_conf_app"))
 			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError(ContainSubstring("[detector] pass: paketo-buildpacks/nginx")))
+			Expect(err).To(MatchError(ContainSubstring(fmt.Sprintf("[detector] pass: %s", buildpackInfo.Buildpack.ID))))
 			Expect(err).To(MatchError(ContainSubstring("provides unused nginx")))
 		})
 	})

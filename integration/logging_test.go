@@ -3,6 +3,7 @@ package integration
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/paketo-buildpacks/occam"
@@ -51,7 +52,7 @@ func testLogging(t *testing.T, when spec.G, it spec.S) {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(logs).To(matchers.ContainLines(
-				fmt.Sprintf("Nginx Server Buildpack %s", buildpackVersion),
+				fmt.Sprintf("%s %s", buildpackInfo.Buildpack.Name, buildpackVersion),
 				"  Resolving Nginx Server version",
 				"    Candidate version sources (in priority order):",
 				`      buildpack.yml -> "1.18.*"`,
@@ -63,11 +64,10 @@ func testLogging(t *testing.T, when spec.G, it spec.S) {
 				MatchRegexp(`      Completed in (\d+\.\d+|\d{3})`),
 				"",
 				"  Configuring environment",
-				`    PATH -> "$PATH:/layers/paketo-buildpacks_nginx/nginx/sbin"`,
+				fmt.Sprintf(`    PATH -> "$PATH:/layers/%s/nginx/sbin"`, strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_")),
 				MatchRegexp(`    Writing profile.d/configure.sh`),
 				MatchRegexp(`      Calls executable that parses templates in nginx conf`),
 			))
-
 		})
 	})
 }
