@@ -2,14 +2,14 @@ package integration
 
 import (
 	"bytes"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/BurntSushi/toml"
-	"github.com/cloudfoundry/dagger"
+	"github.com/paketo-buildpacks/occam"
 	"github.com/paketo-buildpacks/packit/pexec"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
@@ -18,7 +18,9 @@ import (
 )
 
 var (
-	uri string
+	nginxBuildpack        string
+	offlineNginxBuildpack string
+	version               string
 	buildpackInfo struct {
 		Buildpack struct {
 			ID string
@@ -40,26 +42,31 @@ func TestIntegration(t *testing.T) {
 	_, err = toml.DecodeReader(file, &buildpackInfo)
 	Expect(err).NotTo(HaveOccurred())
 
-	uri, err = dagger.PackageBuildpack(root)
+	buildpackStore := occam.NewBuildpackStore()
+
+	version, err = GetGitVersion()
 	Expect(err).NotTo(HaveOccurred())
 
-	// HACK: we need to fix dagger and the package.sh scripts so that this isn't required
-	uri = fmt.Sprintf("%s.tgz", uri)
+	nginxBuildpack, err = buildpackStore.Get.
+		WithVersion(version).
+		Execute(root)
+	Expect(err).NotTo(HaveOccurred())
 
-	suite := spec.New("Integration", spec.Report(report.Terminal{}))
-	suite("SimpleApp", testSimpleApp)
+	offlineNginxBuildpack, err = buildpackStore.Get.
+		WithOfflineDependencies().
+		WithVersion(version).
+		Execute(root)
+	Expect(err).NotTo(HaveOccurred())
+
+	SetDefaultEventuallyTimeout(5 * time.Second)
+
+	suite := spec.New("Integration", spec.Report(report.Terminal{}), spec.Parallel())
 	suite("Caching", testCaching)
 	suite("Logging", testLogging)
 	suite("NoConfApp", testNoConfApp)
-
-	defer AfterSuite(t)
+	suite("Offline", testOffline)
+	suite("SimpleApp", testSimpleApp)
 	suite.Run(t)
-}
-
-func AfterSuite(t *testing.T) {
-	var Expect = NewWithT(t).Expect
-
-	Expect(dagger.DeleteBuildpack(uri)).To(Succeed())
 }
 
 func GetGitVersion() (string, error) {
