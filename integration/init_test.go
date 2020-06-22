@@ -3,10 +3,12 @@ package integration
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/BurntSushi/toml"
 	"github.com/cloudfoundry/dagger"
 	"github.com/paketo-buildpacks/packit/pexec"
 	"github.com/sclevine/spec"
@@ -15,13 +17,28 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var uri string
+var (
+	uri string
+	buildpackInfo struct {
+		Buildpack struct {
+			ID string
+			Name string
+		}
+	}
+)
 
 func TestIntegration(t *testing.T) {
 	var Expect = NewWithT(t).Expect
 
 	root, err := filepath.Abs("./..")
 	Expect(err).ToNot(HaveOccurred())
+
+	file, err := os.Open("../buildpack.toml")
+	Expect(err).NotTo(HaveOccurred())
+	defer file.Close()
+
+	_, err = toml.DecodeReader(file, &buildpackInfo)
+	Expect(err).NotTo(HaveOccurred())
 
 	uri, err = dagger.PackageBuildpack(root)
 	Expect(err).NotTo(HaveOccurred())
