@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -20,6 +21,7 @@ func testCaching(t *testing.T, when spec.G, it spec.S) {
 		docker occam.Docker
 
 		name         string
+		source       string
 		imageIDs     map[string]struct{}
 		containerIDs map[string]struct{}
 	)
@@ -46,12 +48,14 @@ func testCaching(t *testing.T, when spec.G, it spec.S) {
 		}
 
 		Expect(docker.Volume.Remove.Execute(occam.CacheVolumeNames(name))).To(Succeed())
+		Expect(os.RemoveAll(source)).To(Succeed())
 	})
 
 	it("uses a cached layer and doesn't run twice", func() {
-		source := filepath.Join("testdata", "simple_app")
+		source, err := occam.Source(filepath.Join("testdata", "simple_app"))
+		Expect(err).ToNot(HaveOccurred())
 
-		build := pack.Build.WithBuildpacks(uri)
+		build := pack.Build.WithBuildpacks(nginxBuildpack)
 
 		firstImage, _, err := build.Execute(name, source)
 		Expect(err).NotTo(HaveOccurred())
