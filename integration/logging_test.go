@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"os"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -20,8 +21,9 @@ func testLogging(t *testing.T, when spec.G, it spec.S) {
 		pack   occam.Pack
 		docker occam.Docker
 
-		name  string
-		image occam.Image
+		name   string
+		source string
+		image  occam.Image
 	)
 
 	it.Before(func() {
@@ -36,6 +38,7 @@ func testLogging(t *testing.T, when spec.G, it spec.S) {
 	it.After(func() {
 		Expect(docker.Image.Remove.Execute(image.ID)).To(Succeed())
 		Expect(docker.Volume.Remove.Execute(occam.CacheVolumeNames(name))).To(Succeed())
+		Expect(os.RemoveAll(source)).To(Succeed())
 	})
 
 	when("building an app image", func() {
@@ -45,10 +48,13 @@ func testLogging(t *testing.T, when spec.G, it spec.S) {
 			buildpackVersion, err := GetGitVersion()
 			Expect(err).NotTo(HaveOccurred())
 
+			source, err = occam.Source(filepath.Join("testdata", "simple_app"))
+			Expect(err).NotTo(HaveOccurred())
+
 			image, logs, err = pack.Build.
-				WithBuildpacks(uri).
+				WithBuildpacks(nginxBuildpack).
 				WithNoPull().
-				Execute(name, filepath.Join("testdata", "simple_app"))
+				Execute(name, source)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(logs).To(matchers.ContainLines(
