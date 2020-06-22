@@ -1,7 +1,9 @@
 package integration
 
 import (
+	"os"
 	"path/filepath"
+	"fmt"
 	"testing"
 
 	"github.com/paketo-buildpacks/occam"
@@ -16,6 +18,7 @@ func testNoConfApp(t *testing.T, when spec.G, it spec.S) {
 		Expect = NewWithT(t).Expect
 		pack   occam.Pack
 		name   string
+		source string
 	)
 
 	it.Before(func() {
@@ -26,16 +29,24 @@ func testNoConfApp(t *testing.T, when spec.G, it spec.S) {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
+	it.After(func() {
+		Expect(os.RemoveAll(source)).To(Succeed())
+	})
+
 	when("pushing app with no conf", func() {
 		// This is for when downstream buildpacks require nginx
 		it("build fails but provides unused nginx", func() {
 			var err error
+
+			source, err = occam.Source(filepath.Join("testdata", "no_conf_app"))
+			Expect(err).NotTo(HaveOccurred())
+
 			_, _, err = pack.Build.
-				WithBuildpacks(uri).
+				WithBuildpacks(nginxBuildpack).
 				WithNoPull().
-				Execute(name, filepath.Join("testdata", "no_conf_app"))
+				Execute(name, source)
 			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError(ContainSubstring("[detector] pass: paketo-buildpacks/nginx")))
+			Expect(err).To(MatchError(ContainSubstring(fmt.Sprintf("[detector] pass: %s", buildpackInfo.Buildpack.ID))))
 			Expect(err).To(MatchError(ContainSubstring("provides unused nginx")))
 		})
 	})
