@@ -255,9 +255,11 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			it.Before(func() {
 				Expect(os.Chmod(workspaceDir, 0000))
 			})
+
 			it.After(func() {
 				Expect(os.Chmod(workspaceDir, os.ModePerm))
 			})
+
 			it("fails with descriptive error", func() {
 				_, err := build(packit.BuildContext{
 					CNBPath:    cnbPath,
@@ -275,6 +277,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			it.Before(func() {
 				calculator.SumCall.Returns.Error = errors.New("some-error")
 			})
+
 			it("fails with descriptive error", func() {
 				_, err := build(packit.BuildContext{
 					CNBPath:    cnbPath,
@@ -285,6 +288,24 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 				Expect(err).To(HaveOccurred())
 				Expect(err).To(MatchError(ContainSubstring("checksum failed for file")))
+			})
+		})
+
+		context("when the profile.d cannot be written", func() {
+			it.Before(func() {
+				profileDWriter.WriteCall.Returns.Error = errors.New("failed to write profile.d")
+			})
+
+			it("fails with descriptive error", func() {
+				_, err := build(packit.BuildContext{
+					CNBPath:    cnbPath,
+					WorkingDir: workspaceDir,
+					Stack:      "some-stack",
+					Layers:     packit.Layers{Path: layersDir},
+				})
+
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(MatchError("failed to write profile.d"))
 			})
 		})
 	})
