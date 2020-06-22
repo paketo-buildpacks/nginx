@@ -19,6 +19,7 @@ import (
 
 var (
 	uri string
+	offlineNginxBuildpack string
 	buildpackInfo struct {
 		Buildpack struct {
 			ID string
@@ -43,16 +44,24 @@ func TestIntegration(t *testing.T) {
 	uri, err = dagger.PackageBuildpack(root)
 	Expect(err).NotTo(HaveOccurred())
 
+	offlineNginxBuildpack, _, err = dagger.PackageCachedBuildpack(root)
+	Expect(err).NotTo(HaveOccurred())
+
 	// HACK: we need to fix dagger and the package.sh scripts so that this isn't required
 	uri = fmt.Sprintf("%s.tgz", uri)
+	offlineNginxBuildpack = fmt.Sprintf("%s.tgz", offlineNginxBuildpack)
 
-	defer dagger.DeleteBuildpack(uri)
+	defer func(){
+		Expect(dagger.DeleteBuildpack(uri)).To(Succeed())
+		Expect(dagger.DeleteBuildpack(offlineNginxBuildpack)).To(Succeed())
+	}()
 
 	suite := spec.New("Integration", spec.Report(report.Terminal{}))
-	suite("SimpleApp", testSimpleApp)
 	suite("Caching", testCaching)
 	suite("Logging", testLogging)
 	suite("NoConfApp", testNoConfApp)
+	suite("Offline", testOffline)
+	suite("SimpleApp", testSimpleApp)
 	suite.Run(t)
 }
 
