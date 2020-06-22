@@ -59,7 +59,7 @@ func testCaching(t *testing.T, when spec.G, it spec.S) {
 		imageIDs[firstImage.ID] = struct{}{}
 
 		Expect(firstImage.Buildpacks).To(HaveLen(1))
-		Expect(firstImage.Buildpacks[0].Key).To(Equal("paketo-buildpacks/nginx"))
+		Expect(firstImage.Buildpacks[0].Key).To(Equal(buildpackInfo.Buildpack.ID))
 		Expect(firstImage.Buildpacks[0].Layers).To(HaveKey("nginx"))
 
 		container, err := docker.Container.Run.Execute(firstImage.ID)
@@ -75,7 +75,7 @@ func testCaching(t *testing.T, when spec.G, it spec.S) {
 		imageIDs[secondImage.ID] = struct{}{}
 
 		Expect(secondImage.Buildpacks).To(HaveLen(1))
-		Expect(secondImage.Buildpacks[0].Key).To(Equal("paketo-buildpacks/nginx"))
+		Expect(secondImage.Buildpacks[0].Key).To(Equal(buildpackInfo.Buildpack.ID))
 		Expect(secondImage.Buildpacks[0].Layers).To(HaveKey("nginx"))
 
 		container, err = docker.Container.Run.Execute(secondImage.ID)
