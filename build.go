@@ -116,7 +116,7 @@ func Build(entryResolver EntryResolver, dependencyService DependencyService, pro
 		nginxLayer.SharedEnv.Append("PATH", filepath.Join(nginxLayer.Path, "sbin"), ":")
 		logger.Environment(nginxLayer.SharedEnv)
 
-		profileDWriter.Write(
+		err = profileDWriter.Write(
 			nginxLayer.Path,
 			"configure.sh",
 			fmt.Sprintf(`configure "%s" "%s" "%s"`,
@@ -125,6 +125,9 @@ func Build(entryResolver EntryResolver, dependencyService DependencyService, pro
 				filepath.Join(nginxLayer.Path, "modules"),
 			),
 		)
+		if err != nil {
+			return packit.BuildResult{}, err
+		}
 
 		nginxLayer.Metadata = map[string]interface{}{
 			DepKey:          dependency.SHA256,
