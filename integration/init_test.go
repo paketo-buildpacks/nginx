@@ -77,6 +77,11 @@ func GetGitVersion() (string, error) {
 		Args:   []string{"rev-list", "--tags", "--max-count=1"},
 		Stdout: revListOut,
 	})
+
+	if revListOut.String() == "" {
+		return "0.0.0", nil
+	}
+
 	if err != nil {
 		return "", err
 	}
