@@ -170,6 +170,8 @@ github.com/paketo-buildpacks/packit v0.0.15 h1:BYcZAyHcKF+n9DKroAiYC1CgbCHIshcer
 github.com/paketo-buildpacks/packit v0.0.15/go.mod h1:b40wtWWAcgB47+vYGDD9KKhzOtBjI8KPqGxwGvV+XNs=
 github.com/paketo-buildpacks/packit v0.0.16 h1:UMo3r4uAA/tj9qhQgPd6Kg7Lt7jc5YIUHoyNFzwqV+0=
 github.com/paketo-buildpacks/packit v0.0.16/go.mod h1:b40wtWWAcgB47+vYGDD9KKhzOtBjI8KPqGxwGvV+XNs=
+github.com/paketo-buildpacks/packit v0.1.0 h1:4kmSfE9+ZuudfbCaT58vX0DtLNPU4QXmV9lIiGgxWZo=
+github.com/paketo-buildpacks/packit v0.1.0/go.mod h1:b40wtWWAcgB47+vYGDD9KKhzOtBjI8KPqGxwGvV+XNs=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4/go.mod h1:xMI15A0UPsDsEKsMN9yxemIoYk6Tm2C1GtYGdfGttqA=
 github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
