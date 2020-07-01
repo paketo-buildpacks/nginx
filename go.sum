@@ -162,10 +162,14 @@ github.com/paketo-buildpacks/occam v0.0.12 h1:j2yl/dx7ut4nwHwFndoES3szhO8G+CeDe+
 github.com/paketo-buildpacks/occam v0.0.12/go.mod h1:eY5lAyFJLmNq7bc3bSIyvoUSXnyQSBQ138RZPvv5EC8=
 github.com/paketo-buildpacks/occam v0.0.14 h1:8kvKwOjGAeUxTvS48aP6KOzqpPfBp21U9nrymOoBSME=
 github.com/paketo-buildpacks/occam v0.0.14/go.mod h1:YzM19WUBeTUYldLWujLR1BE0BfyFiECvluds0ZhbORo=
+github.com/paketo-buildpacks/occam v0.0.15 h1:kAmAzqOTmff4rX+LA1LecOed1jM80y9J5wuky/1tkt0=
+github.com/paketo-buildpacks/occam v0.0.15/go.mod h1:L95oaK761JmBMsst59F83J6Lfx7XW+HkOWh3OGo6btc=
 github.com/paketo-buildpacks/packit v0.0.14 h1:ySq6WC/WKsOmUdsg9Uh1ggpDkyV0opJuJTus5DYv+lg=
 github.com/paketo-buildpacks/packit v0.0.14/go.mod h1:b40wtWWAcgB47+vYGDD9KKhzOtBjI8KPqGxwGvV+XNs=
 github.com/paketo-buildpacks/packit v0.0.15 h1:BYcZAyHcKF+n9DKroAiYC1CgbCHIshcerxeMYq5rq4A=
 github.com/paketo-buildpacks/packit v0.0.15/go.mod h1:b40wtWWAcgB47+vYGDD9KKhzOtBjI8KPqGxwGvV+XNs=
+github.com/paketo-buildpacks/packit v0.0.16 h1:UMo3r4uAA/tj9qhQgPd6Kg7Lt7jc5YIUHoyNFzwqV+0=
+github.com/paketo-buildpacks/packit v0.0.16/go.mod h1:b40wtWWAcgB47+vYGDD9KKhzOtBjI8KPqGxwGvV+XNs=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4/go.mod h1:xMI15A0UPsDsEKsMN9yxemIoYk6Tm2C1GtYGdfGttqA=
 github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
