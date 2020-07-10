@@ -1,7 +1,4 @@
 .DS_Store
 .idea
-.bin
-/bin
-*.tgz
-nginx_*
-/dependency-cache
+/.bin
+/build
