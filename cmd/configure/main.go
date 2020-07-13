@@ -1,56 +1,51 @@
 package main
 
 import (
+	"errors"
 	"fmt"
-	"github.com/cloudfoundry/libcfbuildpack/helper"
-	"html/template"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
-
+	"text/template"
 )
 
 func main() {
-	filename := os.Args[1]
-	localModulePath := os.Args[2]
-	globalModulePath := os.Args[3]
+	log.SetFlags(0)
 
-	body, err := ioutil.ReadFile(filename)
+	tmpl, err := template.New("configure").
+		Option("missingkey=zero").
+		Funcs(template.FuncMap{
+			"env": os.Getenv,
+			"port": func() string {
+				return os.Getenv("PORT")
+			},
+			"module": func(name string) string {
+				module := filepath.Join(os.Args[2], name+".so")
+
+				_, err := os.Stat(module)
+				if err != nil {
+					if !errors.Is(err, os.ErrNotExist) {
+						log.Fatalf("failed to execute module function: %s", err)
+					}
+
+					module = filepath.Join(os.Args[3], name+".so")
+				}
+
+				return fmt.Sprintf("load_module %s;", module)
+			},
+		}).
+		ParseFiles(os.Args[1])
 	if err != nil {
-		log.Fatalf("Could not read config file: %s: %s", filename, err)
+		log.Fatalf("failed to parse template: %s", err)
 	}
 
-	fileHandle, err := os.Create(filename)
+	file, err := os.Create(os.Args[1])
 	if err != nil {
-		log.Fatalf("Could not open config file for writing: %s", err)
+		log.Fatalf("failed to create nginx.conf: %s", err)
 	}
-	defer fileHandle.Close()
+	defer file.Close()
 
-	funcMap := template.FuncMap{
-		"env": os.Getenv,
-		"port": func() string {
-			return os.Getenv("PORT")
-		},
-		"module": func(name string) string {
-			pathToModules := globalModulePath
-			foundLocally, err := helper.FileExists(filepath.Join(localModulePath, name+".so"))
-			if err != nil {
-				log.Fatalf("Error looking for module in user provided modules directory: %s", err)
-			}
-			if foundLocally {
-				pathToModules = localModulePath
-			}
-			return fmt.Sprintf("load_module %s.so;", filepath.Join(pathToModules, name))
-		},
-	}
-
-	t, err := template.New("conf").Option("missingkey=zero").Funcs(funcMap).Parse(string(body))
-	if err != nil {
-		log.Fatalf("Could not parse config file: %s", err)
-	}
-
-	if err := t.Execute(fileHandle, nil); err != nil {
-		log.Fatalf("Could not write config file: %s", err)
+	if err := tmpl.ExecuteTemplate(file, filepath.Base(os.Args[1]), nil); err != nil {
+		log.Fatalf("failed to execute template: %s", err)
 	}
 }
