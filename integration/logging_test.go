@@ -1,8 +1,8 @@
 package integration
 
 import (
-	"os"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -61,9 +61,9 @@ func testLogging(t *testing.T, when spec.G, it spec.S) {
 				fmt.Sprintf("%s %s", buildpackInfo.Buildpack.Name, buildpackVersion),
 				"  Resolving Nginx Server version",
 				"    Candidate version sources (in priority order):",
-				`      buildpack.yml -> "1.18.*"`,
+				`      buildpack.yml -> "1.19.*"`,
 				"",
-				MatchRegexp(`    Selected Nginx Server version \(using buildpack\.yml\): 1\.18\.\d+`),
+				MatchRegexp(`    Selected Nginx Server version \(using buildpack\.yml\): 1\.19\.\d+`),
 				"",
 				"  Executing build process",
 				MatchRegexp(`    Installing Nginx Server \d+\.\d+\.\d+`),
