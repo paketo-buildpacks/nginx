@@ -2,7 +2,7 @@ api = "0.2"
 
 [buildpack]
   id = "paketo-buildpacks/nginx"
-  name = "Nginx Server Buildpack"
+  name = "Paketo Nginx Server Buildpack"
   homepage = "https://github.com/paketo-buildpacks/nginx"
 
 [metadata]
