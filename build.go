@@ -41,8 +41,9 @@ func Build(entryResolver EntryResolver, dependencyService DependencyService, pro
 		logger.Candidates(context.Plan.Entries)
 
 		entry := entryResolver.Resolve(context.Plan.Entries)
+		entryVersion, _ := entry.Metadata["version"].(string)
 
-		dependency, err := dependencyService.Resolve(filepath.Join(context.CNBPath, "buildpack.toml"), entry.Name, entry.Version, context.Stack)
+		dependency, err := dependencyService.Resolve(filepath.Join(context.CNBPath, "buildpack.toml"), entry.Name, entryVersion, context.Stack)
 		if err != nil {
 			return packit.BuildResult{}, err
 		}

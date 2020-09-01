@@ -54,9 +54,10 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		entryResolver = &fakes.EntryResolver{}
 
 		entryResolver.ResolveCall.Returns.BuildpackPlanEntry = packit.BuildpackPlanEntry{
-			Name:     "nginx",
-			Version:  "1.17.*",
-			Metadata: map[string]interface{}{},
+			Name: "nginx",
+			Metadata: map[string]interface{}{
+				"version": "1.17.*",
+			},
 		}
 
 		dependencyService = &fakes.DependencyService{}
@@ -97,9 +98,10 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			Plan: packit.BuildpackPlan{
 				Entries: []packit.BuildpackPlanEntry{
 					{
-						Name:     "nginx",
-						Version:  "1.17.*",
-						Metadata: map[string]interface{}{},
+						Name: "nginx",
+						Metadata: map[string]interface{}{
+							"version": "1.17.*",
+						},
 					},
 				},
 			},
@@ -110,9 +112,10 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			Plan: packit.BuildpackPlan{
 				Entries: []packit.BuildpackPlanEntry{
 					{
-						Name:     "nginx",
-						Version:  "1.17.*",
-						Metadata: map[string]interface{}{},
+						Name: "nginx",
+						Metadata: map[string]interface{}{
+							"version": "1.17.*",
+						},
 					},
 				},
 			},
@@ -154,9 +157,10 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 		Expect(entryResolver.ResolveCall.Receives.BuildpackPlanEntrySlice).To(Equal([]packit.BuildpackPlanEntry{
 			{
-				Name:     "nginx",
-				Version:  "1.17.*",
-				Metadata: map[string]interface{}{},
+				Name: "nginx",
+				Metadata: map[string]interface{}{
+					"version": "1.17.*",
+				},
 			},
 		}))
 
@@ -199,9 +203,10 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				Plan: packit.BuildpackPlan{
 					Entries: []packit.BuildpackPlanEntry{
 						{
-							Name:     "nginx",
-							Version:  "1.17.*",
-							Metadata: map[string]interface{}{},
+							Name: "nginx",
+							Metadata: map[string]interface{}{
+								"version": "1.17.*",
+							},
 						},
 					},
 				},
@@ -213,9 +218,10 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				Plan: packit.BuildpackPlan{
 					Entries: []packit.BuildpackPlanEntry{
 						{
-							Name:     "nginx",
-							Version:  "1.17.*",
-							Metadata: map[string]interface{}{},
+							Name: "nginx",
+							Metadata: map[string]interface{}{
+								"version": "1.17.*",
+							},
 						},
 					},
 				},
