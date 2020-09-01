@@ -24,9 +24,9 @@ func testPlanEntryResolver(t *testing.T, context spec.G, it spec.S) {
 		it("selectes the highest priority", func() {
 			entry := entryResolver.Resolve([]packit.BuildpackPlanEntry{
 				{
-					Name:    "nginx",
-					Version: "1.2.3",
+					Name: "nginx",
 					Metadata: map[string]interface{}{
+						"version":        "1.2.3",
 						"version-source": "buildpack.yml",
 					},
 				},
@@ -38,9 +38,9 @@ func testPlanEntryResolver(t *testing.T, context spec.G, it spec.S) {
 
 			Expect(entry).To(Equal(packit.BuildpackPlanEntry{
 
-				Name:    "nginx",
-				Version: "1.2.3",
+				Name: "nginx",
 				Metadata: map[string]interface{}{
+					"version":        "1.2.3",
 					"version-source": "buildpack.yml",
 				},
 			}))

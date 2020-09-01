@@ -14,6 +14,7 @@ type VersionParser interface {
 }
 
 type BuildPlanMetadata struct {
+	Version       string `toml:"version,omitempty"`
 	VersionSource string `toml:"version-source,omitempty"`
 }
 
@@ -42,9 +43,9 @@ func Detect(versionParser VersionParser) packit.DetectFunc {
 
 		plan.Plan.Requires = []packit.BuildPlanRequirement{
 			{
-				Name:    NGINX,
-				Version: version,
+				Name: NGINX,
 				Metadata: BuildPlanMetadata{
+					Version:       version,
 					VersionSource: versionSource,
 				},
 			},
