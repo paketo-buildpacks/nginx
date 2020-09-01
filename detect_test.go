@@ -75,9 +75,9 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 					},
 					Requires: []packit.BuildPlanRequirement{
 						{
-							Name:    "nginx",
-							Version: "*",
+							Name: "nginx",
 							Metadata: nginx.BuildPlanMetadata{
+								Version:       "*",
 								VersionSource: "buildpack.toml",
 							},
 						},
@@ -103,9 +103,9 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 					},
 					Requires: []packit.BuildPlanRequirement{
 						{
-							Name:    "nginx",
-							Version: "1.2.3",
+							Name: "nginx",
 							Metadata: nginx.BuildPlanMetadata{
+								Version:       "1.2.3",
 								VersionSource: "buildpack.yml",
 							},
 						},
