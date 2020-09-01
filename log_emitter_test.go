@@ -38,12 +38,16 @@ func testLogEmitter(t *testing.T, context spec.G, it spec.S) {
 		it("logs the candidate entries", func() {
 			emitter.Candidates([]packit.BuildpackPlanEntry{
 				{
-					Version: "some-version",
 					Metadata: map[string]interface{}{
+						"version":        "some-version",
 						"version-source": "some-source",
 					},
 				},
-				{Version: "other-version"},
+				{
+					Metadata: map[string]interface{}{
+						"version": "other-version",
+					},
+				},
 			})
 			Expect(buffer.String()).To(Equal(`    Candidate version sources (in priority order):
       some-source -> "some-version"
