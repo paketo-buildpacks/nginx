@@ -7,6 +7,9 @@ makes it available for subsequent buildpacks.
 The NGINX CNB also supports data driven templates for nginx config. You may use
 variables like `{{port}}`, `{{env "FOO"}}` and `{{module "ngx_stream_module"}}`.
 
+A usage example can be found in the
+[`samples` repository under the `nginx` directory](https://github.com/paketo-buildpacks/samples/tree/main/nginx).
+
 ## Integration
 
 The NGINX CNB provides nginx as a dependency. Downstream buildpacks, like
