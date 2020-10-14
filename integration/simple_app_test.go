@@ -1,9 +1,9 @@
 package integration
 
 import (
-	"os"
 	"fmt"
 	"net/http"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -11,8 +11,8 @@ import (
 
 	"github.com/sclevine/spec"
 
-	. "github.com/paketo-buildpacks/occam/matchers"
 	. "github.com/onsi/gomega"
+	. "github.com/paketo-buildpacks/occam/matchers"
 )
 
 func testSimpleApp(t *testing.T, when spec.G, it spec.S) {
@@ -54,7 +54,7 @@ func testSimpleApp(t *testing.T, when spec.G, it spec.S) {
 
 			image, _, err = pack.Build.
 				WithBuildpacks(nginxBuildpack).
-				WithNoPull().
+				WithPullPolicy("never").
 				Execute(name, source)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -77,7 +77,7 @@ func testSimpleApp(t *testing.T, when spec.G, it spec.S) {
 
 			image, _, err = pack.Build.
 				WithBuildpacks(nginxBuildpack).
-				WithNoPull().
+				WithPullPolicy("never").
 				Execute(name, source)
 			Expect(err).NotTo(HaveOccurred())
 

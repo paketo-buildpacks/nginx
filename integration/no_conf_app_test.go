@@ -1,9 +1,9 @@
 package integration
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
-	"fmt"
 	"testing"
 
 	"github.com/paketo-buildpacks/occam"
@@ -43,7 +43,7 @@ func testNoConfApp(t *testing.T, when spec.G, it spec.S) {
 
 			_, _, err = pack.Build.
 				WithBuildpacks(nginxBuildpack).
-				WithNoPull().
+				WithPullPolicy("never").
 				Execute(name, source)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(ContainSubstring(fmt.Sprintf("[detector] pass: %s", buildpackInfo.Buildpack.ID))))
