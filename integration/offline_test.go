@@ -1,9 +1,9 @@
 package integration
 
 import (
-	"os"
 	"fmt"
 	"net/http"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -11,8 +11,8 @@ import (
 
 	"github.com/sclevine/spec"
 
-	. "github.com/paketo-buildpacks/occam/matchers"
 	. "github.com/onsi/gomega"
+	. "github.com/paketo-buildpacks/occam/matchers"
 )
 
 func testOffline(t *testing.T, when spec.G, it spec.S) {
@@ -53,7 +53,7 @@ func testOffline(t *testing.T, when spec.G, it spec.S) {
 			Expect(err).NotTo(HaveOccurred())
 
 			image, _, err = pack.WithNoColor().Build.
-				WithNoPull().
+				WithPullPolicy("never").
 				WithBuildpacks(offlineNginxBuildpack).
 				WithNetwork("none").
 				Execute(name, source)

@@ -53,7 +53,7 @@ func testLogging(t *testing.T, when spec.G, it spec.S) {
 
 			image, logs, err = pack.Build.
 				WithBuildpacks(nginxBuildpack).
-				WithNoPull().
+				WithPullPolicy("never").
 				Execute(name, source)
 			Expect(err).NotTo(HaveOccurred())
 
