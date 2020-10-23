@@ -35,6 +35,7 @@ type Calculator interface {
 
 func Build(entryResolver EntryResolver, dependencyService DependencyService, profileDWriter ProfileDWriter, calculator Calculator, logger LogEmitter, clock chronos.Clock) packit.BuildFunc {
 	return func(context packit.BuildContext) (packit.BuildResult, error) {
+
 		logger.Title(context.BuildpackInfo)
 
 		logger.Process("Resolving Nginx Server version")
