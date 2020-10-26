@@ -6,8 +6,8 @@ api = "0.2"
   homepage = "https://github.com/paketo-buildpacks/nginx"
 
 [metadata]
-  include_files = ["bin/build", "bin/detect", "bin/run", "bin/configure", "buildpack.toml"]
-  pre_package = "./scripts/build.sh"
+  include-files = ["bin/build", "bin/detect", "bin/run", "bin/configure", "buildpack.toml"]
+  pre-package = "./scripts/build.sh"
   [metadata.default-versions]
     nginx = "1.19.*"
 
