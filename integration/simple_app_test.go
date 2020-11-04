@@ -15,7 +15,7 @@ import (
 	. "github.com/paketo-buildpacks/occam/matchers"
 )
 
-func testSimpleApp(t *testing.T, when spec.G, it spec.S) {
+func testSimpleApp(t *testing.T, context spec.G, it spec.S) {
 	var (
 		Expect     = NewWithT(t).Expect
 		Eventually = NewWithT(t).Eventually
@@ -45,13 +45,15 @@ func testSimpleApp(t *testing.T, when spec.G, it spec.S) {
 		Expect(os.RemoveAll(source)).To(Succeed())
 	})
 
-	when("pushing simple app", func() {
-		it("serves up staticfile", func() {
+	context("when pushing a simple app", func() {
+		it.Before(func() {
 			var err error
-
 			source, err = occam.Source(filepath.Join("testdata", "simple_app"))
 			Expect(err).NotTo(HaveOccurred())
+		})
 
+		it("serves up staticfile", func() {
+			var err error
 			image, _, err = pack.Build.
 				WithBuildpacks(nginxBuildpack).
 				WithPullPolicy("never").
@@ -68,13 +70,16 @@ func testSimpleApp(t *testing.T, when spec.G, it spec.S) {
 			Expect(response.StatusCode).To(Equal(http.StatusOK))
 		})
 	})
-	when("an Nginx app uses the stream module", func() {
-		it("starts successfully", func() {
-			var err error
 
+	context("when an nginx app uses the stream module", func() {
+		it.Before(func() {
+			var err error
 			source, err = occam.Source(filepath.Join("testdata", "with_stream_module"))
 			Expect(err).NotTo(HaveOccurred())
+		})
 
+		it("starts successfully", func() {
+			var err error
 			image, _, err = pack.Build.
 				WithBuildpacks(nginxBuildpack).
 				WithPullPolicy("never").

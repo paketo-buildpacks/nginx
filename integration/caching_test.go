@@ -8,11 +8,11 @@ import (
 	"github.com/paketo-buildpacks/occam"
 	"github.com/sclevine/spec"
 
-	. "github.com/paketo-buildpacks/occam/matchers"
 	. "github.com/onsi/gomega"
+	. "github.com/paketo-buildpacks/occam/matchers"
 )
 
-func testCaching(t *testing.T, when spec.G, it spec.S) {
+func testCaching(t *testing.T, context spec.G, it spec.S) {
 	var (
 		Expect     = NewWithT(t).Expect
 		Eventually = NewWithT(t).Eventually
@@ -36,6 +36,9 @@ func testCaching(t *testing.T, when spec.G, it spec.S) {
 
 		imageIDs = map[string]struct{}{}
 		containerIDs = map[string]struct{}{}
+
+		source, err = occam.Source(filepath.Join("testdata", "simple_app"))
+		Expect(err).ToNot(HaveOccurred())
 	})
 
 	it.After(func() {
@@ -52,9 +55,6 @@ func testCaching(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	it("uses a cached layer and doesn't run twice", func() {
-		source, err := occam.Source(filepath.Join("testdata", "simple_app"))
-		Expect(err).ToNot(HaveOccurred())
-
 		build := pack.Build.WithBuildpacks(nginxBuildpack)
 
 		firstImage, _, err := build.Execute(name, source)
