@@ -14,7 +14,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func testLogging(t *testing.T, when spec.G, it spec.S) {
+func testLogging(t *testing.T, context spec.G, it spec.S) {
 	var (
 		Expect = NewWithT(t).Expect
 
@@ -33,6 +33,9 @@ func testLogging(t *testing.T, when spec.G, it spec.S) {
 		var err error
 		name, err = occam.RandomName()
 		Expect(err).NotTo(HaveOccurred())
+
+		source, err = occam.Source(filepath.Join("testdata", "simple_app"))
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	it.After(func() {
@@ -41,16 +44,10 @@ func testLogging(t *testing.T, when spec.G, it spec.S) {
 		Expect(os.RemoveAll(source)).To(Succeed())
 	})
 
-	when("building an app image", func() {
+	context("when building an app image", func() {
 		it("correctly outputs logs", func() {
 			var err error
 			var logs fmt.Stringer
-			buildpackVersion, err := GetGitVersion()
-			Expect(err).NotTo(HaveOccurred())
-
-			source, err = occam.Source(filepath.Join("testdata", "simple_app"))
-			Expect(err).NotTo(HaveOccurred())
-
 			image, logs, err = pack.Build.
 				WithBuildpacks(nginxBuildpack).
 				WithPullPolicy("never").
@@ -58,7 +55,7 @@ func testLogging(t *testing.T, when spec.G, it spec.S) {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(logs).To(matchers.ContainLines(
-				fmt.Sprintf("%s %s", buildpackInfo.Buildpack.Name, buildpackVersion),
+				fmt.Sprintf("%s 1.2.3", buildpackInfo.Buildpack.Name),
 				"  Resolving Nginx Server version",
 				"    Candidate version sources (in priority order):",
 				`      buildpack.yml -> "1.19.*"`,

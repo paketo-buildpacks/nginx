@@ -33,11 +33,14 @@ func Detect(versionParser VersionParser) packit.DetectFunc {
 			if os.IsNotExist(err) {
 				return plan, nil
 			}
+
+			fmt.Printf("failed to stat nginx.conf: %s", err)
 			return packit.DetectResult{}, fmt.Errorf("failed to stat nginx.conf: %w", err)
 		}
 
 		version, versionSource, err := versionParser.ParseVersion(context.WorkingDir, context.CNBPath)
 		if err != nil {
+			fmt.Printf("parsing version failed: %s", err)
 			return packit.DetectResult{}, fmt.Errorf("parsing version failed: %w", err)
 		}
 

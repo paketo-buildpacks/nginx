@@ -15,7 +15,7 @@ import (
 	. "github.com/paketo-buildpacks/occam/matchers"
 )
 
-func testOffline(t *testing.T, when spec.G, it spec.S) {
+func testOffline(t *testing.T, context spec.G, it spec.S) {
 	var (
 		Expect     = NewWithT(t).Expect
 		Eventually = NewWithT(t).Eventually
@@ -36,6 +36,9 @@ func testOffline(t *testing.T, when spec.G, it spec.S) {
 		var err error
 		name, err = occam.RandomName()
 		Expect(err).NotTo(HaveOccurred())
+
+		source, err = occam.Source(filepath.Join("testdata", "simple_app"))
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	it.After(func() {
@@ -45,13 +48,9 @@ func testOffline(t *testing.T, when spec.G, it spec.S) {
 		Expect(os.RemoveAll(source)).To(Succeed())
 	})
 
-	when("offline", func() {
+	context("offline", func() {
 		it("serves up staticfile", func() {
 			var err error
-
-			source, err = occam.Source(filepath.Join("testdata", "simple_app"))
-			Expect(err).NotTo(HaveOccurred())
-
 			image, _, err = pack.WithNoColor().Build.
 				WithPullPolicy("never").
 				WithBuildpacks(offlineNginxBuildpack).
