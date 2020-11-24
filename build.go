@@ -30,7 +30,7 @@ type ProfileDWriter interface {
 
 //go:generate faux --interface Calculator --output fakes/calculator.go
 type Calculator interface {
-	Sum(path string) (string, error)
+	Sum(paths ...string) (string, error)
 }
 
 func Build(entryResolver EntryResolver, dependencyService DependencyService, profileDWriter ProfileDWriter, calculator Calculator, logger LogEmitter, clock chronos.Clock) packit.BuildFunc {
