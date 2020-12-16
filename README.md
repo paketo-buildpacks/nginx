@@ -63,7 +63,7 @@ This builds the buildpack's Go source using `GOOS=linux` by default. You can sup
 
 ```yaml
 nginx:
-  # this allows you to specify a version constaint for the `NGINX` dependency
+  # this allows you to specify a version constraint for the `NGINX` dependency
   # any valid semver constaints (e.g. 1.* and 1.17.*) are also acceptable
   #
   # you can also specify "mainline" or "stable"
