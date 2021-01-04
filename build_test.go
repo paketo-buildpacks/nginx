@@ -139,10 +139,12 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					},
 				},
 			},
-			Processes: []packit.Process{
-				{
-					Type:    "web",
-					Command: fmt.Sprintf(`nginx -p $PWD -c "%s"`, filepath.Join(workspaceDir, "nginx.conf")),
+			Launch: packit.LaunchMetadata{
+				Processes: []packit.Process{
+					{
+						Type:    "web",
+						Command: fmt.Sprintf(`nginx -p $PWD -c "%s"`, filepath.Join(workspaceDir, "nginx.conf")),
+					},
 				},
 			},
 		}))
@@ -188,7 +190,8 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 	context("when rebuilding a layer", func() {
 		it.Before(func() {
-			err := ioutil.WriteFile(filepath.Join(layersDir, "nginx.toml"), []byte(fmt.Sprintf(`[metadata]
+			err := ioutil.WriteFile(filepath.Join(layersDir, "nginx.toml"), []byte(fmt.Sprintf(`launch = true
+[metadata]
 			dependency-sha = "some-sha"
 			configure-bin-sha = "some-bin-sha"
 			built_at = "%s"
@@ -242,10 +245,12 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 						},
 					},
 				},
-				Processes: []packit.Process{
-					{
-						Type:    "web",
-						Command: fmt.Sprintf(`nginx -p $PWD -c "%s"`, filepath.Join(workspaceDir, "nginx.conf")),
+				Launch: packit.LaunchMetadata{
+					Processes: []packit.Process{
+						{
+							Type:    "web",
+							Command: fmt.Sprintf(`nginx -p $PWD -c "%s"`, filepath.Join(workspaceDir, "nginx.conf")),
+						},
 					},
 				},
 			}))
