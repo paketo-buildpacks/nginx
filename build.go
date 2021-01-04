@@ -55,7 +55,7 @@ func Build(entryResolver EntryResolver, dependencyService DependencyService, pro
 			return packit.BuildResult{}, fmt.Errorf("failed to create logs dir : %w", err)
 		}
 
-		nginxLayer, err := context.Layers.Get(NGINX, packit.LaunchLayer)
+		nginxLayer, err := context.Layers.Get(NGINX)
 		if err != nil {
 			return packit.BuildResult{}, err
 		}
@@ -80,17 +80,23 @@ func Build(entryResolver EntryResolver, dependencyService DependencyService, pro
 				Layers: []packit.Layer{
 					nginxLayer,
 				},
-				Processes: defaultStartProcesses,
+				Launch: packit.LaunchMetadata{
+					Processes: defaultStartProcesses,
+				},
 			}, nil
 		}
 
 		logger.Break()
 		logger.Process("Executing build process")
 
-		err = nginxLayer.Reset()
+		nginxLayer, err = nginxLayer.Reset()
 		if err != nil {
 			return packit.BuildResult{}, err
 		}
+
+		// later todo: ask for launch in metadata (detect) and
+		// read metadata here
+		nginxLayer.Launch = true
 
 		err = os.MkdirAll(filepath.Join(nginxLayer.Path, "bin"), os.ModePerm)
 		if err != nil {
@@ -141,7 +147,9 @@ func Build(entryResolver EntryResolver, dependencyService DependencyService, pro
 			Layers: []packit.Layer{
 				nginxLayer,
 			},
-			Processes: defaultStartProcesses,
+			Launch: packit.LaunchMetadata{
+				Processes: defaultStartProcesses,
+			},
 		}, nil
 	}
 }
