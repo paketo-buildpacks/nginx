@@ -79,6 +79,7 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 							Metadata: nginx.BuildPlanMetadata{
 								Version:       "*",
 								VersionSource: "buildpack.toml",
+								Launch:        true,
 							},
 						},
 					},
@@ -107,6 +108,7 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 							Metadata: nginx.BuildPlanMetadata{
 								Version:       "1.2.3",
 								VersionSource: "buildpack.yml",
+								Launch:        true,
 							},
 						},
 					},

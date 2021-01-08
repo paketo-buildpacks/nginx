@@ -94,9 +94,7 @@ func Build(entryResolver EntryResolver, dependencyService DependencyService, pro
 			return packit.BuildResult{}, err
 		}
 
-		// later todo: ask for launch in metadata (detect) and
-		// read metadata here
-		nginxLayer.Launch = true
+		nginxLayer.Launch = entry.Metadata["launch"] == true
 
 		err = os.MkdirAll(filepath.Join(nginxLayer.Path, "bin"), os.ModePerm)
 		if err != nil {

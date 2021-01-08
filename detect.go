@@ -16,6 +16,7 @@ type VersionParser interface {
 type BuildPlanMetadata struct {
 	Version       string `toml:"version,omitempty"`
 	VersionSource string `toml:"version-source,omitempty"`
+	Launch        bool   `toml:"launch"`
 }
 
 func Detect(versionParser VersionParser) packit.DetectFunc {
@@ -48,6 +49,7 @@ func Detect(versionParser VersionParser) packit.DetectFunc {
 				Metadata: BuildPlanMetadata{
 					Version:       version,
 					VersionSource: versionSource,
+					Launch:        true,
 				},
 			},
 		}
