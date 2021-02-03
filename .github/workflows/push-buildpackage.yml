@@ -53,5 +53,5 @@ jobs:
       with:
         id: ${{ github.repository }}
         version: ${{ steps.event.outputs.tag }}
-        address: {{ steps.push.outputs.image }}@{{ steps.push.outputs.digest }}
+        address: ${{ steps.push.outputs.image }}@${{ steps.push.outputs.digest }}
         token: ${{ secrets.PAKETO_BOT_GITHUB_TOKEN }}
