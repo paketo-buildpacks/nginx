@@ -49,7 +49,7 @@ jobs:
         echo "::set-output name=digest::$(sudo skopeo inspect "oci-archive:${GITHUB_WORKSPACE}/buildpackage.cnb" | jq -r .Digest)"
 
     - name: Register with CNB Registry
-      uses: docker://ghcr.io/buildpacks/actions/registry/request-add-entry
+      uses: docker://ghcr.io/buildpacks/actions/registry/request-add-entry:main
       with:
         id: ${{ github.repository }}
         version: ${{ steps.event.outputs.tag }}
