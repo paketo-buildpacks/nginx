@@ -1,4 +1,4 @@
-name: Create Draft Release
+name: Create or Update Draft Release
 
 on:
   push:
@@ -6,6 +6,7 @@ on:
     - main
   repository_dispatch:
     types: [ version-bump ]
+  workflow_dispatch: {}
 
 jobs:
   unit:
@@ -15,7 +16,7 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v1
       with:
-        go-version: 1.14
+        go-version: 1.16
     - name: Checkout
       uses: actions/checkout@v2
     - name: Run Unit Tests
@@ -29,7 +30,7 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v1
       with:
-        go-version: 1.14
+        go-version: 1.16
     - name: Checkout
       uses: actions/checkout@v2
     - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/* || true
