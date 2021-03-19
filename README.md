@@ -50,13 +50,10 @@ To package this buildpack for consumption:
 $ ./scripts/package.sh
 ```
 
-This builds the buildpack's Go source using `GOOS=linux` by default. You can supply another value as the first argument to `package.sh`.
-
-
 ## Data driven templates
 
-The NGINX buildpack also supports data driven templates for nginx config. You
-can use templated variables like `{{port}}`, `{{env "FOO"}}` and `{{module
+The NGINX buildpack supports data driven templates for nginx config. You can
+use templated variables like `{{port}}`, `{{env "FOO"}}` and `{{module
 "ngx_stream_module"}}` in your `nginx.conf` to use values known at launch time.
 
 A usage example can be found in the [`samples` repository under the `nginx`
@@ -82,9 +79,9 @@ docker run --tty --env PORT=8080 --publish 8080:8080 my-nginx-image
 
 #### Environment Variables
 
-This is a generic case of the `{{port}}` described ealier. To use the value of
-any environment variable `$FOOVAR` available at launch time, use the directive
-`{{env "FOOVAR"}}` in your `nginx.conf`.
+This is a generic case of the `{{port}}` directive described ealier. To use the
+value of any environment variable `$FOOVAR` available at launch time, use the
+directive `{{env "FOOVAR"}}` in your `nginx.conf`.
 
 For example, include the following in your `nginx.conf` file to enable or
 disable gzipping of responses based on the value of `GZIP_DOWNLOADS`:
@@ -104,7 +101,7 @@ docker run --tty --env PORT=8080 --env GZIP_DOWNLOADS=off --publish 8080:8080 my
 You can use templates to set the path to a dynamic module using the
 `load_module` directive.
 
-* To load a custom module named `ngx_foo_module`, provide a
+* To load a user-provided module named `ngx_foo_module`, provide a
   `modules/ngx_foo_module.so` file in your app directory and add the following
   to the top of your `nginx.conf` file:
 
@@ -112,7 +109,7 @@ You can use templates to set the path to a dynamic module using the
 {{module "ngx_foo_module"}}
 ```
 
-* To load a buildpack provided module like `ngx_stream_module`, add the
+* To load a buildpack-provided module like `ngx_stream_module`, add the
   following to the top of your `nginx.conf` file. You do not need to provide an
   `ngx_stream_module.so` file:
 
