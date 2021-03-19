@@ -1,14 +1,8 @@
 # NGINX Server Cloud Native Buildpack
 
-The NGINX CNB provides the [NGINX](https://www.nginx.com/) binary distribution.
+The NGINX buildpack provides the [NGINX](https://www.nginx.com/) binary distribution.
 The buildpack installs the NGINX binary distribution onto the `$PATH` which
-makes it available for subsequent buildpacks.
-
-The NGINX CNB also supports data driven templates for nginx config. You may use
-variables like `{{port}}`, `{{env "FOO"}}` and `{{module "ngx_stream_module"}}`.
-
-A usage example can be found in the
-[`samples` repository under the `nginx` directory](https://github.com/paketo-buildpacks/samples/tree/main/nginx).
+makes it available for subsequent buildpacks and/or the application image.
 
 #### The NGINX buildpack is compatible with the following builder(s):
 - [Paketo Full Builder](https://github.com/paketo-buildpacks/full-builder)
@@ -58,6 +52,73 @@ $ ./scripts/package.sh
 
 This builds the buildpack's Go source using `GOOS=linux` by default. You can supply another value as the first argument to `package.sh`.
 
+
+## Data driven templates
+
+The NGINX buildpack also supports data driven templates for nginx config. You
+can use templated variables like `{{port}}`, `{{env "FOO"}}` and `{{module
+"ngx_stream_module"}}` in your `nginx.conf` to use values known at launch time.
+
+A usage example can be found in the [`samples` repository under the `nginx`
+directory](https://github.com/paketo-buildpacks/samples/tree/main/nginx).
+
+#### PORT
+
+Use `{{port}}` to dynamically set the port at which the server will accepts requests. At launch time, the buildpack will read the value of `$PORT` to set the value of `{{port}}`.
+
+For example, to set an NGINX server to listen on `$PORT`, use the following in your `nginx.conf` file:
+
+```
+server {
+  listen {{port}};
+}
+```
+
+Then run the built image using the `PORT` variable set as follows:
+
+```
+docker run --tty --env PORT=8080 --publish 8080:8080 my-nginx-image
+```
+
+#### Environment Variables
+
+This is a generic case of the `{{port}}` described ealier. To use the value of
+any environment variable `$FOOVAR` available at launch time, use the directive
+`{{env "FOOVAR"}}` in your `nginx.conf`.
+
+For example, include the following in your `nginx.conf` file to enable or
+disable gzipping of responses based on the value of `GZIP_DOWNLOADS`:
+
+```
+gzip {{env "GZIP_DOWNLOADS"}};
+```
+
+Then run the built image using the `GZIP_DOWNLOADS` variable set as follows:
+
+```
+docker run --tty --env PORT=8080 --env GZIP_DOWNLOADS=off --publish 8080:8080 my-nginx-image
+```
+
+#### Loading dynamic modules
+
+You can use templates to set the path to a dynamic module using the
+`load_module` directive.
+
+* To load a custom module named `ngx_foo_module`, provide a
+  `modules/ngx_foo_module.so` file in your app directory and add the following
+  to the top of your `nginx.conf` file:
+
+```
+{{module "ngx_foo_module"}}
+```
+
+* To load a buildpack provided module like `ngx_stream_module`, add the
+  following to the top of your `nginx.conf` file. You do not need to provide an
+  `ngx_stream_module.so` file:
+
+```
+{{module "ngx_stream_module"}}
+```
 
 ## `buildpack.yml` Configurations
 
