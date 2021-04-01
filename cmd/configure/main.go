@@ -69,7 +69,7 @@ func main() {
 
 func getIncludedConfs(confText string, confDir string) ([]string, error) {
 	includeFiles := []string{}
-	includeRe := regexp.MustCompile(`include (\S*.conf);`)
+	includeRe := regexp.MustCompile(`include\s+(\S*.conf);`)
 	matches := includeRe.FindAllStringSubmatch(confText, -1)
 	for _, v := range matches {
 		if len(v) == 2 {
