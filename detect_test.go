@@ -20,6 +20,7 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 		Expect = NewWithT(t).Expect
 
 		workingDir string
+		cnbPath    string
 
 		versionParser *fakes.VersionParser
 		detect        packit.DetectFunc
@@ -30,14 +31,18 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 		workingDir, err = ioutil.TempDir("", "working-dir")
 		Expect(err).NotTo(HaveOccurred())
 
+		cnbPath, err = ioutil.TempDir("", "cnb")
+		Expect(err).NotTo(HaveOccurred())
+
 		versionParser = &fakes.VersionParser{}
-		versionParser.ParseVersionCall.Returns.Version = "*"
+		versionParser.ResolveVersionCall.Returns.ResultVersion = "1.19.*"
 
 		detect = nginx.Detect(versionParser)
 	})
 
 	it.After(func() {
 		Expect(os.RemoveAll(workingDir)).To(Succeed())
+		Expect(os.RemoveAll(cnbPath)).To(Succeed())
 	})
 
 	it("returns a plan that provides nginx", func() {
@@ -60,13 +65,21 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 			)).To(Succeed())
 		})
 
-		context("when there is no buildpack.yml", func() {
+		context("when version is set via BP_NGINX_VERSION", func() {
 			it.Before(func() {
-				versionParser.ParseVersionCall.Returns.VersionSource = "buildpack.toml"
+				os.Setenv("BP_NGINX_VERSION", "mainline")
+				versionParser.ResolveVersionCall.Returns.ResultVersion = "1.19.*"
+				versionParser.ResolveVersionCall.Returns.Err = nil
 			})
-			it("requires nginx at any version", func() {
+
+			it.After(func() {
+				os.Unsetenv("BP_NGINX_VERSION")
+			})
+
+			it("requires the given constraint in buildpack.yml", func() {
 				result, err := detect(packit.DetectContext{
 					WorkingDir: workingDir,
+					CNBPath:    cnbPath,
 				})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(result.Plan).To(Equal(packit.BuildPlan{
@@ -77,20 +90,26 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 						{
 							Name: "nginx",
 							Metadata: nginx.BuildPlanMetadata{
-								Version:       "*",
-								VersionSource: "buildpack.toml",
+								Version:       "1.19.*",
+								VersionSource: "BP_NGINX_VERSION",
 								Launch:        true,
 							},
 						},
 					},
 				}))
+
+				Expect(versionParser.ResolveVersionCall.Receives.CnbPath).To(Equal(cnbPath))
+				Expect(versionParser.ResolveVersionCall.Receives.Version).To(Equal("mainline"))
+
 			})
 		})
 
 		context("when there is a buildpack.yml", func() {
 			it.Before(func() {
-				versionParser.ParseVersionCall.Returns.Version = "1.2.3"
-				versionParser.ParseVersionCall.Returns.VersionSource = "buildpack.yml"
+				versionParser.ResolveVersionCall.Returns.ResultVersion = "1.2.3"
+				versionParser.ResolveVersionCall.Returns.Err = nil
+				versionParser.ParseYmlCall.Returns.Exists = true
+				versionParser.ParseYmlCall.Returns.YmlVersion = "1.2.3"
 			})
 
 			it("requires the given constraint in buildpack.yml", func() {
@@ -115,6 +134,34 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 				}))
 			})
 		})
+
+		context("when there is no buildpack.yml && BP_NGINX_VERSION is not set", func() {
+			it.Before(func() {
+				versionParser.ResolveVersionCall.Returns.ResultVersion = "1.19.*"
+			})
+			it("requires nginx at any version", func() {
+				result, err := detect(packit.DetectContext{
+					WorkingDir: workingDir,
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result.Plan).To(Equal(packit.BuildPlan{
+					Provides: []packit.BuildPlanProvision{
+						{Name: "nginx"},
+					},
+					Requires: []packit.BuildPlanRequirement{
+						{
+							Name: "nginx",
+							Metadata: nginx.BuildPlanMetadata{
+								Version:       "1.19.*",
+								VersionSource: "buildpack.toml",
+								Launch:        true,
+							},
+						},
+					},
+				}))
+			})
+		})
+
 	})
 
 	context("nginx.conf is absent", func() {
@@ -167,7 +214,7 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 
 		context("version parsing fails", func() {
 			it.Before(func() {
-				versionParser.ParseVersionCall.Returns.Err = errors.New("parsing version failed")
+				versionParser.ResolveVersionCall.Returns.Err = errors.New("parsing version failed")
 			})
 
 			it("returns an error", func() {
