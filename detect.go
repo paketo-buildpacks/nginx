@@ -10,7 +10,8 @@ import (
 
 //go:generate faux --interface VersionParser --output fakes/version_parser.go
 type VersionParser interface {
-	ParseVersion(workingDir, cnbPath string) (version, versionSource string, err error)
+	ResolveVersion(cnbPath, version string) (resultVersion string, err error)
+	ParseYml(workDir string) (ymlVersion string, exists bool, err error)
 }
 
 type BuildPlanMetadata struct {
@@ -38,21 +39,62 @@ func Detect(versionParser VersionParser) packit.DetectFunc {
 			return packit.DetectResult{}, fmt.Errorf("failed to stat nginx.conf: %w", err)
 		}
 
-		version, versionSource, err := versionParser.ParseVersion(context.WorkingDir, context.CNBPath)
+		version, envVarExists := os.LookupEnv("BP_NGINX_VERSION")
+		var requirements []packit.BuildPlanRequirement
+
+		if envVarExists {
+			version, err = versionParser.ResolveVersion(context.CNBPath, version)
+			if err != nil {
+				return packit.DetectResult{}, err
+			}
+			requirements = append(requirements, packit.BuildPlanRequirement{
+				Name: NGINX,
+				Metadata: BuildPlanMetadata{
+					Version:       version,
+					VersionSource: "BP_NGINX_VERSION",
+					Launch:        true,
+				},
+			})
+		}
+
+		ymlVersion, ymlExists, err := versionParser.ParseYml(context.WorkingDir)
+
+		if ymlExists {
+			version, err = versionParser.ResolveVersion(context.CNBPath, ymlVersion)
+			if err != nil {
+				return packit.DetectResult{}, err
+			}
+			requirements = append(requirements, packit.BuildPlanRequirement{
+				Name: NGINX,
+				Metadata: BuildPlanMetadata{
+					Version:       version,
+					VersionSource: "buildpack.yml",
+					Launch:        true,
+				},
+			})
+		}
+
+		if !envVarExists && !ymlExists {
+			version, err = versionParser.ResolveVersion(context.CNBPath, "")
+			if err != nil {
+				return packit.DetectResult{}, err
+			}
+			requirements = append(requirements, packit.BuildPlanRequirement{
+				Name: NGINX,
+				Metadata: BuildPlanMetadata{
+					Version:       version,
+					VersionSource: "buildpack.toml",
+					Launch:        true,
+				},
+			})
+		}
+
 		if err != nil {
 			return packit.DetectResult{}, fmt.Errorf("parsing version failed: %w", err)
 		}
 
-		plan.Plan.Requires = []packit.BuildPlanRequirement{
-			{
-				Name: NGINX,
-				Metadata: BuildPlanMetadata{
-					Version:       version,
-					VersionSource: versionSource,
-					Launch:        true,
-				},
-			},
-		}
+		plan.Plan.Requires = requirements
+
 		return plan, nil
 	}
 }

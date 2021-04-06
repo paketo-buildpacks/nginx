@@ -36,6 +36,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 		clock     chronos.Clock
 		timeStamp time.Time
+		buffer    *bytes.Buffer
 
 		build packit.BuildFunc
 	)
@@ -51,13 +52,15 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		workspaceDir, err = ioutil.TempDir("", "workspace")
 		Expect(err).NotTo(HaveOccurred())
 
+		buffer = bytes.NewBuffer(nil)
 		entryResolver = &fakes.EntryResolver{}
 
 		entryResolver.ResolveCall.Returns.BuildpackPlanEntry = packit.BuildpackPlanEntry{
 			Name: "nginx",
 			Metadata: map[string]interface{}{
-				"version": "1.17.*",
-				"launch":  true,
+				"version-source": "BP_NGINX_VERSION",
+				"version":        "1.19.*",
+				"launch":         true,
 			},
 		}
 
@@ -69,7 +72,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			SourceSHA256: "some-source-sha",
 			Stacks:       []string{"some-stack"},
 			URI:          "some-uri",
-			Version:      "1.17.2",
+			Version:      "1.19.8",
 		}
 
 		profileDWriter = &fakes.ProfileDWriter{}
@@ -86,7 +89,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			return timeStamp
 		})
 
-		logEmitter := nginx.NewLogEmitter(bytes.NewBuffer(nil))
+		logEmitter := nginx.NewLogEmitter(buffer)
 
 		build = nginx.Build(entryResolver, dependencyService, profileDWriter, calculator, logEmitter, clock)
 	})
@@ -101,8 +104,9 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					{
 						Name: "nginx",
 						Metadata: map[string]interface{}{
-							"version": "1.17.*",
-							"launch":  true,
+							"version-source": "BP_NGINX_VERSION",
+							"version":        "1.19.*",
+							"launch":         true,
 						},
 					},
 				},
@@ -116,8 +120,9 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					{
 						Name: "nginx",
 						Metadata: map[string]interface{}{
-							"version": "1.17.*",
-							"launch":  true,
+							"version-source": "BP_NGINX_VERSION",
+							"version":        "1.19.*",
+							"launch":         true,
 						},
 					},
 				},
@@ -165,15 +170,16 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			{
 				Name: "nginx",
 				Metadata: map[string]interface{}{
-					"version": "1.17.*",
-					"launch":  true,
+					"version-source": "BP_NGINX_VERSION",
+					"version":        "1.19.*",
+					"launch":         true,
 				},
 			},
 		}))
 
 		Expect(dependencyService.ResolveCall.Receives.Path).To(Equal(filepath.Join(cnbPath, "buildpack.toml")))
 		Expect(dependencyService.ResolveCall.Receives.Name).To(Equal("nginx"))
-		Expect(dependencyService.ResolveCall.Receives.Version).To(Equal("1.17.*"))
+		Expect(dependencyService.ResolveCall.Receives.Version).To(Equal("1.19.*"))
 		Expect(dependencyService.ResolveCall.Receives.Stack).To(Equal("some-stack"))
 
 		Expect(dependencyService.InstallCall.Receives.Dependency).To(Equal(
@@ -184,13 +190,146 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				SourceSHA256: "some-source-sha",
 				Stacks:       []string{"some-stack"},
 				URI:          "some-uri",
-				Version:      "1.17.2",
+				Version:      "1.19.8",
 			},
 		))
 		Expect(dependencyService.InstallCall.Receives.CnbPath).To(Equal(cnbPath))
 		Expect(dependencyService.InstallCall.Receives.LayerPath).To(Equal(filepath.Join(layersDir, "nginx")))
 		Expect(calculator.SumCall.CallCount).To(Equal(1))
 
+	})
+
+	context("when version source is buildpack.yml", func() {
+		it.Before(func() {
+			dependencyService.ResolveCall.Returns.Dependency = postal.Dependency{
+				ID:           "nginx",
+				SHA256:       "some-sha",
+				Source:       "some-source",
+				SourceSHA256: "some-source-sha",
+				Stacks:       []string{"some-stack"},
+				URI:          "some-uri",
+				Version:      "some-bp-yml-version",
+			}
+			entryResolver.ResolveCall.Returns.BuildpackPlanEntry = packit.BuildpackPlanEntry{
+				Name: "nginx",
+				Metadata: map[string]interface{}{
+					"version-source": "buildpack.yml",
+					"version":        "some-bp-yml-version",
+					"launch":         true,
+				},
+			}
+		})
+
+		it("does a build", func() {
+			result, err := build(packit.BuildContext{
+				BuildpackInfo: packit.BuildpackInfo{
+					Name:    "Some Buildpack",
+					Version: "1.2.3",
+				},
+				CNBPath:    cnbPath,
+				WorkingDir: workspaceDir,
+				Stack:      "some-stack",
+				Plan: packit.BuildpackPlan{
+					Entries: []packit.BuildpackPlanEntry{
+						{
+							Name: "nginx",
+							Metadata: map[string]interface{}{
+								"version-source": "buildpack.yml",
+								"version":        "some-bp-yml-version",
+								"launch":         true,
+							},
+						},
+					},
+				},
+				Layers: packit.Layers{Path: layersDir},
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result).To(Equal(packit.BuildResult{
+				Plan: packit.BuildpackPlan{
+					Entries: []packit.BuildpackPlanEntry{
+						{
+							Name: "nginx",
+							Metadata: map[string]interface{}{
+								"version-source": "buildpack.yml",
+								"version":        "some-bp-yml-version",
+								"launch":         true,
+							},
+						},
+					},
+				},
+				Layers: []packit.Layer{
+					{
+						Name: "nginx",
+						Path: filepath.Join(layersDir, "nginx"),
+						SharedEnv: packit.Environment{
+							"PATH.append": filepath.Join(layersDir, "nginx", "sbin"),
+							"PATH.delim":  ":",
+						},
+						BuildEnv:         packit.Environment{},
+						LaunchEnv:        packit.Environment{},
+						ProcessLaunchEnv: map[string]packit.Environment{},
+						Build:            false,
+						Launch:           true,
+						Cache:            false,
+						Metadata: map[string]interface{}{
+							nginx.DepKey:          "some-sha",
+							nginx.ConfigureBinKey: "some-bin-sha",
+							"built_at":            timeStamp.Format(time.RFC3339Nano),
+						},
+					},
+				},
+				Launch: packit.LaunchMetadata{
+					Processes: []packit.Process{
+						{
+							Type:    "web",
+							Command: fmt.Sprintf(`nginx -p $PWD -c "%s"`, filepath.Join(workspaceDir, "nginx.conf")),
+						},
+					},
+				},
+			}))
+
+			Expect(filepath.Join(layersDir, "nginx")).To(BeADirectory())
+			Expect(filepath.Join(layersDir, "nginx", "bin", "configure")).To(BeAnExistingFile())
+			Expect(profileDWriter.WriteCall.Receives.LayerDir).To(Equal(filepath.Join(layersDir, "nginx")))
+			Expect(profileDWriter.WriteCall.Receives.ScriptName).To(Equal("configure.sh"))
+			expectedScript := fmt.Sprintf(`configure "%s" "%s" "%s"`, filepath.Join(workspaceDir, "nginx.conf"), filepath.Join(workspaceDir, "modules"), filepath.Join(layersDir, "nginx", "modules"))
+			Expect(profileDWriter.WriteCall.Receives.ScriptContents).To(Equal(expectedScript))
+			Expect(filepath.Join(workspaceDir, "logs")).To(BeADirectory())
+
+			Expect(entryResolver.ResolveCall.Receives.BuildpackPlanEntrySlice).To(Equal([]packit.BuildpackPlanEntry{
+				{
+					Name: "nginx",
+					Metadata: map[string]interface{}{
+						"version-source": "buildpack.yml",
+						"version":        "some-bp-yml-version",
+						"launch":         true,
+					},
+				},
+			}))
+
+			Expect(dependencyService.ResolveCall.Receives.Path).To(Equal(filepath.Join(cnbPath, "buildpack.toml")))
+			Expect(dependencyService.ResolveCall.Receives.Name).To(Equal("nginx"))
+			Expect(dependencyService.ResolveCall.Receives.Version).To(Equal("some-bp-yml-version"))
+			Expect(dependencyService.ResolveCall.Receives.Stack).To(Equal("some-stack"))
+
+			Expect(dependencyService.InstallCall.Receives.Dependency).To(Equal(
+				postal.Dependency{
+					ID:           "nginx",
+					SHA256:       "some-sha",
+					Source:       "some-source",
+					SourceSHA256: "some-source-sha",
+					Stacks:       []string{"some-stack"},
+					URI:          "some-uri",
+					Version:      "some-bp-yml-version",
+				},
+			))
+			Expect(dependencyService.InstallCall.Receives.CnbPath).To(Equal(cnbPath))
+			Expect(dependencyService.InstallCall.Receives.LayerPath).To(Equal(filepath.Join(layersDir, "nginx")))
+			Expect(calculator.SumCall.CallCount).To(Equal(1))
+
+			Expect(buffer.String()).To(ContainSubstring("WARNING: Setting the server version through buildpack.yml will be deprecated soon in Nginx Server Buildpack v2.0.0"))
+			Expect(buffer.String()).To(ContainSubstring("Please specify the version through the $BP_NGINX_VERSION environment variable instead. See docs for more information."))
+		})
 	})
 
 	context("when rebuilding a layer", func() {
@@ -213,8 +352,9 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 						{
 							Name: "nginx",
 							Metadata: map[string]interface{}{
-								"version": "1.17.*",
-								"launch":  true,
+								"version-source": "BP_NGINX_VERSION",
+								"version":        "1.17.*",
+								"launch":         true,
 							},
 						},
 					},
@@ -229,8 +369,9 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 						{
 							Name: "nginx",
 							Metadata: map[string]interface{}{
-								"version": "1.17.*",
-								"launch":  true,
+								"version-source": "BP_NGINX_VERSION",
+								"version":        "1.17.*",
+								"launch":         true,
 							},
 						},
 					},

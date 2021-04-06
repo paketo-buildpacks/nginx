@@ -14,6 +14,5 @@ func TestUnitNGINX(t *testing.T) {
 	suite("LogEmitter", testLogEmitter)
 	suite("Parse", testParser)
 	suite("ProfileWriter", testProfileWriter)
-	suite("ResolvePlan", testPlanEntryResolver)
 	suite.Run(t)
 }

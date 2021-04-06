@@ -14,11 +14,31 @@ func NewParser() Parser {
 	return Parser{}
 }
 
-func (p Parser) ParseVersion(workingDir, cnbPath string) (string, string, error) {
+func (p Parser) ParseYml(workingDir string) (string, bool, error) {
+	bpYML, err := os.Open(filepath.Join(workingDir, BuildpackYMLSource))
+	if err != nil {
+		return "", false, err
+	}
+
+	var buildpackYML struct {
+		Config struct {
+			Version string `yaml:"version"`
+		} `yaml:"nginx"`
+	}
+
+	err = yaml.NewDecoder(bpYML).Decode(&buildpackYML)
+	if err != nil {
+		return "", false, err
+	}
+
+	return buildpackYML.Config.Version, true, nil
+}
+
+func (p Parser) ResolveVersion(cnbPath, version string) (string, error) {
 
 	bpTOML, err := os.Open(filepath.Join(cnbPath, "buildpack.toml"))
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 
 	var buildpackTOML struct {
@@ -33,31 +53,8 @@ func (p Parser) ParseVersion(workingDir, cnbPath string) (string, string, error)
 
 	_, err = toml.DecodeReader(bpTOML, &buildpackTOML)
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
-
-	bpYML, err := os.Open(filepath.Join(workingDir, BuildpackYMLSource))
-	if err != nil {
-		if os.IsNotExist(err) {
-			return buildpackTOML.Metadata.DefaultVersions[NGINX], "buildpack.toml", nil
-		}
-		return "", "", err
-	}
-
-	var buildpackYML struct {
-		Config struct {
-			Version string `yaml:"version"`
-		} `yaml:"nginx"`
-	}
-
-	var version string
-	var versionSource = "buildpack.yml"
-	err = yaml.NewDecoder(bpYML).Decode(&buildpackYML)
-	if err != nil {
-		return "", "", err
-	}
-
-	version = buildpackYML.Config.Version
 
 	if version == "mainline" {
 		version = buildpackTOML.Metadata.VersionLines.Mainline
@@ -68,9 +65,8 @@ func (p Parser) ParseVersion(workingDir, cnbPath string) (string, string, error)
 	}
 
 	if version == "" {
-		versionSource = "buildpack.toml"
 		version = buildpackTOML.Metadata.DefaultVersions[NGINX]
 	}
 
-	return version, versionSource, nil
+	return version, nil
 }

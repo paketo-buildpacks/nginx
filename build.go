@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/Masterminds/semver"
 	"github.com/paketo-buildpacks/packit"
 	"github.com/paketo-buildpacks/packit/chronos"
 	"github.com/paketo-buildpacks/packit/fs"
@@ -14,7 +15,7 @@ import (
 
 //go:generate faux --interface EntryResolver --output fakes/entry_resolver.go
 type EntryResolver interface {
-	Resolve([]packit.BuildpackPlanEntry) packit.BuildpackPlanEntry
+	Resolve(string, []packit.BuildpackPlanEntry, []interface{}) (packit.BuildpackPlanEntry, []packit.BuildpackPlanEntry)
 }
 
 //go:generate faux --interface DependencyService --output fakes/dependency_service.go
@@ -38,10 +39,15 @@ func Build(entryResolver EntryResolver, dependencyService DependencyService, pro
 		logger.Title(context.BuildpackInfo)
 
 		logger.Process("Resolving Nginx Server version")
-		logger.Candidates(context.Plan.Entries)
 
-		entry := entryResolver.Resolve(context.Plan.Entries)
+		priorities := []interface{}{
+			"BP_NGINX_VERSION",
+			"buildpack.yml",
+		}
+		entry, sortedEntries := entryResolver.Resolve("nginx", context.Plan.Entries, priorities)
 		entryVersion, _ := entry.Metadata["version"].(string)
+
+		logger.Candidates(sortedEntries)
 
 		dependency, err := dependencyService.Resolve(filepath.Join(context.CNBPath, "buildpack.toml"), entry.Name, entryVersion, context.Stack)
 		if err != nil {
@@ -50,6 +56,13 @@ func Build(entryResolver EntryResolver, dependencyService DependencyService, pro
 
 		logger.SelectedDependency(entry, dependency.Version)
 
+		versionSource := entry.Metadata["version-source"].(string)
+		if versionSource == "buildpack.yml" {
+			nextMajorVersion := semver.MustParse(context.BuildpackInfo.Version).IncMajor()
+			logger.Break()
+			logger.Subprocess("WARNING: Setting the server version through buildpack.yml will be deprecated soon in Nginx Server Buildpack v%s.", nextMajorVersion.String())
+			logger.Subprocess("Please specify the version through the $BP_NGINX_VERSION environment variable instead. See docs for more information.")
+		}
 		err = os.MkdirAll(filepath.Join(context.WorkingDir, "logs"), os.ModePerm)
 		if err != nil {
 			return packit.BuildResult{}, fmt.Errorf("failed to create logs dir : %w", err)

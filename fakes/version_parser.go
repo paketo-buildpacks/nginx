@@ -3,30 +3,52 @@ package fakes
 import "sync"
 
 type VersionParser struct {
-	ParseVersionCall struct {
+	ParseYmlCall struct {
 		sync.Mutex
 		CallCount int
 		Receives  struct {
-			WorkingDir string
-			CnbPath    string
+			WorkDir string
 		}
 		Returns struct {
-			Version       string
-			VersionSource string
+			YmlVersion string
+			Exists     bool
+			Err        error
+		}
+		Stub func(string) (string, bool, error)
+	}
+	ResolveVersionCall struct {
+		sync.Mutex
+		CallCount int
+		Receives  struct {
+			CnbPath string
+			Version string
+		}
+		Returns struct {
+			ResultVersion string
 			Err           error
 		}
-		Stub func(string, string) (string, string, error)
+		Stub func(string, string) (string, error)
 	}
 }
 
-func (f *VersionParser) ParseVersion(param1 string, param2 string) (string, string, error) {
-	f.ParseVersionCall.Lock()
-	defer f.ParseVersionCall.Unlock()
-	f.ParseVersionCall.CallCount++
-	f.ParseVersionCall.Receives.WorkingDir = param1
-	f.ParseVersionCall.Receives.CnbPath = param2
-	if f.ParseVersionCall.Stub != nil {
-		return f.ParseVersionCall.Stub(param1, param2)
+func (f *VersionParser) ParseYml(param1 string) (string, bool, error) {
+	f.ParseYmlCall.Lock()
+	defer f.ParseYmlCall.Unlock()
+	f.ParseYmlCall.CallCount++
+	f.ParseYmlCall.Receives.WorkDir = param1
+	if f.ParseYmlCall.Stub != nil {
+		return f.ParseYmlCall.Stub(param1)
 	}
-	return f.ParseVersionCall.Returns.Version, f.ParseVersionCall.Returns.VersionSource, f.ParseVersionCall.Returns.Err
+	return f.ParseYmlCall.Returns.YmlVersion, f.ParseYmlCall.Returns.Exists, f.ParseYmlCall.Returns.Err
+}
+func (f *VersionParser) ResolveVersion(param1 string, param2 string) (string, error) {
+	f.ResolveVersionCall.Lock()
+	defer f.ResolveVersionCall.Unlock()
+	f.ResolveVersionCall.CallCount++
+	f.ResolveVersionCall.Receives.CnbPath = param1
+	f.ResolveVersionCall.Receives.Version = param2
+	if f.ResolveVersionCall.Stub != nil {
+		return f.ResolveVersionCall.Stub(param1, param2)
+	}
+	return f.ResolveVersionCall.Returns.ResultVersion, f.ResolveVersionCall.Returns.Err
 }

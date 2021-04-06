@@ -43,8 +43,8 @@ func testParser(t *testing.T, context spec.G, it spec.S) {
 		parser = nginx.NewParser()
 	})
 
-	context("when buildpack.yml exists", func() {
-		context("when buildpack.yml is valid and specifies an nginx semver", func() {
+	context("Calling ParseYml", func() {
+		context("when buildpack.yml is valid and specifies an nginx version", func() {
 			it.Before(func() {
 				Expect(ioutil.WriteFile(
 					filepath.Join(workingDir, "buildpack.yml"),
@@ -56,79 +56,13 @@ nginx:
 			})
 
 			it("parses out a version from buildpack.yml and detects version source", func() {
-				version, versionSource, err := parser.ParseVersion(workingDir, cnbPath)
-				Expect(err).NotTo(HaveOccurred())
+				version, ok, err := parser.ParseYml(workingDir)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(ok).To(Equal(true))
 				Expect(version).To(Equal("1.2.3"))
-				Expect(versionSource).To(Equal("buildpack.yml"))
 			})
 		})
 
-		context("when buildpack.yml specifies mainline", func() {
-			it.Before(func() {
-				Expect(ioutil.WriteFile(
-					filepath.Join(workingDir, "buildpack.yml"),
-					[]byte(`---
-nginx:
-  version: mainline`),
-					os.ModePerm,
-				))
-			})
-
-			it("parses out the mainline constraint", func() {
-				version, _, err := parser.ParseVersion(workingDir, cnbPath)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(version).To(Equal("1.17.*"))
-			})
-		})
-
-		context("when buildpack.yml specifies stable", func() {
-			it.Before(func() {
-				Expect(ioutil.WriteFile(
-					filepath.Join(workingDir, "buildpack.yml"),
-					[]byte(`---
-nginx:
-  version: stable`),
-					os.ModePerm,
-				))
-			})
-
-			it("parses out the stable constraint", func() {
-				version, _, err := parser.ParseVersion(workingDir, cnbPath)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(version).To(Equal("1.16.*"))
-			})
-		})
-
-		context("when buildpack.yml does NOT specify any nginx constraint", func() {
-			it.Before(func() {
-				Expect(ioutil.WriteFile(
-					filepath.Join(workingDir, "buildpack.yml"),
-					[]byte(`---
-some-other-dep:
-  version: 1.2.3`),
-					os.ModePerm,
-				))
-			})
-			it("parses out a general * constraint", func() {
-				version, versionSource, err := parser.ParseVersion(workingDir, cnbPath)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(version).To(Equal("the-default-version"))
-				Expect(versionSource).To(Equal("buildpack.toml"))
-			})
-
-		})
-	})
-
-	context("when buildpack.yml does NOT exist", func() {
-		it("parses out a general * constraint", func() {
-			version, versionSource, err := parser.ParseVersion(workingDir, cnbPath)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(version).To(Equal("the-default-version"))
-			Expect(versionSource).To(Equal("buildpack.toml"))
-		})
-	})
-
-	context("failure cases", func() {
 		context("buildpack.yml cannot be opened", func() {
 			it.Before(func() {
 				Expect(ioutil.WriteFile(
@@ -139,7 +73,7 @@ some-other-dep:
 			})
 
 			it("returns an error", func() {
-				_, _, err := parser.ParseVersion(workingDir, cnbPath)
+				_, _, err := parser.ParseYml(workingDir)
 				Expect(err).To(MatchError(ContainSubstring("permission denied")))
 			})
 		})
@@ -154,26 +88,55 @@ some-other-dep:
 			})
 
 			it("returns an error", func() {
-				_, _, err := parser.ParseVersion(workingDir, cnbPath)
+				_, _, err := parser.ParseYml(workingDir)
 				Expect(err).To(MatchError(ContainSubstring("could not find expected directive name")))
 			})
 		})
 
+	})
+
+	context("Calling ResolveVersion", func() {
+		context("with mainline version", func() {
+			it("return the buildpack.toml mainline version", func() {
+				version, err := parser.ResolveVersion(cnbPath, "mainline")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(version).To(Equal("1.17.*"))
+			})
+		})
+
+		context("with stable version", func() {
+			it("return the buildpack.toml stable version", func() {
+				version, err := parser.ResolveVersion(cnbPath, "stable")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(version).To(Equal("1.16.*"))
+			})
+		})
+
+		context("with empty version", func() {
+			it("return the buildpack.toml default version", func() {
+				version, err := parser.ResolveVersion(cnbPath, "")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(version).To(Equal("the-default-version"))
+			})
+		})
+
+		context("with semver version", func() {
+			it("return the same semver version", func() {
+				version, err := parser.ResolveVersion(cnbPath, "1.1.1")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(version).To(Equal("1.1.1"))
+			})
+		})
+	})
+
+	context("failure cases", func() {
 		context("buildpack.toml cannot be opened", func() {
 			it.Before(func() {
 				Expect(os.Chmod(filepath.Join(cnbPath, "buildpack.toml"), 0000)).To(Succeed())
-
-				Expect(ioutil.WriteFile(
-					filepath.Join(workingDir, "buildpack.yml"),
-					[]byte(`---
-nginx:
-  version: mainline`),
-					os.ModePerm,
-				))
 			})
 
 			it("returns an error", func() {
-				_, _, err := parser.ParseVersion(workingDir, cnbPath)
+				_, err := parser.ResolveVersion(cnbPath, "")
 				Expect(err).To(MatchError(ContainSubstring("permission denied")))
 			})
 		})
@@ -185,18 +148,10 @@ nginx:
 					[]byte(`%%%`),
 					0644,
 				)).To(Succeed())
-
-				Expect(ioutil.WriteFile(
-					filepath.Join(workingDir, "buildpack.yml"),
-					[]byte(`---
-nginx:
-  version: mainline`),
-					os.ModePerm,
-				))
 			})
 
 			it("returns an error", func() {
-				_, _, err := parser.ParseVersion(workingDir, cnbPath)
+				_, err := parser.ResolveVersion(cnbPath, "")
 				Expect(err).To(MatchError(ContainSubstring("bare keys cannot contain")))
 			})
 		})

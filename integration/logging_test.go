@@ -62,6 +62,41 @@ func testLogging(t *testing.T, context spec.G, it spec.S) {
 				"",
 				MatchRegexp(`    Selected Nginx Server version \(using buildpack\.yml\): 1\.19\.\d+`),
 				"",
+				"    WARNING: Setting the server version through buildpack.yml will be deprecated soon in Nginx Server Buildpack v2.0.0.",
+				"    Please specify the version through the $BP_NGINX_VERSION environment variable instead. See docs for more information.",
+				"",
+				"  Executing build process",
+				MatchRegexp(`    Installing Nginx Server \d+\.\d+\.\d+`),
+				MatchRegexp(`      Completed in (\d+\.\d+|\d{3})`),
+				"",
+				"  Configuring environment",
+				fmt.Sprintf(`    PATH -> "$PATH:/layers/%s/nginx/sbin"`, strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_")),
+				MatchRegexp(`    Writing profile.d/configure.sh`),
+				MatchRegexp(`      Calls executable that parses templates in nginx conf`),
+			))
+		})
+	})
+
+	context("when version is set via BP_NGINX_VERSION", func() {
+		it("correctly outputs logs", func() {
+			var err error
+			var logs fmt.Stringer
+			image, logs, err = pack.Build.
+				WithEnv(map[string]string{"BP_NGINX_VERSION": "stable"}).
+				WithBuildpacks(nginxBuildpack).
+				WithPullPolicy("never").
+				Execute(name, source)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(logs).To(matchers.ContainLines(
+				fmt.Sprintf("%s 1.2.3", buildpackInfo.Buildpack.Name),
+				"  Resolving Nginx Server version",
+				"    Candidate version sources (in priority order):",
+				`      BP_NGINX_VERSION -> "1.18.*"`,
+				`      buildpack.yml    -> "1.19.*"`,
+				"",
+				MatchRegexp(`    Selected Nginx Server version \(using BP_NGINX_VERSION\): 1\.18\.\d+`),
+				"",
 				"  Executing build process",
 				MatchRegexp(`    Installing Nginx Server \d+\.\d+\.\d+`),
 				MatchRegexp(`      Completed in (\d+\.\d+|\d{3})`),
