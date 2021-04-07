@@ -81,11 +81,6 @@ func getIncludedConfs(confText string, confDir string) ([]string, error) {
 			if err != nil {
 				return nil, fmt.Errorf("failed to get 'include' files for %s: %w", conf, err)
 			}
-
-			if len(matchFiles) == 0 {
-				return nil, fmt.Errorf("failed to get 'include' files for %s: no matching files exist", conf)
-			}
-
 			includeFiles = append(includeFiles, matchFiles...)
 		}
 	}
