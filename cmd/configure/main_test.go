@@ -289,21 +289,6 @@ http {
 					Expect(buffer.String()).To(ContainSubstring(`/\/\/.conf: syntax error in pattern`))
 				})
 			})
-			context("when an include file does not exist", func() {
-				it.Before(func() {
-					Expect(ioutil.WriteFile(filepath.Join(workingDir, "nginx.conf"), []byte("include donotexist.conf;"), 0644)).To(Succeed())
-					command = exec.Command(path, filepath.Join(workingDir, "nginx.conf"), localModulePath, globalModulePath)
-					buffer = bytes.NewBuffer(nil)
-				})
-
-				it("exits non-zero", func() {
-					session, err := gexec.Start(command, buffer, buffer)
-					Expect(err).ToNot(HaveOccurred())
-					Eventually(session).Should(gexec.Exit(1), buffer.String)
-					Expect(buffer.String()).To(ContainSubstring(`failed to get 'include' files for /tmp/working-dir`))
-					Expect(buffer.String()).To(ContainSubstring("no matching files exist"))
-				})
-			})
 		})
 	}, spec.Report(report.Terminal{}))
 }
