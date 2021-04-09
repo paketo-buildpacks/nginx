@@ -43,6 +43,7 @@ func Build(entryResolver EntryResolver, dependencyService DependencyService, pro
 		priorities := []interface{}{
 			"BP_NGINX_VERSION",
 			"buildpack.yml",
+			"buildpack.toml",
 		}
 		entry, sortedEntries := entryResolver.Resolve("nginx", context.Plan.Entries, priorities)
 		entryVersion, _ := entry.Metadata["version"].(string)
