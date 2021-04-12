@@ -120,7 +120,7 @@ You can use templates to set the path to a dynamic module using the
 ## Configurations
 
 Specifying the NGINX Server version through `buildpack.yml` configuration
-is deprecated and will not be supported in Apache HTTP Server Buildpack v1.0.0.
+is deprecated and will not be supported in NGINX Server Buildpack v1.0.0.
 
 To migrate from using `buildpack.yml` please set the following environment
 variables at build time either directly (ex. `pack build my-app --env
