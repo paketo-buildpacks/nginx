@@ -117,13 +117,27 @@ You can use templates to set the path to a dynamic module using the
 {{module "ngx_stream_module"}}
 ```
 
-## `buildpack.yml` Configurations
+## Configurations
 
+Specifying the NGINX Server version through `buildpack.yml` configuration
+is deprecated and will not be supported in NGINX Server Buildpack v1.0.0.
+
+To migrate from using `buildpack.yml` please set the following environment
+variables at build time either directly (ex. `pack build my-app --env
+BP_ENVIRONMENT_VARIABLE=some-value`) or through a [`project.toml`
+file](https://github.com/buildpacks/spec/blob/main/extensions/project-descriptor.md)
+
+### `BP_NGINX_VERSION`
+The `BP_NGINX_VERSION` variable allows you to specify the version of NGINX Server that is installed.
+
+```shell
+BP_NGINX_VERSION=1.19.8
+```
+
+This will replace the following structure in `buildpack.yml`:
 ```yaml
 nginx:
-  # this allows you to specify a version constraint for the `NGINX` dependency
-  # any valid semver constaints (e.g. 1.* and 1.17.*) are also acceptable
-  #
-  # you can also specify "mainline" or "stable"
-  version: 1.17.9
+  # this allows you to specify a version constraint for the nginx dependency
+  # any valid semver constraints (e.g. 1.* and 1.19.*) are also acceptable
+  version: "1.19.8"
 ```
