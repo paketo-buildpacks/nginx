@@ -44,6 +44,16 @@ api = "0.4"
     uri = "https://buildpacks.cloudfoundry.org/dependencies/nginx/nginx_1.19.10_linux_x64_cflinuxfs3_cc115256.tgz"
     version = "1.19.10"
 
+  [[metadata.dependencies]]
+    id = "nginx"
+    name = "Nginx Server"
+    sha256 = "801bde5e490b3341e5780e77a0736e904e89dc9bf3000077b2ade4c3834d443b"
+    source = "http://nginx.org/download/nginx-1.20.0.tar.gz"
+    source_sha256 = "54ef91ec8ebcaa486c640c09c92d832eaeaff149b10ee52ef140f407b1b04d1c"
+    stacks = ["io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.cflinuxfs3"]
+    uri = "https://buildpacks.cloudfoundry.org/dependencies/nginx/nginx_1.20.0_linux_x64_cflinuxfs3_801bde5e.tgz"
+    version = "1.20.0"
+
   [[metadata.dependency_deprecation_dates]]
     date = 2021-05-01T00:00:00Z
     link = "https://nginx.org/"
