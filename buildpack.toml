@@ -1,9 +1,9 @@
 api = "0.4"
 
 [buildpack]
+  homepage = "https://github.com/paketo-buildpacks/nginx"
   id = "paketo-buildpacks/nginx"
   name = "Paketo Nginx Server Buildpack"
-  homepage = "https://github.com/paketo-buildpacks/nginx"
 
 [metadata]
   include-files = ["bin/build", "bin/detect", "bin/run", "bin/configure", "buildpack.toml"]
@@ -65,7 +65,7 @@ api = "0.4"
     version = "1.20.1"
 
   [[metadata.dependency_deprecation_dates]]
-    date = 2021-05-01T00:00:00Z
+    date = "2021-05-01T00:00:00Z"
     link = "https://nginx.org/"
     name = "nginx"
     version_line = "1.18.x"
