@@ -9,7 +9,7 @@ api = "0.4"
   include-files = ["bin/build", "bin/detect", "bin/run", "bin/configure", "buildpack.toml"]
   pre-package = "./scripts/build.sh"
   [metadata.default-versions]
-    nginx = "1.19.*"
+    nginx = "1.20.*"
 
   [[metadata.dependencies]]
     deprecation_date = "2021-05-01T00:00:00Z"
