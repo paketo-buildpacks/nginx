@@ -71,7 +71,7 @@ api = "0.4"
     version_line = "1.18.x"
   [metadata.version-lines]
     mainline = "1.19.*"
-    stable = "1.18.*"
+    stable = "1.20.*"
 
 [[stacks]]
   id = "io.buildpacks.stacks.bionic"
