@@ -53,7 +53,6 @@ api = "0.4"
     link = "https://nginx.org/"
     name = "nginx"
     version_line = "1.20.x"
-    
   [metadata.version-lines]
     mainline = "1.21.*"
     stable = "1.20.*"
