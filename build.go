@@ -57,12 +57,14 @@ func Build(entryResolver EntryResolver, dependencyService DependencyService, pro
 
 		logger.SelectedDependency(entry, dependency.Version)
 
-		versionSource := entry.Metadata["version-source"].(string)
-		if versionSource == "buildpack.yml" {
-			nextMajorVersion := semver.MustParse(context.BuildpackInfo.Version).IncMajor()
-			logger.Break()
-			logger.Subprocess("WARNING: Setting the server version through buildpack.yml will be deprecated soon in Nginx Server Buildpack v%s.", nextMajorVersion.String())
-			logger.Subprocess("Please specify the version through the $BP_NGINX_VERSION environment variable instead. See docs for more information.")
+		versionSource := entry.Metadata["version-source"]
+		if versionSource != nil {
+			if versionSource.(string) == "buildpack.yml" {
+				nextMajorVersion := semver.MustParse(context.BuildpackInfo.Version).IncMajor()
+				logger.Break()
+				logger.Subprocess("WARNING: Setting the server version through buildpack.yml will be deprecated soon in Nginx Server Buildpack v%s.", nextMajorVersion.String())
+				logger.Subprocess("Please specify the version through the $BP_NGINX_VERSION environment variable instead. See docs for more information.")
+			}
 		}
 		err = os.MkdirAll(filepath.Join(context.WorkingDir, "logs"), os.ModePerm)
 		if err != nil {
