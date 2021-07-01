@@ -131,13 +131,13 @@ file](https://github.com/buildpacks/spec/blob/main/extensions/project-descriptor
 The `BP_NGINX_VERSION` variable allows you to specify the version of NGINX Server that is installed.
 
 ```shell
-BP_NGINX_VERSION=1.19.8
+BP_NGINX_VERSION=1.21.0
 ```
 
 This will replace the following structure in `buildpack.yml`:
 ```yaml
 nginx:
   # this allows you to specify a version constraint for the nginx dependency
-  # any valid semver constraints (e.g. 1.* and 1.19.*) are also acceptable
-  version: "1.19.8"
+  # any valid semver constraints (e.g. 1.* and 1.21.*) are also acceptable
+  version: "1.21.0"
 ```
