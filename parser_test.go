@@ -152,7 +152,7 @@ nginx:
 
 			it("returns an error", func() {
 				_, err := parser.ResolveVersion(cnbPath, "")
-				Expect(err).To(MatchError(ContainSubstring("bare keys cannot contain")))
+				Expect(err).To(MatchError(ContainSubstring("got '%' instead")))
 			})
 		})
 	})
