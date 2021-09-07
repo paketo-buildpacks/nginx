@@ -1,9 +1,9 @@
 api = "0.4"
 
 [buildpack]
+  homepage = "https://github.com/paketo-buildpacks/nginx"
   id = "paketo-buildpacks/nginx"
   name = "Paketo Nginx Server Buildpack"
-  homepage = "https://github.com/paketo-buildpacks/nginx"
 
 [metadata]
   include-files = ["bin/build", "bin/detect", "bin/run", "bin/configure", "buildpack.toml"]
