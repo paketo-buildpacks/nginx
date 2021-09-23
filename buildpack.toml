@@ -12,58 +12,66 @@ api = "0.4"
     nginx = "1.21.*"
 
   [[metadata.dependencies]]
+    cpe = "cpe:2.3:a:nginx:nginx:1.20.0:*:*:*:*:*:*:*"
     id = "nginx"
+    licenses = ["BSD-2-Clause"]
     name = "Nginx Server"
-    sha256 = "801bde5e490b3341e5780e77a0736e904e89dc9bf3000077b2ade4c3834d443b"
+    purl = "pkg:generic/nginx@1.20.0?checksum=54ef91ec8ebcaa486c640c09c92d832eaeaff149b10ee52ef140f407b1b04d1c&download_url=http://nginx.org/download/nginx-1.20.0.tar.gz"
+    sha256 = "2a1a108ad00264790d4574f70526226d944c448f1362e0f60bfa1127a86387b9"
     source = "http://nginx.org/download/nginx-1.20.0.tar.gz"
     source_sha256 = "54ef91ec8ebcaa486c640c09c92d832eaeaff149b10ee52ef140f407b1b04d1c"
-    stacks = ["io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.cflinuxfs3"]
-    uri = "https://buildpacks.cloudfoundry.org/dependencies/nginx/nginx_1.20.0_linux_x64_cflinuxfs3_801bde5e.tgz"
+    stacks = ["io.buildpacks.stacks.bionic"]
+    uri = "https://deps.paketo.io/nginx/nginx_1.20.0_linux_x64_bionic_2a1a108a.tgz"
     version = "1.20.0"
 
   [[metadata.dependencies]]
+    cpe = "cpe:2.3:a:nginx:nginx:1.20.1:*:*:*:*:*:*:*"
     id = "nginx"
+    licenses = ["BSD-2-Clause"]
     name = "Nginx Server"
-    sha256 = "1758f1a31daad32d5a648739ea72e9190c482ae54ee9502a527a2a7f3ee8a70a"
+    purl = "pkg:generic/nginx@1.20.1?checksum=e462e11533d5c30baa05df7652160ff5979591d291736cfa5edb9fd2edb48c49&download_url=http://nginx.org/download/nginx-1.20.1.tar.gz"
+    sha256 = "cc318a48510d3c41bc93867069d05423b2ba2d577b40c076789712e98089ff31"
     source = "http://nginx.org/download/nginx-1.20.1.tar.gz"
     source_sha256 = "e462e11533d5c30baa05df7652160ff5979591d291736cfa5edb9fd2edb48c49"
-    stacks = ["io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.cflinuxfs3"]
-    uri = "https://buildpacks.cloudfoundry.org/dependencies/nginx/nginx_1.20.1_linux_x64_cflinuxfs3_1758f1a3.tgz"
+    stacks = ["io.buildpacks.stacks.bionic"]
+    uri = "https://deps.paketo.io/nginx/nginx_1.20.1_linux_x64_bionic_cc318a48.tgz"
     version = "1.20.1"
 
   [[metadata.dependencies]]
-    deprecation_date = "2022-05-25T00:00:00Z"
+    cpe = "cpe:2.3:a:nginx:nginx:1.21.2:*:*:*:*:*:*:*"
     id = "nginx"
+    licenses = ["BSD-2-Clause"]
     name = "Nginx Server"
-    sha256 = "b3ddd0fa875fdb91d9c324fde4652ab22d1bde1e4913cc9731a02898fd3e6027"
+    purl = "pkg:generic/nginx@1.21.2?checksum=31771c560e46d73650568e8193cb94d981081f83dd62d1ba43af1a1e0ba25185&download_url=http://nginx.org/download/nginx-1.21.2.tar.gz"
+    sha256 = "4cb0a3d0effdab66d737d44d6cba88954fe561df47c2199a2dec27434af71738"
     source = "http://nginx.org/download/nginx-1.21.2.tar.gz"
     source_sha256 = "31771c560e46d73650568e8193cb94d981081f83dd62d1ba43af1a1e0ba25185"
-    stacks = ["io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.cflinuxfs3"]
-    uri = "https://buildpacks.cloudfoundry.org/dependencies/nginx/nginx_1.21.2_linux_x64_cflinuxfs3_b3ddd0fa.tgz"
+    stacks = ["io.buildpacks.stacks.bionic"]
+    uri = "https://deps.paketo.io/nginx/nginx_1.21.2_linux_x64_bionic_4cb0a3d0.tgz"
     version = "1.21.2"
 
   [[metadata.dependencies]]
-    deprecation_date = "2022-05-25T00:00:00Z"
+    cpe = "cpe:2.3:a:nginx:nginx:1.21.3:*:*:*:*:*:*:*"
     id = "nginx"
+    licenses = ["BSD-2-Clause"]
     name = "Nginx Server"
-    sha256 = "4ba725c035a188882d2f67637821769b09f1fefd6fd386bf95a5bbb08eab4594"
+    purl = "pkg:generic/nginx@1.21.3?checksum=14774aae0d151da350417efc4afda5cce5035056e71894836797e1f6e2d1175a&download_url=http://nginx.org/download/nginx-1.21.3.tar.gz"
+    sha256 = "765d5abb306fc2c9cb1a8cfa9f4daf83fac6d259b2fb139f6773d7131fe1dd46"
     source = "http://nginx.org/download/nginx-1.21.3.tar.gz"
     source_sha256 = "14774aae0d151da350417efc4afda5cce5035056e71894836797e1f6e2d1175a"
-    stacks = ["io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.cflinuxfs3"]
-    uri = "https://buildpacks.cloudfoundry.org/dependencies/nginx/nginx_1.21.3_linux_x64_cflinuxfs3_4ba725c0.tgz"
+    stacks = ["io.buildpacks.stacks.bionic"]
+    uri = "https://deps.paketo.io/nginx/nginx_1.21.3_linux_x64_bionic_765d5abb.tgz"
     version = "1.21.3"
 
-  [[metadata.dependency_deprecation_dates]]
-    date = "2022-05-25T00:00:00Z"
-    link = "https://nginx.org/"
-    name = "nginx"
-    version_line = "1.21.x"
+  [[metadata.dependency-constraints]]
+    constraint = "1.20.*"
+    id = "nginx"
+    patches = 2
 
-  [[metadata.dependency_deprecation_dates]]
-    date = "2022-05-25T00:00:00Z"
-    link = "https://nginx.org/"
-    name = "nginx"
-    version_line = "1.20.x"
+  [[metadata.dependency-constraints]]
+    constraint = "1.21.*"
+    id = "nginx"
+    patches = 2
   [metadata.version-lines]
     mainline = "1.21.*"
     stable = "1.20.*"
