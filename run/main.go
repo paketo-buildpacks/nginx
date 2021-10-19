@@ -10,24 +10,19 @@ import (
 	"github.com/paketo-buildpacks/packit/draft"
 	"github.com/paketo-buildpacks/packit/fs"
 	"github.com/paketo-buildpacks/packit/postal"
+	"github.com/paketo-buildpacks/packit/scribe"
 )
 
 func main() {
-	parser := nginx.NewParser()
-	transport := cargo.NewTransport()
-	dependencyService := postal.NewService(transport)
-	entryResolver := draft.NewPlanner()
-	logger := nginx.NewLogEmitter(os.Stdout)
-	profileWriter := nginx.NewProfileWriter(logger)
-	calculator := fs.NewChecksumCalculator()
+	logger := scribe.NewEmitter(os.Stdout)
 
 	packit.Run(
-		nginx.Detect(parser),
+		nginx.Detect(nginx.NewParser()),
 		nginx.Build(
-			entryResolver,
-			dependencyService,
-			profileWriter,
-			calculator,
+			draft.NewPlanner(),
+			postal.NewService(cargo.NewTransport()),
+			nginx.NewProfileWriter(logger),
+			fs.NewChecksumCalculator(),
 			logger,
 			chronos.DefaultClock,
 		),

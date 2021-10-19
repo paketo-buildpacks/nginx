@@ -5,13 +5,15 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"github.com/paketo-buildpacks/packit/scribe"
 )
 
 type ProfileWriter struct {
-	logger LogEmitter
+	logger scribe.Emitter
 }
 
-func NewProfileWriter(logger LogEmitter) ProfileWriter {
+func NewProfileWriter(logger scribe.Emitter) ProfileWriter {
 	return ProfileWriter{
 		logger: logger,
 	}
@@ -25,8 +27,8 @@ func (p ProfileWriter) Write(layerDir, scriptName, scriptContents string) error 
 	}
 	scriptFilePath := filepath.Join(profileDir, scriptName)
 
-	p.logger.Subprocess("    Writing profile.d/configure.sh")
-	p.logger.Action("Calls executable that parses templates in nginx conf")
+	p.logger.Process("Writing profile.d/configure.sh")
+	p.logger.Subprocess("Calls executable that parses templates in nginx conf")
 	err = ioutil.WriteFile(scriptFilePath, []byte(scriptContents), 0644)
 	if err != nil {
 		return fmt.Errorf("failed to write profile script: %w", err)

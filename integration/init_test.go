@@ -1,4 +1,4 @@
-package integration
+package integration_test
 
 import (
 	"os"
@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
+	"github.com/onsi/gomega/format"
 	"github.com/paketo-buildpacks/occam"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
@@ -26,6 +27,7 @@ var (
 )
 
 func TestIntegration(t *testing.T) {
+	format.MaxLength = 0
 	var Expect = NewWithT(t).Expect
 
 	root, err := filepath.Abs("./..")

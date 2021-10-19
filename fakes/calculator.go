@@ -4,7 +4,7 @@ import "sync"
 
 type Calculator struct {
 	SumCall struct {
-		sync.Mutex
+		mutex     sync.Mutex
 		CallCount int
 		Receives  struct {
 			Paths []string
@@ -18,8 +18,8 @@ type Calculator struct {
 }
 
 func (f *Calculator) Sum(param1 ...string) (string, error) {
-	f.SumCall.Lock()
-	defer f.SumCall.Unlock()
+	f.SumCall.mutex.Lock()
+	defer f.SumCall.mutex.Unlock()
 	f.SumCall.CallCount++
 	f.SumCall.Receives.Paths = param1
 	if f.SumCall.Stub != nil {

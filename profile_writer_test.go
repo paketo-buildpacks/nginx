@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/paketo-buildpacks/nginx"
+	"github.com/paketo-buildpacks/packit/scribe"
 	"github.com/sclevine/spec"
 
 	. "github.com/onsi/gomega"
@@ -24,9 +25,10 @@ func testProfileWriter(t *testing.T, when spec.G, it spec.S) {
 	)
 
 	it.Before(func() {
-		var err error
 		buf = bytes.NewBuffer(nil)
-		profileWriter = nginx.NewProfileWriter(nginx.NewLogEmitter(buf))
+		profileWriter = nginx.NewProfileWriter(scribe.NewEmitter(buf))
+
+		var err error
 		layerDir, err = ioutil.TempDir("", "layer")
 		Expect(err).NotTo(HaveOccurred())
 	})
@@ -53,8 +55,8 @@ func testProfileWriter(t *testing.T, when spec.G, it spec.S) {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(contents)).To(Equal("some-contents"))
 
-			Expect(buf.String()).To(ContainSubstring("    Writing profile.d/configure.sh"))
-			Expect(buf.String()).To(ContainSubstring("      Calls executable that parses templates in nginx conf"))
+			Expect(buf.String()).To(ContainSubstring("  Writing profile.d/configure.sh"))
+			Expect(buf.String()).To(ContainSubstring("    Calls executable that parses templates in nginx conf"))
 		})
 	})
 
@@ -72,8 +74,8 @@ func testProfileWriter(t *testing.T, when spec.G, it spec.S) {
 				Expect(err).To(MatchError(ContainSubstring(
 					fmt.Sprintf("failed to create dir %s:", filepath.Join(layerDir, "profile.d")),
 				)))
-				Expect(buf.String()).NotTo(ContainSubstring("    Writing profile.d/configure.sh"))
-				Expect(buf.String()).NotTo(ContainSubstring("      Calls executable that parses templates in nginx conf"))
+				Expect(buf.String()).NotTo(ContainSubstring("  Writing profile.d/configure.sh"))
+				Expect(buf.String()).NotTo(ContainSubstring("    Calls executable that parses templates in nginx conf"))
 			})
 		})
 
@@ -92,5 +94,4 @@ func testProfileWriter(t *testing.T, when spec.G, it spec.S) {
 			})
 		})
 	})
-
 }

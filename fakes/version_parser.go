@@ -4,7 +4,7 @@ import "sync"
 
 type VersionParser struct {
 	ParseYmlCall struct {
-		sync.Mutex
+		mutex     sync.Mutex
 		CallCount int
 		Receives  struct {
 			WorkDir string
@@ -17,7 +17,7 @@ type VersionParser struct {
 		Stub func(string) (string, bool, error)
 	}
 	ResolveVersionCall struct {
-		sync.Mutex
+		mutex     sync.Mutex
 		CallCount int
 		Receives  struct {
 			CnbPath string
@@ -32,8 +32,8 @@ type VersionParser struct {
 }
 
 func (f *VersionParser) ParseYml(param1 string) (string, bool, error) {
-	f.ParseYmlCall.Lock()
-	defer f.ParseYmlCall.Unlock()
+	f.ParseYmlCall.mutex.Lock()
+	defer f.ParseYmlCall.mutex.Unlock()
 	f.ParseYmlCall.CallCount++
 	f.ParseYmlCall.Receives.WorkDir = param1
 	if f.ParseYmlCall.Stub != nil {
@@ -42,8 +42,8 @@ func (f *VersionParser) ParseYml(param1 string) (string, bool, error) {
 	return f.ParseYmlCall.Returns.YmlVersion, f.ParseYmlCall.Returns.Exists, f.ParseYmlCall.Returns.Err
 }
 func (f *VersionParser) ResolveVersion(param1 string, param2 string) (string, error) {
-	f.ResolveVersionCall.Lock()
-	defer f.ResolveVersionCall.Unlock()
+	f.ResolveVersionCall.mutex.Lock()
+	defer f.ResolveVersionCall.mutex.Unlock()
 	f.ResolveVersionCall.CallCount++
 	f.ResolveVersionCall.Receives.CnbPath = param1
 	f.ResolveVersionCall.Receives.Version = param2
