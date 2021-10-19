@@ -4,7 +4,7 @@ import "sync"
 
 type ProfileDWriter struct {
 	WriteCall struct {
-		sync.Mutex
+		mutex     sync.Mutex
 		CallCount int
 		Receives  struct {
 			LayerDir       string
@@ -19,8 +19,8 @@ type ProfileDWriter struct {
 }
 
 func (f *ProfileDWriter) Write(param1 string, param2 string, param3 string) error {
-	f.WriteCall.Lock()
-	defer f.WriteCall.Unlock()
+	f.WriteCall.mutex.Lock()
+	defer f.WriteCall.mutex.Unlock()
 	f.WriteCall.CallCount++
 	f.WriteCall.Receives.LayerDir = param1
 	f.WriteCall.Receives.ScriptName = param2

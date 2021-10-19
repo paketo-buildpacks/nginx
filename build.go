@@ -11,17 +11,20 @@ import (
 	"github.com/paketo-buildpacks/packit/chronos"
 	"github.com/paketo-buildpacks/packit/fs"
 	"github.com/paketo-buildpacks/packit/postal"
+	"github.com/paketo-buildpacks/packit/scribe"
 )
 
 //go:generate faux --interface EntryResolver --output fakes/entry_resolver.go
 type EntryResolver interface {
 	Resolve(string, []packit.BuildpackPlanEntry, []interface{}) (packit.BuildpackPlanEntry, []packit.BuildpackPlanEntry)
+	MergeLayerTypes(string, []packit.BuildpackPlanEntry) (launch, build bool)
 }
 
 //go:generate faux --interface DependencyService --output fakes/dependency_service.go
 type DependencyService interface {
 	Resolve(path, name, version, stack string) (postal.Dependency, error)
 	Install(dependency postal.Dependency, cnbPath, layerPath string) error
+	GenerateBillOfMaterials(dependencies ...postal.Dependency) []packit.BOMEntry
 }
 
 //go:generate faux --interface ProfileDWriter --output fakes/profiled_writer.go
@@ -34,9 +37,9 @@ type Calculator interface {
 	Sum(paths ...string) (string, error)
 }
 
-func Build(entryResolver EntryResolver, dependencyService DependencyService, profileDWriter ProfileDWriter, calculator Calculator, logger LogEmitter, clock chronos.Clock) packit.BuildFunc {
+func Build(entryResolver EntryResolver, dependencyService DependencyService, profileDWriter ProfileDWriter, calculator Calculator, logger scribe.Emitter, clock chronos.Clock) packit.BuildFunc {
 	return func(context packit.BuildContext) (packit.BuildResult, error) {
-		logger.Title(context.BuildpackInfo)
+		logger.Title("%s %s", context.BuildpackInfo.Name, context.BuildpackInfo.Version)
 
 		logger.Process("Resolving Nginx Server version")
 
@@ -55,76 +58,84 @@ func Build(entryResolver EntryResolver, dependencyService DependencyService, pro
 			return packit.BuildResult{}, err
 		}
 
-		logger.SelectedDependency(entry, dependency.Version)
+		logger.SelectedDependency(entry, dependency, clock.Now())
 
 		versionSource := entry.Metadata["version-source"]
 		if versionSource != nil {
 			if versionSource.(string) == "buildpack.yml" {
 				nextMajorVersion := semver.MustParse(context.BuildpackInfo.Version).IncMajor()
-				logger.Break()
 				logger.Subprocess("WARNING: Setting the server version through buildpack.yml will be deprecated soon in Nginx Server Buildpack v%s.", nextMajorVersion.String())
 				logger.Subprocess("Please specify the version through the $BP_NGINX_VERSION environment variable instead. See docs for more information.")
+				logger.Break()
 			}
 		}
+
 		err = os.MkdirAll(filepath.Join(context.WorkingDir, "logs"), os.ModePerm)
 		if err != nil {
 			return packit.BuildResult{}, fmt.Errorf("failed to create logs dir : %w", err)
 		}
 
-		nginxLayer, err := context.Layers.Get(NGINX)
+		layer, err := context.Layers.Get(NGINX)
 		if err != nil {
 			return packit.BuildResult{}, err
 		}
 
 		nginxConfPath := filepath.Join(context.WorkingDir, ConfFile)
-		defaultStartProcesses := []packit.Process{
-			{
-				Type:    "web",
-				Command: fmt.Sprintf(`nginx -p $PWD -c "%s"`, nginxConfPath),
-			},
-		}
-
 		configureBinPath := filepath.Join(context.CNBPath, "bin", "configure")
 		currConfigureBinSHA256, err := calculator.Sum(configureBinPath)
 		if err != nil {
 			return packit.BuildResult{}, fmt.Errorf("checksum failed for file %s: %w", configureBinPath, err)
 		}
 
-		if !shouldInstall(nginxLayer.Metadata, currConfigureBinSHA256, dependency.SHA256) {
+		bom := dependencyService.GenerateBillOfMaterials(dependency)
+		launch, build := entryResolver.MergeLayerTypes("nginx", context.Plan.Entries)
+
+		var buildMetadata packit.BuildMetadata
+		if build {
+			buildMetadata.BOM = bom
+		}
+
+		var launchMetadata packit.LaunchMetadata
+		if launch {
+			launchMetadata.Processes = []packit.Process{
+				{
+					Type:    "web",
+					Command: fmt.Sprintf(`nginx -p $PWD -c "%s"`, nginxConfPath),
+				},
+			}
+			launchMetadata.BOM = bom
+		}
+
+		if !shouldInstall(layer.Metadata, currConfigureBinSHA256, dependency.SHA256) {
 			return packit.BuildResult{
-				Plan: context.Plan,
-				Layers: []packit.Layer{
-					nginxLayer,
-				},
-				Launch: packit.LaunchMetadata{
-					Processes: defaultStartProcesses,
-				},
+				Layers: []packit.Layer{layer},
+				Build:  buildMetadata,
+				Launch: launchMetadata,
 			}, nil
 		}
 
-		logger.Break()
 		logger.Process("Executing build process")
 
-		nginxLayer, err = nginxLayer.Reset()
+		layer, err = layer.Reset()
 		if err != nil {
 			return packit.BuildResult{}, err
 		}
 
-		nginxLayer.Launch = entry.Metadata["launch"] == true
+		layer.Launch, layer.Build = launch, build
 
-		err = os.MkdirAll(filepath.Join(nginxLayer.Path, "bin"), os.ModePerm)
+		err = os.MkdirAll(filepath.Join(layer.Path, "bin"), os.ModePerm)
 		if err != nil {
 			return packit.BuildResult{}, err
 		}
 
-		err = fs.Copy(configureBinPath, filepath.Join(nginxLayer.Path, "bin", "configure"))
+		err = fs.Copy(configureBinPath, filepath.Join(layer.Path, "bin", "configure"))
 		if err != nil {
 			return packit.BuildResult{}, err
 		}
 
 		logger.Subprocess("Installing Nginx Server %s", dependency.Version)
 		duration, err := clock.Measure(func() error {
-			return dependencyService.Install(dependency, context.CNBPath, nginxLayer.Path)
+			return dependencyService.Install(dependency, context.CNBPath, layer.Path)
 		})
 		if err != nil {
 			return packit.BuildResult{}, err
@@ -133,37 +144,32 @@ func Build(entryResolver EntryResolver, dependencyService DependencyService, pro
 		logger.Action("Completed in %s", duration.Round(time.Millisecond))
 		logger.Break()
 
-		logger.Process("Configuring environment")
-		nginxLayer.SharedEnv.Append("PATH", filepath.Join(nginxLayer.Path, "sbin"), ":")
-		logger.Environment(nginxLayer.SharedEnv)
+		layer.SharedEnv.Append("PATH", filepath.Join(layer.Path, "sbin"), ":")
+		logger.EnvironmentVariables(layer)
 
 		err = profileDWriter.Write(
-			nginxLayer.Path,
+			layer.Path,
 			"configure.sh",
 			fmt.Sprintf(`configure "%s" "%s" "%s"`,
 				nginxConfPath,
 				filepath.Join(context.WorkingDir, "modules"),
-				filepath.Join(nginxLayer.Path, "modules"),
+				filepath.Join(layer.Path, "modules"),
 			),
 		)
 		if err != nil {
 			return packit.BuildResult{}, err
 		}
 
-		nginxLayer.Metadata = map[string]interface{}{
+		layer.Metadata = map[string]interface{}{
 			DepKey:          dependency.SHA256,
 			ConfigureBinKey: currConfigureBinSHA256,
 			"built_at":      clock.Now().Format(time.RFC3339Nano),
 		}
 
 		return packit.BuildResult{
-			Plan: context.Plan,
-			Layers: []packit.Layer{
-				nginxLayer,
-			},
-			Launch: packit.LaunchMetadata{
-				Processes: defaultStartProcesses,
-			},
+			Layers: []packit.Layer{layer},
+			Build:  buildMetadata,
+			Launch: launchMetadata,
 		}, nil
 	}
 }

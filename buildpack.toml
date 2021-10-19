@@ -1,4 +1,4 @@
-api = "0.4"
+api = "0.5"
 
 [buildpack]
   homepage = "https://github.com/paketo-buildpacks/nginx"
@@ -72,12 +72,10 @@ api = "0.4"
     constraint = "1.21.*"
     id = "nginx"
     patches = 2
+
   [metadata.version-lines]
     mainline = "1.21.*"
     stable = "1.20.*"
 
 [[stacks]]
   id = "io.buildpacks.stacks.bionic"
-
-[[stacks]]
-  id = "org.cloudfoundry.stacks.cflinuxfs3"

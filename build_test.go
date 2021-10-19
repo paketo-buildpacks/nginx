@@ -15,6 +15,7 @@ import (
 	"github.com/paketo-buildpacks/packit"
 	"github.com/paketo-buildpacks/packit/chronos"
 	"github.com/paketo-buildpacks/packit/postal"
+	"github.com/paketo-buildpacks/packit/scribe"
 	"github.com/sclevine/spec"
 
 	. "github.com/onsi/gomega"
@@ -63,6 +64,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				"launch":         true,
 			},
 		}
+		entryResolver.MergeLayerTypesCall.Returns.Launch = true
 
 		dependencyService = &fakes.DependencyService{}
 		dependencyService.ResolveCall.Returns.Dependency = postal.Dependency{
@@ -74,6 +76,19 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			URI:          "some-uri",
 			Version:      "1.19.8",
 		}
+		dependencyService.GenerateBillOfMaterialsCall.Returns.BOMEntrySlice = []packit.BOMEntry{
+			{
+				Name: "nginx",
+				Metadata: packit.BOMMetadata{
+					Version: "nginx-dependency-version",
+					Checksum: packit.BOMChecksum{
+						Algorithm: packit.SHA256,
+						Hash:      "nginx-dependency-sha",
+					},
+					URI: "nginx-dependency-uri",
+				},
+			},
+		}
 
 		profileDWriter = &fakes.ProfileDWriter{}
 		calculator = &fakes.Calculator{}
@@ -82,16 +97,14 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 		// create fake configure binary
 		Expect(os.Mkdir(filepath.Join(cnbPath, "bin"), os.ModePerm)).To(Succeed())
-		Expect(ioutil.WriteFile(filepath.Join(cnbPath, "bin", "configure"), []byte("binary-contents"), 0755)).To(Succeed())
+		Expect(ioutil.WriteFile(filepath.Join(cnbPath, "bin", "configure"), []byte("binary-contents"), 0600)).To(Succeed())
 
 		timeStamp = time.Now()
 		clock = chronos.NewClock(func() time.Time {
 			return timeStamp
 		})
 
-		logEmitter := nginx.NewLogEmitter(buffer)
-
-		build = nginx.Build(entryResolver, dependencyService, profileDWriter, calculator, logEmitter, clock)
+		build = nginx.Build(entryResolver, dependencyService, profileDWriter, calculator, scribe.NewEmitter(buffer), clock)
 	})
 
 	it("does a build", func() {
@@ -115,18 +128,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		})
 		Expect(err).NotTo(HaveOccurred())
 		Expect(result).To(Equal(packit.BuildResult{
-			Plan: packit.BuildpackPlan{
-				Entries: []packit.BuildpackPlanEntry{
-					{
-						Name: "nginx",
-						Metadata: map[string]interface{}{
-							"version-source": "BP_NGINX_VERSION",
-							"version":        "1.19.*",
-							"launch":         true,
-						},
-					},
-				},
-			},
 			Layers: []packit.Layer{
 				{
 					Name: "nginx",
@@ -149,6 +150,19 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				},
 			},
 			Launch: packit.LaunchMetadata{
+				BOM: []packit.BOMEntry{
+					{
+						Name: "nginx",
+						Metadata: packit.BOMMetadata{
+							Version: "nginx-dependency-version",
+							Checksum: packit.BOMChecksum{
+								Algorithm: packit.SHA256,
+								Hash:      "nginx-dependency-sha",
+							},
+							URI: "nginx-dependency-uri",
+						},
+					},
+				},
 				Processes: []packit.Process{
 					{
 						Type:    "web",
@@ -245,18 +259,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result).To(Equal(packit.BuildResult{
-				Plan: packit.BuildpackPlan{
-					Entries: []packit.BuildpackPlanEntry{
-						{
-							Name: "nginx",
-							Metadata: map[string]interface{}{
-								"version-source": "buildpack.yml",
-								"version":        "some-bp-yml-version",
-								"launch":         true,
-							},
-						},
-					},
-				},
 				Layers: []packit.Layer{
 					{
 						Name: "nginx",
@@ -279,6 +281,19 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					},
 				},
 				Launch: packit.LaunchMetadata{
+					BOM: []packit.BOMEntry{
+						{
+							Name: "nginx",
+							Metadata: packit.BOMMetadata{
+								Version: "nginx-dependency-version",
+								Checksum: packit.BOMChecksum{
+									Algorithm: packit.SHA256,
+									Hash:      "nginx-dependency-sha",
+								},
+								URI: "nginx-dependency-uri",
+							},
+						},
+					},
 					Processes: []packit.Process{
 						{
 							Type:    "web",
@@ -364,18 +379,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result).To(Equal(packit.BuildResult{
-				Plan: packit.BuildpackPlan{
-					Entries: []packit.BuildpackPlanEntry{
-						{
-							Name: "nginx",
-							Metadata: map[string]interface{}{
-								"version-source": "BP_NGINX_VERSION",
-								"version":        "1.17.*",
-								"launch":         true,
-							},
-						},
-					},
-				},
 				Layers: []packit.Layer{
 					{
 						Name:             "nginx",
@@ -395,6 +398,19 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					},
 				},
 				Launch: packit.LaunchMetadata{
+					BOM: []packit.BOMEntry{
+						{
+							Name: "nginx",
+							Metadata: packit.BOMMetadata{
+								Version: "nginx-dependency-version",
+								Checksum: packit.BOMChecksum{
+									Algorithm: packit.SHA256,
+									Hash:      "nginx-dependency-sha",
+								},
+								URI: "nginx-dependency-uri",
+							},
+						},
+					},
 					Processes: []packit.Process{
 						{
 							Type:    "web",
@@ -406,7 +422,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 			Expect(dependencyService.InstallCall.CallCount).To(Equal(0))
 			Expect(profileDWriter.WriteCall.CallCount).To(Equal(0))
-
 		})
 	})
 

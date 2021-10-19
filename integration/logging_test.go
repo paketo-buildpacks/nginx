@@ -1,4 +1,4 @@
-package integration
+package integration_test
 
 import (
 	"fmt"
@@ -69,10 +69,14 @@ func testLogging(t *testing.T, context spec.G, it spec.S) {
 				MatchRegexp(`    Installing Nginx Server \d+\.\d+\.\d+`),
 				MatchRegexp(`      Completed in (\d+\.\d+|\d{3})`),
 				"",
-				"  Configuring environment",
+				"  Configuring build environment",
 				fmt.Sprintf(`    PATH -> "$PATH:/layers/%s/nginx/sbin"`, strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_")),
-				MatchRegexp(`    Writing profile.d/configure.sh`),
-				MatchRegexp(`      Calls executable that parses templates in nginx conf`),
+				"",
+				"  Configuring launch environment",
+				fmt.Sprintf(`    PATH -> "$PATH:/layers/%s/nginx/sbin"`, strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_")),
+				"",
+				MatchRegexp(`  Writing profile.d/configure.sh`),
+				MatchRegexp(`    Calls executable that parses templates in nginx conf`),
 			))
 		})
 	})
@@ -101,10 +105,14 @@ func testLogging(t *testing.T, context spec.G, it spec.S) {
 				MatchRegexp(`    Installing Nginx Server \d+\.\d+\.\d+`),
 				MatchRegexp(`      Completed in (\d+\.\d+|\d{3})`),
 				"",
-				"  Configuring environment",
+				"  Configuring build environment",
 				fmt.Sprintf(`    PATH -> "$PATH:/layers/%s/nginx/sbin"`, strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_")),
-				MatchRegexp(`    Writing profile.d/configure.sh`),
-				MatchRegexp(`      Calls executable that parses templates in nginx conf`),
+				"",
+				"  Configuring launch environment",
+				fmt.Sprintf(`    PATH -> "$PATH:/layers/%s/nginx/sbin"`, strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_")),
+				"",
+				MatchRegexp(`  Writing profile.d/configure.sh`),
+				MatchRegexp(`    Calls executable that parses templates in nginx conf`),
 			))
 		})
 	})
