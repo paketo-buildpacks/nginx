@@ -72,7 +72,6 @@ api = "0.5"
     constraint = "1.21.*"
     id = "nginx"
     patches = 2
-
   [metadata.version-lines]
     mainline = "1.21.*"
     stable = "1.20.*"
