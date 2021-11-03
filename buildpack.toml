@@ -38,19 +38,6 @@ api = "0.5"
     version = "1.20.1"
 
   [[metadata.dependencies]]
-    cpe = "cpe:2.3:a:nginx:nginx:1.21.2:*:*:*:*:*:*:*"
-    id = "nginx"
-    licenses = ["BSD-2-Clause"]
-    name = "Nginx Server"
-    purl = "pkg:generic/nginx@1.21.2?checksum=31771c560e46d73650568e8193cb94d981081f83dd62d1ba43af1a1e0ba25185&download_url=http://nginx.org/download/nginx-1.21.2.tar.gz"
-    sha256 = "4cb0a3d0effdab66d737d44d6cba88954fe561df47c2199a2dec27434af71738"
-    source = "http://nginx.org/download/nginx-1.21.2.tar.gz"
-    source_sha256 = "31771c560e46d73650568e8193cb94d981081f83dd62d1ba43af1a1e0ba25185"
-    stacks = ["io.buildpacks.stacks.bionic"]
-    uri = "https://deps.paketo.io/nginx/nginx_1.21.2_linux_x64_bionic_4cb0a3d0.tgz"
-    version = "1.21.2"
-
-  [[metadata.dependencies]]
     cpe = "cpe:2.3:a:nginx:nginx:1.21.3:*:*:*:*:*:*:*"
     id = "nginx"
     licenses = ["BSD-2-Clause"]
@@ -62,6 +49,19 @@ api = "0.5"
     stacks = ["io.buildpacks.stacks.bionic"]
     uri = "https://deps.paketo.io/nginx/nginx_1.21.3_linux_x64_bionic_765d5abb.tgz"
     version = "1.21.3"
+
+  [[metadata.dependencies]]
+    cpe = "cpe:2.3:a:nginx:nginx:1.21.4:*:*:*:*:*:*:*"
+    id = "nginx"
+    licenses = ["BSD-2-Clause"]
+    name = "Nginx Server"
+    purl = "pkg:generic/nginx@1.21.4?checksum=d1f72f474e71bcaaf465dcc7e6f7b6a4705e4b1ed95c581af31df697551f3bfe&download_url=http://nginx.org/download/nginx-1.21.4.tar.gz"
+    sha256 = "c4110e05f6fb78ba4aa516cb62c82db67278b0e79db61f4d5c95b97a45e6aac7"
+    source = "http://nginx.org/download/nginx-1.21.4.tar.gz"
+    source_sha256 = "d1f72f474e71bcaaf465dcc7e6f7b6a4705e4b1ed95c581af31df697551f3bfe"
+    stacks = ["io.buildpacks.stacks.bionic"]
+    uri = "https://deps.paketo.io/nginx/nginx_1.21.4_linux_x64_bionic_c4110e05.tgz"
+    version = "1.21.4"
 
   [[metadata.dependency-constraints]]
     constraint = "1.20.*"
