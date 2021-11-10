@@ -101,12 +101,15 @@ func Build(entryResolver EntryResolver, dependencyService DependencyService, pro
 				{
 					Type:    "web",
 					Command: fmt.Sprintf(`nginx -p $PWD -c "%s"`, nginxConfPath),
+					Default: true,
 				},
 			}
 			launchMetadata.BOM = bom
 		}
 
 		if !shouldInstall(layer.Metadata, currConfigureBinSHA256, dependency.SHA256) {
+			layer.Launch, layer.Build = launch, build
+
 			return packit.BuildResult{
 				Layers: []packit.Layer{layer},
 				Build:  buildMetadata,

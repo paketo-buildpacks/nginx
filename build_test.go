@@ -167,6 +167,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					{
 						Type:    "web",
 						Command: fmt.Sprintf(`nginx -p $PWD -c "%s"`, filepath.Join(workspaceDir, "nginx.conf")),
+						Default: true,
 					},
 				},
 			},
@@ -210,7 +211,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(dependencyService.InstallCall.Receives.CnbPath).To(Equal(cnbPath))
 		Expect(dependencyService.InstallCall.Receives.LayerPath).To(Equal(filepath.Join(layersDir, "nginx")))
 		Expect(calculator.SumCall.CallCount).To(Equal(1))
-
 	})
 
 	context("when version source is buildpack.yml", func() {
@@ -298,6 +298,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 						{
 							Type:    "web",
 							Command: fmt.Sprintf(`nginx -p $PWD -c "%s"`, filepath.Join(workspaceDir, "nginx.conf")),
+							Default: true,
 						},
 					},
 				},
@@ -349,14 +350,16 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 	context("when rebuilding a layer", func() {
 		it.Before(func() {
-			err := ioutil.WriteFile(filepath.Join(layersDir, "nginx.toml"), []byte(fmt.Sprintf(`launch = true
-[metadata]
+			err := ioutil.WriteFile(filepath.Join(layersDir, "nginx.toml"), []byte(fmt.Sprintf(`[metadata]
 			dependency-sha = "some-sha"
 			configure-bin-sha = "some-bin-sha"
 			built_at = "%s"
-			`, timeStamp.Format(time.RFC3339Nano))), 0644)
+			`, timeStamp.Format(time.RFC3339Nano))), 0600)
 			Expect(err).NotTo(HaveOccurred())
+
+			entryResolver.MergeLayerTypesCall.Returns.Launch = true
 		})
+
 		it("does not re-build the nginx layer", func() {
 			result, err := build(packit.BuildContext{
 				CNBPath:    cnbPath,
@@ -415,6 +418,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 						{
 							Type:    "web",
 							Command: fmt.Sprintf(`nginx -p $PWD -c "%s"`, filepath.Join(workspaceDir, "nginx.conf")),
+							Default: true,
 						},
 					},
 				},
