@@ -15,9 +15,10 @@ type VersionParser interface {
 }
 
 type BuildPlanMetadata struct {
-	Version       string `toml:"version,omitempty"`
-	VersionSource string `toml:"version-source,omitempty"`
-	Launch        bool   `toml:"launch"`
+	Version           string `toml:"version,omitempty"`
+	VersionSource     string `toml:"version-source,omitempty"`
+	Launch            bool   `toml:"launch"`
+	ConfigurationFile string `toml:"configurationfile,omitempty"`
 }
 
 func Detect(versionParser VersionParser) packit.DetectFunc {
@@ -30,13 +31,17 @@ func Detect(versionParser VersionParser) packit.DetectFunc {
 			},
 		}
 
-		_, err := os.Stat(filepath.Join(context.WorkingDir, ConfFile))
+		nginxConfFile := ConfFile
+		if bpConfFile, ok := os.LookupEnv(BpNginxConfFile); ok {
+			nginxConfFile = bpConfFile
+		}
+		_, err := os.Stat(filepath.Join(context.WorkingDir, nginxConfFile))
 		if err != nil {
 			if os.IsNotExist(err) {
 				return plan, nil
 			}
 
-			return packit.DetectResult{}, fmt.Errorf("failed to stat nginx.conf: %w", err)
+			return packit.DetectResult{}, fmt.Errorf("failed to stat %s: %w", nginxConfFile, err)
 		}
 
 		version, envVarExists := os.LookupEnv("BP_NGINX_VERSION")
@@ -50,9 +55,10 @@ func Detect(versionParser VersionParser) packit.DetectFunc {
 			requirements = append(requirements, packit.BuildPlanRequirement{
 				Name: NGINX,
 				Metadata: BuildPlanMetadata{
-					Version:       version,
-					VersionSource: "BP_NGINX_VERSION",
-					Launch:        true,
+					Version:           version,
+					VersionSource:     "BP_NGINX_VERSION",
+					Launch:            true,
+					ConfigurationFile: nginxConfFile,
 				},
 			})
 		}
@@ -67,9 +73,10 @@ func Detect(versionParser VersionParser) packit.DetectFunc {
 			requirements = append(requirements, packit.BuildPlanRequirement{
 				Name: NGINX,
 				Metadata: BuildPlanMetadata{
-					Version:       version,
-					VersionSource: "buildpack.yml",
-					Launch:        true,
+					Version:           version,
+					VersionSource:     "buildpack.yml",
+					Launch:            true,
+					ConfigurationFile: nginxConfFile,
 				},
 			})
 		}
@@ -82,9 +89,10 @@ func Detect(versionParser VersionParser) packit.DetectFunc {
 			requirements = append(requirements, packit.BuildPlanRequirement{
 				Name: NGINX,
 				Metadata: BuildPlanMetadata{
-					Version:       version,
-					VersionSource: "buildpack.toml",
-					Launch:        true,
+					Version:           version,
+					VersionSource:     "buildpack.toml",
+					Launch:            true,
+					ConfigurationFile: nginxConfFile,
 				},
 			})
 		}

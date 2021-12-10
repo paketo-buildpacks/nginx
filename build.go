@@ -80,7 +80,7 @@ func Build(entryResolver EntryResolver, dependencyService DependencyService, pro
 			return packit.BuildResult{}, err
 		}
 
-		nginxConfPath := filepath.Join(context.WorkingDir, ConfFile)
+		nginxConfPath := filepath.Join(context.WorkingDir, entry.Metadata["configurationfile"].(string))
 		configureBinPath := filepath.Join(context.CNBPath, "bin", "configure")
 		currConfigureBinSHA256, err := calculator.Sum(configureBinPath)
 		if err != nil {

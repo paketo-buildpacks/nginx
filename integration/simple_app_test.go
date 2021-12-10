@@ -13,6 +13,8 @@ import (
 
 	. "github.com/onsi/gomega"
 	. "github.com/paketo-buildpacks/occam/matchers"
+
+	"github.com/paketo-buildpacks/nginx"
 )
 
 func testSimpleApp(t *testing.T, context spec.G, it spec.S) {
@@ -45,34 +47,50 @@ func testSimpleApp(t *testing.T, context spec.G, it spec.S) {
 		Expect(os.RemoveAll(source)).To(Succeed())
 	})
 
-	context("when pushing a simple app", func() {
-		it.Before(func() {
-			var err error
-			source, err = occam.Source(filepath.Join("testdata", "simple_app"))
-			Expect(err).NotTo(HaveOccurred())
+	type TestCase struct {
+		title       string
+		folder      []string
+		environment map[string]string
+	}
+
+	testCases := []TestCase{
+		{"Simple app with default nginx.conf", []string{"testdata", "simple_app"}, map[string]string{}},
+		{"Simple app with cusomt nginx config file", []string{"testdata", "simple_app_nginx_conf"}, map[string]string{nginx.BpNginxConfFile: "customnginx.conf"}},
+	}
+
+	for _, testCase := range testCases {
+		currentCase := testCase
+
+		context("when pushing a simple app", func() {
+			it.Before(func() {
+				var err error
+				source, err = occam.Source(filepath.Join(currentCase.folder...))
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			it("serves up staticfile", func() {
+				var err error
+				image, _, err = pack.Build.
+					WithBuildpacks(nginxBuildpack).
+					WithPullPolicy("never").
+					WithEnv(currentCase.environment).
+					Execute(name, source)
+				Expect(err).NotTo(HaveOccurred())
+
+				container, err = docker.Container.Run.
+					WithEnv(map[string]string{"PORT": "8080"}).
+					WithPublish("8080").
+					Execute(image.ID)
+				Expect(err).ToNot(HaveOccurred())
+
+				Eventually(container).Should(BeAvailable())
+
+				response, err := http.Get(fmt.Sprintf("http://localhost:%s/index.html", container.HostPort("8080")))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(response.StatusCode).To(Equal(http.StatusOK))
+			})
 		})
-
-		it("serves up staticfile", func() {
-			var err error
-			image, _, err = pack.Build.
-				WithBuildpacks(nginxBuildpack).
-				WithPullPolicy("never").
-				Execute(name, source)
-			Expect(err).NotTo(HaveOccurred())
-
-			container, err = docker.Container.Run.
-				WithEnv(map[string]string{"PORT": "8080"}).
-				WithPublish("8080").
-				Execute(image.ID)
-			Expect(err).ToNot(HaveOccurred())
-
-			Eventually(container).Should(BeAvailable())
-
-			response, err := http.Get(fmt.Sprintf("http://localhost:%s/index.html", container.HostPort("8080")))
-			Expect(err).NotTo(HaveOccurred())
-			Expect(response.StatusCode).To(Equal(http.StatusOK))
-		})
-	})
+	}
 
 	context("when an nginx app uses the stream module", func() {
 		it.Before(func() {
