@@ -51,7 +51,7 @@ func (p Parser) ResolveVersion(cnbPath, version string) (string, error) {
 		} `toml:"metadata"`
 	}
 
-	_, err = toml.DecodeReader(bpTOML, &buildpackTOML)
+	_, err = toml.NewDecoder(bpTOML).Decode(&buildpackTOML)
 	if err != nil {
 		return "", err
 	}
