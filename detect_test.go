@@ -104,6 +104,40 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 			})
 		})
 
+		context("and BP_LIVE_RELOAD_ENABLED=true in the build environment", func() {
+			it.Before(func() {
+				os.Setenv("BP_LIVE_RELOAD_ENABLED", "true")
+			})
+
+			it.After(func() {
+				os.Unsetenv("BP_LIVE_RELOAD_ENABLED")
+			})
+
+			it("requires watchexec at launch time", func() {
+				result, err := detect(packit.DetectContext{
+					WorkingDir: workingDir,
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result.Plan.Requires).To(Equal([]packit.BuildPlanRequirement{
+					{
+						Name: "nginx",
+						Metadata: nginx.BuildPlanMetadata{
+							Version:       "1.19.*",
+							VersionSource: "buildpack.toml",
+							Launch:        true,
+						},
+					},
+					{
+						Name: "watchexec",
+						Metadata: map[string]interface{}{
+							"launch": true,
+						},
+					},
+				},
+				))
+			})
+		})
+
 		context("when there is a buildpack.yml", func() {
 			it.Before(func() {
 				versionParser.ResolveVersionCall.Returns.ResultVersion = "1.2.3"
@@ -223,6 +257,23 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 				})
 
 				Expect(err).To(MatchError(ContainSubstring("parsing version failed")))
+			})
+		})
+
+		context("when BP_LIVE_RELOAD_ENABLED is set to an invalid value", func() {
+			it.Before(func() {
+				os.Setenv("BP_LIVE_RELOAD_ENABLED", "not-a-bool")
+			})
+
+			it.After(func() {
+				os.Unsetenv("BP_LIVE_RELOAD_ENABLED")
+			})
+
+			it("returns an error", func() {
+				_, err := detect(packit.DetectContext{
+					WorkingDir: workingDir,
+				})
+				Expect(err).To(MatchError(ContainSubstring("failed to parse BP_LIVE_RELOAD_ENABLED value not-a-bool")))
 			})
 		})
 	})

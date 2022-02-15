@@ -27,17 +27,12 @@ type DependencyService interface {
 	GenerateBillOfMaterials(dependencies ...postal.Dependency) []packit.BOMEntry
 }
 
-//go:generate faux --interface ProfileDWriter --output fakes/profiled_writer.go
-type ProfileDWriter interface {
-	Write(layerDir, scriptName, scriptContents string) error
-}
-
 //go:generate faux --interface Calculator --output fakes/calculator.go
 type Calculator interface {
 	Sum(paths ...string) (string, error)
 }
 
-func Build(entryResolver EntryResolver, dependencyService DependencyService, profileDWriter ProfileDWriter, calculator Calculator, logger scribe.Emitter, clock chronos.Clock) packit.BuildFunc {
+func Build(entryResolver EntryResolver, dependencyService DependencyService, calculator Calculator, logger scribe.Emitter, clock chronos.Clock) packit.BuildFunc {
 	return func(context packit.BuildContext) (packit.BuildResult, error) {
 		logger.Title("%s %s", context.BuildpackInfo.Name, context.BuildpackInfo.Version)
 
@@ -97,14 +92,52 @@ func Build(entryResolver EntryResolver, dependencyService DependencyService, pro
 
 		var launchMetadata packit.LaunchMetadata
 		if launch {
+			command := "nginx"
+			args := []string{
+				"-p",
+				context.WorkingDir,
+				"-c",
+				nginxConfPath,
+			}
 			launchMetadata.Processes = []packit.Process{
 				{
 					Type:    "web",
-					Command: fmt.Sprintf(`nginx -p $PWD -c "%s"`, nginxConfPath),
+					Command: command,
+					Args:    args,
 					Default: true,
+					Direct:  true,
 				},
 			}
 			launchMetadata.BOM = bom
+
+			shouldReload, err := checkLiveReloadEnabled()
+			if err != nil {
+				return packit.BuildResult{}, err
+			}
+
+			if shouldReload {
+				launchMetadata.Processes = []packit.Process{
+					{
+						Type:    "web",
+						Command: "watchexec",
+						Args: append([]string{
+							"--restart",
+							"--watch", context.WorkingDir,
+							"--shell", "none",
+							"--",
+							command,
+						}, args...),
+						Default: true,
+						Direct:  true,
+					},
+					{
+						Type:    "no-reload",
+						Command: command,
+						Args:    args,
+						Direct:  true,
+					},
+				}
+			}
 		}
 
 		if !shouldInstall(layer.Metadata, currConfigureBinSHA256, dependency.SHA256) {
@@ -150,15 +183,13 @@ func Build(entryResolver EntryResolver, dependencyService DependencyService, pro
 		layer.SharedEnv.Append("PATH", filepath.Join(layer.Path, "sbin"), ":")
 		logger.EnvironmentVariables(layer)
 
-		err = profileDWriter.Write(
-			layer.Path,
-			"configure.sh",
-			fmt.Sprintf(`configure "%s" "%s" "%s"`,
-				nginxConfPath,
-				filepath.Join(context.WorkingDir, "modules"),
-				filepath.Join(layer.Path, "modules"),
-			),
-		)
+		execdDir := filepath.Join(layer.Path, "exec.d")
+		err = os.MkdirAll(execdDir, os.ModePerm)
+		if err != nil {
+			return packit.BuildResult{}, err
+		}
+
+		err = fs.Copy(filepath.Join(context.CNBPath, "bin", "configure"), filepath.Join(execdDir, "0-configure"))
 		if err != nil {
 			return packit.BuildResult{}, err
 		}
@@ -169,6 +200,7 @@ func Build(entryResolver EntryResolver, dependencyService DependencyService, pro
 			"built_at":      clock.Now().Format(time.RFC3339Nano),
 		}
 
+		logger.LaunchProcesses(launchMetadata.Processes)
 		return packit.BuildResult{
 			Layers: []packit.Layer{layer},
 			Build:  buildMetadata,
