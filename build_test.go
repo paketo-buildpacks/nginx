@@ -32,7 +32,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 		entryResolver     *fakes.EntryResolver
 		dependencyService *fakes.DependencyService
-		profileDWriter    *fakes.ProfileDWriter
 		calculator        *fakes.Calculator
 
 		clock     chronos.Clock
@@ -90,7 +89,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			},
 		}
 
-		profileDWriter = &fakes.ProfileDWriter{}
 		calculator = &fakes.Calculator{}
 
 		calculator.SumCall.Returns.String = "some-bin-sha"
@@ -104,7 +102,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			return timeStamp
 		})
 
-		build = nginx.Build(entryResolver, dependencyService, profileDWriter, calculator, scribe.NewEmitter(buffer), clock)
+		build = nginx.Build(entryResolver, dependencyService, calculator, scribe.NewEmitter(buffer), clock)
 	})
 
 	it("does a build", func() {
@@ -166,7 +164,14 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				Processes: []packit.Process{
 					{
 						Type:    "web",
-						Command: fmt.Sprintf(`nginx -p $PWD -c "%s"`, filepath.Join(workspaceDir, "nginx.conf")),
+						Command: "nginx",
+						Args: []string{
+							"-p",
+							workspaceDir,
+							"-c",
+							filepath.Join(workspaceDir, "nginx.conf"),
+						},
+						Direct:  true,
 						Default: true,
 					},
 				},
@@ -175,10 +180,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 		Expect(filepath.Join(layersDir, "nginx")).To(BeADirectory())
 		Expect(filepath.Join(layersDir, "nginx", "bin", "configure")).To(BeAnExistingFile())
-		Expect(profileDWriter.WriteCall.Receives.LayerDir).To(Equal(filepath.Join(layersDir, "nginx")))
-		Expect(profileDWriter.WriteCall.Receives.ScriptName).To(Equal("configure.sh"))
-		expectedScript := fmt.Sprintf(`configure "%s" "%s" "%s"`, filepath.Join(workspaceDir, "nginx.conf"), filepath.Join(workspaceDir, "modules"), filepath.Join(layersDir, "nginx", "modules"))
-		Expect(profileDWriter.WriteCall.Receives.ScriptContents).To(Equal(expectedScript))
 		Expect(filepath.Join(workspaceDir, "logs")).To(BeADirectory())
 
 		Expect(entryResolver.ResolveCall.Receives.BuildpackPlanEntrySlice).To(Equal([]packit.BuildpackPlanEntry{
@@ -211,6 +212,69 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(dependencyService.InstallCall.Receives.CnbPath).To(Equal(cnbPath))
 		Expect(dependencyService.InstallCall.Receives.LayerPath).To(Equal(filepath.Join(layersDir, "nginx")))
 		Expect(calculator.SumCall.CallCount).To(Equal(1))
+	})
+
+	context("when BP_LIVE_RELOAD_ENABLED=true in the build environment", func() {
+		it.Before(func() {
+			os.Setenv("BP_LIVE_RELOAD_ENABLED", "true")
+		})
+
+		it.After(func() {
+			os.Unsetenv("BP_LIVE_RELOAD_ENABLED")
+		})
+
+		it("uses watchexec to set the start command", func() {
+			result, err := build(packit.BuildContext{
+				CNBPath:    cnbPath,
+				WorkingDir: workspaceDir,
+				Stack:      "some-stack",
+				Plan: packit.BuildpackPlan{
+					Entries: []packit.BuildpackPlanEntry{
+						{
+							Name: "nginx",
+							Metadata: map[string]interface{}{
+								"version-source": "BP_NGINX_VERSION",
+								"version":        "1.19.*",
+								"launch":         true,
+							},
+						},
+					},
+				},
+				Layers: packit.Layers{Path: layersDir},
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(result.Launch.Processes).To(Equal([]packit.Process{
+				{
+					Type:    "web",
+					Command: "watchexec",
+					Args: []string{
+						"--restart",
+						"--watch", workspaceDir,
+						"--shell", "none",
+						"--",
+						"nginx",
+						"-p",
+						workspaceDir,
+						"-c",
+						filepath.Join(workspaceDir, "nginx.conf"),
+					},
+					Direct:  true,
+					Default: true,
+				},
+				{
+					Type:    "no-reload",
+					Command: "nginx",
+					Args: []string{
+						"-p",
+						workspaceDir,
+						"-c",
+						filepath.Join(workspaceDir, "nginx.conf"),
+					},
+					Direct: true,
+				},
+			}))
+		})
 	})
 
 	context("when version source is buildpack.yml", func() {
@@ -297,7 +361,14 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					Processes: []packit.Process{
 						{
 							Type:    "web",
-							Command: fmt.Sprintf(`nginx -p $PWD -c "%s"`, filepath.Join(workspaceDir, "nginx.conf")),
+							Command: "nginx",
+							Args: []string{
+								"-p",
+								workspaceDir,
+								"-c",
+								filepath.Join(workspaceDir, "nginx.conf"),
+							},
+							Direct:  true,
 							Default: true,
 						},
 					},
@@ -306,10 +377,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 			Expect(filepath.Join(layersDir, "nginx")).To(BeADirectory())
 			Expect(filepath.Join(layersDir, "nginx", "bin", "configure")).To(BeAnExistingFile())
-			Expect(profileDWriter.WriteCall.Receives.LayerDir).To(Equal(filepath.Join(layersDir, "nginx")))
-			Expect(profileDWriter.WriteCall.Receives.ScriptName).To(Equal("configure.sh"))
-			expectedScript := fmt.Sprintf(`configure "%s" "%s" "%s"`, filepath.Join(workspaceDir, "nginx.conf"), filepath.Join(workspaceDir, "modules"), filepath.Join(layersDir, "nginx", "modules"))
-			Expect(profileDWriter.WriteCall.Receives.ScriptContents).To(Equal(expectedScript))
 			Expect(filepath.Join(workspaceDir, "logs")).To(BeADirectory())
 
 			Expect(entryResolver.ResolveCall.Receives.BuildpackPlanEntrySlice).To(Equal([]packit.BuildpackPlanEntry{
@@ -417,7 +484,14 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					Processes: []packit.Process{
 						{
 							Type:    "web",
-							Command: fmt.Sprintf(`nginx -p $PWD -c "%s"`, filepath.Join(workspaceDir, "nginx.conf")),
+							Command: "nginx",
+							Args: []string{
+								"-p",
+								workspaceDir,
+								"-c",
+								filepath.Join(workspaceDir, "nginx.conf"),
+							},
+							Direct:  true,
 							Default: true,
 						},
 					},
@@ -425,7 +499,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			}))
 
 			Expect(dependencyService.InstallCall.CallCount).To(Equal(0))
-			Expect(profileDWriter.WriteCall.CallCount).To(Equal(0))
 		})
 	})
 
@@ -470,21 +543,30 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			})
 		})
 
-		context("when the profile.d cannot be written", func() {
+		context("when BP_LIVE_RELOAD_ENABLED is set to an invalid value", func() {
 			it.Before(func() {
-				profileDWriter.WriteCall.Returns.Error = errors.New("failed to write profile.d")
+				os.Setenv("BP_LIVE_RELOAD_ENABLED", "not-a-bool")
 			})
 
-			it("fails with descriptive error", func() {
-				_, err := build(packit.BuildContext{
-					CNBPath:    cnbPath,
-					WorkingDir: workspaceDir,
-					Stack:      "some-stack",
-					Layers:     packit.Layers{Path: layersDir},
-				})
+			it.After(func() {
+				os.Unsetenv("BP_LIVE_RELOAD_ENABLED")
+			})
 
-				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError("failed to write profile.d"))
+			it("returns an error", func() {
+				_, err := build(packit.BuildContext{
+					WorkingDir: workspaceDir,
+					CNBPath:    cnbPath,
+					Stack:      "some-stack",
+					BuildpackInfo: packit.BuildpackInfo{
+						Name:    "Some Buildpack",
+						Version: "some-version",
+					},
+					Plan: packit.BuildpackPlan{
+						Entries: []packit.BuildpackPlanEntry{},
+					},
+					Layers: packit.Layers{Path: layersDir},
+				})
+				Expect(err).To(MatchError(ContainSubstring("failed to parse BP_LIVE_RELOAD_ENABLED value not-a-bool")))
 			})
 		})
 	})
