@@ -120,60 +120,54 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			Layers: packit.Layers{Path: layersDir},
 		})
 		Expect(err).NotTo(HaveOccurred())
-		Expect(result).To(Equal(packit.BuildResult{
-			Layers: []packit.Layer{
-				{
-					Name: "nginx",
-					Path: filepath.Join(layersDir, "nginx"),
-					SharedEnv: packit.Environment{
-						"PATH.append": filepath.Join(layersDir, "nginx", "sbin"),
-						"PATH.delim":  ":",
+
+		Expect(len(result.Layers)).To(Equal(1))
+		layer := result.Layers[0]
+
+		Expect(layer.Name).To(Equal("nginx"))
+		Expect(layer.Path).To(Equal(filepath.Join(layersDir, "nginx")))
+		Expect(layer.Build).To(BeFalse())
+		Expect(layer.Launch).To(BeTrue())
+		Expect(layer.Cache).To(BeFalse())
+		Expect(layer.SharedEnv).To(Equal(packit.Environment{
+			"PATH.append": filepath.Join(layersDir, "nginx", "sbin"),
+			"PATH.delim":  ":",
+		}))
+		Expect(layer.Metadata).To(Equal(map[string]interface{}{
+			nginx.DepKey:          "some-sha",
+			nginx.ConfigureBinKey: "some-bin-sha",
+		}))
+
+		Expect(result.Launch.BOM).To(Equal([]packit.BOMEntry{
+			{
+				Name: "nginx",
+				Metadata: paketosbom.BOMMetadata{
+					Version: "nginx-dependency-version",
+					Checksum: paketosbom.BOMChecksum{
+						Algorithm: paketosbom.SHA256,
+						Hash:      "nginx-dependency-sha",
 					},
-					BuildEnv:         packit.Environment{},
-					LaunchEnv:        packit.Environment{},
-					ProcessLaunchEnv: map[string]packit.Environment{},
-					Build:            false,
-					Launch:           true,
-					Cache:            false,
-					Metadata: map[string]interface{}{
-						nginx.DepKey:          "some-sha",
-						nginx.ConfigureBinKey: "some-bin-sha",
-					},
-				},
-			},
-			Launch: packit.LaunchMetadata{
-				BOM: []packit.BOMEntry{
-					{
-						Name: "nginx",
-						Metadata: paketosbom.BOMMetadata{
-							Version: "nginx-dependency-version",
-							Checksum: paketosbom.BOMChecksum{
-								Algorithm: paketosbom.SHA256,
-								Hash:      "nginx-dependency-sha",
-							},
-							URI: "nginx-dependency-uri",
-						},
-					},
-				},
-				Processes: []packit.Process{
-					{
-						Type:    "web",
-						Command: "nginx",
-						Args: []string{
-							"-p",
-							workspaceDir,
-							"-c",
-							filepath.Join(workspaceDir, "nginx.conf"),
-						},
-						Direct:  true,
-						Default: true,
-					},
+					URI: "nginx-dependency-uri",
 				},
 			},
 		}))
 
+		Expect(result.Launch.Processes).To(Equal([]packit.Process{
+			{
+				Type:    "web",
+				Command: "nginx",
+				Args: []string{
+					"-p",
+					workspaceDir,
+					"-c",
+					filepath.Join(workspaceDir, "nginx.conf"),
+				},
+				Direct:  true,
+				Default: true,
+			},
+		}))
+
 		Expect(filepath.Join(layersDir, "nginx")).To(BeADirectory())
-		Expect(filepath.Join(layersDir, "nginx", "bin", "configure")).To(BeAnExistingFile())
 		Expect(filepath.Join(workspaceDir, "logs")).To(BeADirectory())
 
 		Expect(entryResolver.ResolveCall.Receives.BuildpackPlanEntrySlice).To(Equal([]packit.BuildpackPlanEntry{
@@ -318,60 +312,54 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				Layers: packit.Layers{Path: layersDir},
 			})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result).To(Equal(packit.BuildResult{
-				Layers: []packit.Layer{
-					{
-						Name: "nginx",
-						Path: filepath.Join(layersDir, "nginx"),
-						SharedEnv: packit.Environment{
-							"PATH.append": filepath.Join(layersDir, "nginx", "sbin"),
-							"PATH.delim":  ":",
+
+			Expect(len(result.Layers)).To(Equal(1))
+			layer := result.Layers[0]
+
+			Expect(layer.Name).To(Equal("nginx"))
+			Expect(layer.Path).To(Equal(filepath.Join(layersDir, "nginx")))
+			Expect(layer.Build).To(BeFalse())
+			Expect(layer.Launch).To(BeTrue())
+			Expect(layer.Cache).To(BeFalse())
+			Expect(layer.SharedEnv).To(Equal(packit.Environment{
+				"PATH.append": filepath.Join(layersDir, "nginx", "sbin"),
+				"PATH.delim":  ":",
+			}))
+			Expect(layer.Metadata).To(Equal(map[string]interface{}{
+				nginx.DepKey:          "some-sha",
+				nginx.ConfigureBinKey: "some-bin-sha",
+			}))
+
+			Expect(result.Launch.BOM).To(Equal([]packit.BOMEntry{
+				{
+					Name: "nginx",
+					Metadata: paketosbom.BOMMetadata{
+						Version: "nginx-dependency-version",
+						Checksum: paketosbom.BOMChecksum{
+							Algorithm: paketosbom.SHA256,
+							Hash:      "nginx-dependency-sha",
 						},
-						BuildEnv:         packit.Environment{},
-						LaunchEnv:        packit.Environment{},
-						ProcessLaunchEnv: map[string]packit.Environment{},
-						Build:            false,
-						Launch:           true,
-						Cache:            false,
-						Metadata: map[string]interface{}{
-							nginx.DepKey:          "some-sha",
-							nginx.ConfigureBinKey: "some-bin-sha",
-						},
-					},
-				},
-				Launch: packit.LaunchMetadata{
-					BOM: []packit.BOMEntry{
-						{
-							Name: "nginx",
-							Metadata: paketosbom.BOMMetadata{
-								Version: "nginx-dependency-version",
-								Checksum: paketosbom.BOMChecksum{
-									Algorithm: paketosbom.SHA256,
-									Hash:      "nginx-dependency-sha",
-								},
-								URI: "nginx-dependency-uri",
-							},
-						},
-					},
-					Processes: []packit.Process{
-						{
-							Type:    "web",
-							Command: "nginx",
-							Args: []string{
-								"-p",
-								workspaceDir,
-								"-c",
-								filepath.Join(workspaceDir, "nginx.conf"),
-							},
-							Direct:  true,
-							Default: true,
-						},
+						URI: "nginx-dependency-uri",
 					},
 				},
 			}))
 
+			Expect(result.Launch.Processes).To(Equal([]packit.Process{
+				{
+					Type:    "web",
+					Command: "nginx",
+					Args: []string{
+						"-p",
+						workspaceDir,
+						"-c",
+						filepath.Join(workspaceDir, "nginx.conf"),
+					},
+					Direct:  true,
+					Default: true,
+				},
+			}))
+
 			Expect(filepath.Join(layersDir, "nginx")).To(BeADirectory())
-			Expect(filepath.Join(layersDir, "nginx", "bin", "configure")).To(BeAnExistingFile())
 			Expect(filepath.Join(workspaceDir, "logs")).To(BeADirectory())
 
 			Expect(entryResolver.ResolveCall.Receives.BuildpackPlanEntrySlice).To(Equal([]packit.BuildpackPlanEntry{
@@ -443,52 +431,46 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			})
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result).To(Equal(packit.BuildResult{
-				Layers: []packit.Layer{
-					{
-						Name:             "nginx",
-						Path:             filepath.Join(layersDir, "nginx"),
-						SharedEnv:        packit.Environment{},
-						BuildEnv:         packit.Environment{},
-						LaunchEnv:        packit.Environment{},
-						ProcessLaunchEnv: map[string]packit.Environment{},
-						Build:            false,
-						Launch:           true,
-						Cache:            false,
-						Metadata: map[string]interface{}{
-							nginx.DepKey:          "some-sha",
-							nginx.ConfigureBinKey: "some-bin-sha",
+
+			Expect(len(result.Layers)).To(Equal(1))
+			layer := result.Layers[0]
+
+			Expect(layer.Name).To(Equal("nginx"))
+			Expect(layer.Path).To(Equal(filepath.Join(layersDir, "nginx")))
+			Expect(layer.Build).To(BeFalse())
+			Expect(layer.Launch).To(BeTrue())
+			Expect(layer.Cache).To(BeFalse())
+			Expect(layer.Metadata).To(Equal(map[string]interface{}{
+				nginx.DepKey:          "some-sha",
+				nginx.ConfigureBinKey: "some-bin-sha",
+			}))
+
+			Expect(result.Launch.BOM).To(Equal([]packit.BOMEntry{
+				{
+					Name: "nginx",
+					Metadata: paketosbom.BOMMetadata{
+						Version: "nginx-dependency-version",
+						Checksum: paketosbom.BOMChecksum{
+							Algorithm: paketosbom.SHA256,
+							Hash:      "nginx-dependency-sha",
 						},
+						URI: "nginx-dependency-uri",
 					},
 				},
-				Launch: packit.LaunchMetadata{
-					BOM: []packit.BOMEntry{
-						{
-							Name: "nginx",
-							Metadata: paketosbom.BOMMetadata{
-								Version: "nginx-dependency-version",
-								Checksum: paketosbom.BOMChecksum{
-									Algorithm: paketosbom.SHA256,
-									Hash:      "nginx-dependency-sha",
-								},
-								URI: "nginx-dependency-uri",
-							},
-						},
+			}))
+
+			Expect(result.Launch.Processes).To(Equal([]packit.Process{
+				{
+					Type:    "web",
+					Command: "nginx",
+					Args: []string{
+						"-p",
+						workspaceDir,
+						"-c",
+						filepath.Join(workspaceDir, "nginx.conf"),
 					},
-					Processes: []packit.Process{
-						{
-							Type:    "web",
-							Command: "nginx",
-							Args: []string{
-								"-p",
-								workspaceDir,
-								"-c",
-								filepath.Join(workspaceDir, "nginx.conf"),
-							},
-							Direct:  true,
-							Default: true,
-						},
-					},
+					Direct:  true,
+					Default: true,
 				},
 			}))
 
@@ -497,6 +479,26 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 	})
 
 	context("failure cases", func() {
+		context("when the dependency cannot be resolved", func() {
+			it.Before(func() {
+				dependencyService.ResolveCall.Returns.Error = errors.New("failed to resolve dependency")
+			})
+
+			it("returns an error", func() {
+				_, err := build(packit.BuildContext{
+					CNBPath: cnbPath,
+					Plan: packit.BuildpackPlan{
+						Entries: []packit.BuildpackPlanEntry{
+							{Name: "nginx"},
+						},
+					},
+					Layers: packit.Layers{Path: layersDir},
+					Stack:  "some-stack",
+				})
+				Expect(err).To(MatchError("failed to resolve dependency"))
+			})
+		})
+
 		context("unable to create log directory", func() {
 			it.Before(func() {
 				Expect(os.Chmod(workspaceDir, 0000))
@@ -516,6 +518,27 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				Expect(err).To(HaveOccurred())
 				logsDir := filepath.Join(workspaceDir, "logs")
 				Expect(err).To(MatchError(ContainSubstring(fmt.Sprintf("failed to create logs dir : mkdir %s", logsDir))))
+			})
+		})
+
+		context("when the layer cannot be retrieved", func() {
+			it.Before(func() {
+				err := os.WriteFile(filepath.Join(layersDir, "nginx.toml"), nil, 0000)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			it("returns an error", func() {
+				_, err := build(packit.BuildContext{
+					CNBPath: cnbPath,
+					Plan: packit.BuildpackPlan{
+						Entries: []packit.BuildpackPlanEntry{
+							{Name: "nginx"},
+						},
+					},
+					Layers: packit.Layers{Path: layersDir},
+					Stack:  "some-stack",
+				})
+				Expect(err).To(MatchError(ContainSubstring("failed to parse layer content metadata")))
 			})
 		})
 
@@ -562,6 +585,72 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				})
 				Expect(err).To(MatchError(ContainSubstring("failed to parse BP_LIVE_RELOAD_ENABLED value not-a-bool")))
 			})
+		})
+
+		context("when the layer cannot be reset", func() {
+			it.Before(func() {
+				Expect(os.MkdirAll(filepath.Join(layersDir, "nginx", "something"), os.ModePerm)).To(Succeed())
+				Expect(os.Chmod(filepath.Join(layersDir, "nginx"), 0500)).To(Succeed())
+			})
+
+			it.After(func() {
+				Expect(os.Chmod(filepath.Join(layersDir, "nginx"), os.ModePerm)).To(Succeed())
+			})
+
+			it("returns an error", func() {
+				_, err := build(packit.BuildContext{
+					CNBPath: cnbPath,
+					Plan: packit.BuildpackPlan{
+						Entries: []packit.BuildpackPlanEntry{
+							{Name: "nginx"},
+						},
+					},
+					Layers: packit.Layers{Path: layersDir},
+					Stack:  "some-stack",
+				})
+				Expect(err).To(MatchError(ContainSubstring("could not remove file")))
+			})
+		})
+
+		context("when the dependency cannot be installed", func() {
+			it.Before(func() {
+				dependencyService.DeliverCall.Returns.Error = errors.New("failed to deliver dependency")
+			})
+
+			it("returns an error", func() {
+				_, err := build(packit.BuildContext{
+					CNBPath: cnbPath,
+					Plan: packit.BuildpackPlan{
+						Entries: []packit.BuildpackPlanEntry{
+							{Name: "nginx"},
+						},
+					},
+					Layers: packit.Layers{Path: layersDir},
+					Stack:  "some-stack",
+				})
+				Expect(err).To(MatchError("failed to deliver dependency"))
+			})
+		})
+
+		context("when the exec.d binary cannot be copied", func() {
+			it.Before(func() {
+				Expect(os.Remove(filepath.Join(cnbPath, "bin", "configure"))).To(Succeed())
+			})
+
+			it("returns an error", func() {
+				_, err := build(packit.BuildContext{
+					CNBPath: cnbPath,
+					Plan: packit.BuildpackPlan{
+						Entries: []packit.BuildpackPlanEntry{
+							{Name: "nginx"},
+						},
+					},
+					Layers: packit.Layers{Path: layersDir},
+					Stack:  "some-stack",
+				})
+				Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
+			})
+
 		})
 	})
 }

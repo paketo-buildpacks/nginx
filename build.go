@@ -141,6 +141,9 @@ func Build(entryResolver EntryResolver, dependencyService DependencyService, cal
 		}
 
 		if !shouldInstall(layer.Metadata, currConfigureBinSHA256, dependency.SHA256) {
+			logger.Process("Reusing cached layer %s", layer.Path)
+			logger.Break()
+
 			layer.Launch, layer.Build = launch, build
 
 			return packit.BuildResult{
@@ -158,16 +161,6 @@ func Build(entryResolver EntryResolver, dependencyService DependencyService, cal
 		}
 
 		layer.Launch, layer.Build = launch, build
-
-		err = os.MkdirAll(filepath.Join(layer.Path, "bin"), os.ModePerm)
-		if err != nil {
-			return packit.BuildResult{}, err
-		}
-
-		err = fs.Copy(configureBinPath, filepath.Join(layer.Path, "bin", "configure"))
-		if err != nil {
-			return packit.BuildResult{}, err
-		}
 
 		logger.Subprocess("Installing Nginx Server %s", dependency.Version)
 		duration, err := clock.Measure(func() error {
