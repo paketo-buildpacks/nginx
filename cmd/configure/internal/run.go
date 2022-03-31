@@ -3,7 +3,6 @@ package internal
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -14,7 +13,7 @@ import (
 func Run(mainConf, localModulePath, globalModulePath string) error {
 	log.SetFlags(0)
 
-	body, err := ioutil.ReadFile(mainConf)
+	body, err := os.ReadFile(mainConf)
 	if err != nil {
 		return fmt.Errorf("could not read config file (%s): %s", mainConf, err)
 	}

@@ -1,7 +1,6 @@
 package nginx_test
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -23,13 +22,13 @@ func testParser(t *testing.T, context spec.G, it spec.S) {
 
 	it.Before(func() {
 		var err error
-		workingDir, err = ioutil.TempDir("", "working-dir")
+		workingDir, err = os.MkdirTemp("", "working-dir")
 		Expect(err).NotTo(HaveOccurred())
 
-		cnbPath, err = ioutil.TempDir("", "cnbPath")
+		cnbPath, err = os.MkdirTemp("", "cnbPath")
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(ioutil.WriteFile(
+		Expect(os.WriteFile(
 			filepath.Join(cnbPath, "buildpack.toml"),
 			[]byte(`
 [metadata]
@@ -46,7 +45,7 @@ func testParser(t *testing.T, context spec.G, it spec.S) {
 	context("Calling ParseYml", func() {
 		context("when buildpack.yml is valid and specifies an nginx version", func() {
 			it.Before(func() {
-				Expect(ioutil.WriteFile(
+				Expect(os.WriteFile(
 					filepath.Join(workingDir, "buildpack.yml"),
 					[]byte(`---
 nginx:
@@ -65,7 +64,7 @@ nginx:
 
 		context("buildpack.yml cannot be opened", func() {
 			it.Before(func() {
-				Expect(ioutil.WriteFile(
+				Expect(os.WriteFile(
 					filepath.Join(workingDir, "buildpack.yml"),
 					[]byte(`some-content`),
 					0000,
@@ -80,7 +79,7 @@ nginx:
 
 		context("buildpack.yml cannot be parsed", func() {
 			it.Before(func() {
-				Expect(ioutil.WriteFile(
+				Expect(os.WriteFile(
 					filepath.Join(workingDir, "buildpack.yml"),
 					[]byte(`%%%`),
 					0644,
@@ -143,7 +142,7 @@ nginx:
 
 		context("buildpack.toml cannot be parsed", func() {
 			it.Before(func() {
-				Expect(ioutil.WriteFile(
+				Expect(os.WriteFile(
 					filepath.Join(cnbPath, "buildpack.toml"),
 					[]byte(`%%%`),
 					0644,

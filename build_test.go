@@ -4,18 +4,19 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/paketo-buildpacks/nginx"
 	"github.com/paketo-buildpacks/nginx/fakes"
-	"github.com/paketo-buildpacks/packit"
-	"github.com/paketo-buildpacks/packit/chronos"
-	"github.com/paketo-buildpacks/packit/postal"
-	"github.com/paketo-buildpacks/packit/scribe"
+	"github.com/paketo-buildpacks/packit/v2"
+	"github.com/paketo-buildpacks/packit/v2/chronos"
+
+	//nolint Ignore SA1019, informed usage of deprecated package
+	"github.com/paketo-buildpacks/packit/v2/paketosbom"
+	"github.com/paketo-buildpacks/packit/v2/postal"
+	"github.com/paketo-buildpacks/packit/v2/scribe"
 	"github.com/sclevine/spec"
 
 	. "github.com/onsi/gomega"
@@ -34,22 +35,20 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		dependencyService *fakes.DependencyService
 		calculator        *fakes.Calculator
 
-		clock     chronos.Clock
-		timeStamp time.Time
-		buffer    *bytes.Buffer
+		buffer *bytes.Buffer
 
 		build packit.BuildFunc
 	)
 
 	it.Before(func() {
 		var err error
-		layersDir, err = ioutil.TempDir("", "layers")
+		layersDir, err = os.MkdirTemp("", "layers")
 		Expect(err).NotTo(HaveOccurred())
 
-		cnbPath, err = ioutil.TempDir("", "cnb")
+		cnbPath, err = os.MkdirTemp("", "cnb")
 		Expect(err).NotTo(HaveOccurred())
 
-		workspaceDir, err = ioutil.TempDir("", "workspace")
+		workspaceDir, err = os.MkdirTemp("", "workspace")
 		Expect(err).NotTo(HaveOccurred())
 
 		buffer = bytes.NewBuffer(nil)
@@ -78,10 +77,10 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		dependencyService.GenerateBillOfMaterialsCall.Returns.BOMEntrySlice = []packit.BOMEntry{
 			{
 				Name: "nginx",
-				Metadata: packit.BOMMetadata{
+				Metadata: paketosbom.BOMMetadata{
 					Version: "nginx-dependency-version",
-					Checksum: packit.BOMChecksum{
-						Algorithm: packit.SHA256,
+					Checksum: paketosbom.BOMChecksum{
+						Algorithm: paketosbom.SHA256,
 						Hash:      "nginx-dependency-sha",
 					},
 					URI: "nginx-dependency-uri",
@@ -95,14 +94,9 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 		// create fake configure binary
 		Expect(os.Mkdir(filepath.Join(cnbPath, "bin"), os.ModePerm)).To(Succeed())
-		Expect(ioutil.WriteFile(filepath.Join(cnbPath, "bin", "configure"), []byte("binary-contents"), 0600)).To(Succeed())
+		Expect(os.WriteFile(filepath.Join(cnbPath, "bin", "configure"), []byte("binary-contents"), 0600)).To(Succeed())
 
-		timeStamp = time.Now()
-		clock = chronos.NewClock(func() time.Time {
-			return timeStamp
-		})
-
-		build = nginx.Build(entryResolver, dependencyService, calculator, scribe.NewEmitter(buffer), clock)
+		build = nginx.Build(entryResolver, dependencyService, calculator, scribe.NewEmitter(buffer), chronos.DefaultClock)
 	})
 
 	it("does a build", func() {
@@ -110,6 +104,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			CNBPath:    cnbPath,
 			WorkingDir: workspaceDir,
 			Stack:      "some-stack",
+			Platform:   packit.Platform{Path: "platform"},
 			Plan: packit.BuildpackPlan{
 				Entries: []packit.BuildpackPlanEntry{
 					{
@@ -143,7 +138,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					Metadata: map[string]interface{}{
 						nginx.DepKey:          "some-sha",
 						nginx.ConfigureBinKey: "some-bin-sha",
-						"built_at":            timeStamp.Format(time.RFC3339Nano),
 					},
 				},
 			},
@@ -151,10 +145,10 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				BOM: []packit.BOMEntry{
 					{
 						Name: "nginx",
-						Metadata: packit.BOMMetadata{
+						Metadata: paketosbom.BOMMetadata{
 							Version: "nginx-dependency-version",
-							Checksum: packit.BOMChecksum{
-								Algorithm: packit.SHA256,
+							Checksum: paketosbom.BOMChecksum{
+								Algorithm: paketosbom.SHA256,
 								Hash:      "nginx-dependency-sha",
 							},
 							URI: "nginx-dependency-uri",
@@ -198,7 +192,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(dependencyService.ResolveCall.Receives.Version).To(Equal("1.19.*"))
 		Expect(dependencyService.ResolveCall.Receives.Stack).To(Equal("some-stack"))
 
-		Expect(dependencyService.InstallCall.Receives.Dependency).To(Equal(
+		Expect(dependencyService.DeliverCall.Receives.Dependency).To(Equal(
 			postal.Dependency{
 				ID:           "nginx",
 				SHA256:       "some-sha",
@@ -209,8 +203,9 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				Version:      "1.19.8",
 			},
 		))
-		Expect(dependencyService.InstallCall.Receives.CnbPath).To(Equal(cnbPath))
-		Expect(dependencyService.InstallCall.Receives.LayerPath).To(Equal(filepath.Join(layersDir, "nginx")))
+		Expect(dependencyService.DeliverCall.Receives.CnbPath).To(Equal(cnbPath))
+		Expect(dependencyService.DeliverCall.Receives.LayerPath).To(Equal(filepath.Join(layersDir, "nginx")))
+		Expect(dependencyService.DeliverCall.Receives.PlatformPath).To(Equal("platform"))
 		Expect(calculator.SumCall.CallCount).To(Equal(1))
 	})
 
@@ -307,6 +302,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				CNBPath:    cnbPath,
 				WorkingDir: workspaceDir,
 				Stack:      "some-stack",
+				Platform:   packit.Platform{Path: "platform"},
 				Plan: packit.BuildpackPlan{
 					Entries: []packit.BuildpackPlanEntry{
 						{
@@ -340,7 +336,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 						Metadata: map[string]interface{}{
 							nginx.DepKey:          "some-sha",
 							nginx.ConfigureBinKey: "some-bin-sha",
-							"built_at":            timeStamp.Format(time.RFC3339Nano),
 						},
 					},
 				},
@@ -348,10 +343,10 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					BOM: []packit.BOMEntry{
 						{
 							Name: "nginx",
-							Metadata: packit.BOMMetadata{
+							Metadata: paketosbom.BOMMetadata{
 								Version: "nginx-dependency-version",
-								Checksum: packit.BOMChecksum{
-									Algorithm: packit.SHA256,
+								Checksum: paketosbom.BOMChecksum{
+									Algorithm: paketosbom.SHA256,
 									Hash:      "nginx-dependency-sha",
 								},
 								URI: "nginx-dependency-uri",
@@ -395,7 +390,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			Expect(dependencyService.ResolveCall.Receives.Version).To(Equal("some-bp-yml-version"))
 			Expect(dependencyService.ResolveCall.Receives.Stack).To(Equal("some-stack"))
 
-			Expect(dependencyService.InstallCall.Receives.Dependency).To(Equal(
+			Expect(dependencyService.DeliverCall.Receives.Dependency).To(Equal(
 				postal.Dependency{
 					ID:           "nginx",
 					SHA256:       "some-sha",
@@ -406,8 +401,9 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					Version:      "some-bp-yml-version",
 				},
 			))
-			Expect(dependencyService.InstallCall.Receives.CnbPath).To(Equal(cnbPath))
-			Expect(dependencyService.InstallCall.Receives.LayerPath).To(Equal(filepath.Join(layersDir, "nginx")))
+			Expect(dependencyService.DeliverCall.Receives.CnbPath).To(Equal(cnbPath))
+			Expect(dependencyService.DeliverCall.Receives.LayerPath).To(Equal(filepath.Join(layersDir, "nginx")))
+			Expect(dependencyService.DeliverCall.Receives.PlatformPath).To(Equal("platform"))
 			Expect(calculator.SumCall.CallCount).To(Equal(1))
 
 			Expect(buffer.String()).To(ContainSubstring("WARNING: Setting the server version through buildpack.yml will be deprecated soon in Nginx Server Buildpack v2.0.0"))
@@ -417,11 +413,10 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 	context("when rebuilding a layer", func() {
 		it.Before(func() {
-			err := ioutil.WriteFile(filepath.Join(layersDir, "nginx.toml"), []byte(fmt.Sprintf(`[metadata]
+			err := os.WriteFile(filepath.Join(layersDir, "nginx.toml"), []byte(`[metadata]
 			dependency-sha = "some-sha"
 			configure-bin-sha = "some-bin-sha"
-			built_at = "%s"
-			`, timeStamp.Format(time.RFC3339Nano))), 0600)
+			`), 0600)
 			Expect(err).NotTo(HaveOccurred())
 
 			entryResolver.MergeLayerTypesCall.Returns.Launch = true
@@ -463,7 +458,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 						Metadata: map[string]interface{}{
 							nginx.DepKey:          "some-sha",
 							nginx.ConfigureBinKey: "some-bin-sha",
-							"built_at":            timeStamp.Format(time.RFC3339Nano),
 						},
 					},
 				},
@@ -471,10 +465,10 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					BOM: []packit.BOMEntry{
 						{
 							Name: "nginx",
-							Metadata: packit.BOMMetadata{
+							Metadata: paketosbom.BOMMetadata{
 								Version: "nginx-dependency-version",
-								Checksum: packit.BOMChecksum{
-									Algorithm: packit.SHA256,
+								Checksum: paketosbom.BOMChecksum{
+									Algorithm: paketosbom.SHA256,
 									Hash:      "nginx-dependency-sha",
 								},
 								URI: "nginx-dependency-uri",
@@ -498,7 +492,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				},
 			}))
 
-			Expect(dependencyService.InstallCall.CallCount).To(Equal(0))
+			Expect(dependencyService.DeliverCall.CallCount).To(Equal(0))
 		})
 	})
 
