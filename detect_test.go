@@ -2,14 +2,13 @@ package nginx_test
 
 import (
 	"errors"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/paketo-buildpacks/nginx"
 	"github.com/paketo-buildpacks/nginx/fakes"
-	"github.com/paketo-buildpacks/packit"
+	"github.com/paketo-buildpacks/packit/v2"
 	"github.com/sclevine/spec"
 
 	. "github.com/onsi/gomega"
@@ -28,10 +27,10 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 
 	it.Before(func() {
 		var err error
-		workingDir, err = ioutil.TempDir("", "working-dir")
+		workingDir, err = os.MkdirTemp("", "working-dir")
 		Expect(err).NotTo(HaveOccurred())
 
-		cnbPath, err = ioutil.TempDir("", "cnb")
+		cnbPath, err = os.MkdirTemp("", "cnb")
 		Expect(err).NotTo(HaveOccurred())
 
 		versionParser = &fakes.VersionParser{}
@@ -59,7 +58,7 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 
 	context("nginx.conf is present", func() {
 		it.Before(func() {
-			Expect(ioutil.WriteFile(filepath.Join(workingDir, "nginx.conf"),
+			Expect(os.WriteFile(filepath.Join(workingDir, "nginx.conf"),
 				[]byte(`conf`),
 				0644,
 			)).To(Succeed())
@@ -223,7 +222,7 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 		var confPath string
 		it.Before(func() {
 			confPath = filepath.Join(workingDir, "nginx.conf")
-			Expect(ioutil.WriteFile(confPath,
+			Expect(os.WriteFile(confPath,
 				[]byte(`conf`),
 				0644,
 			)).To(Succeed())

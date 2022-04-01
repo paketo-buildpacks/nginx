@@ -2,7 +2,6 @@ package internal_test
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -32,7 +31,7 @@ func testRun(t *testing.T, context spec.G, it spec.S) {
 
 	it.Before(func() {
 		var err error
-		workingDir, err = ioutil.TempDir("", "working-dir")
+		workingDir, err = os.MkdirTemp("", "working-dir")
 		mainConf = filepath.Join(workingDir, "nginx.conf")
 		Expect(err).NotTo(HaveOccurred())
 	})
@@ -43,7 +42,7 @@ func testRun(t *testing.T, context spec.G, it spec.S) {
 
 	context("when the template contains a 'port' action", func() {
 		it.Before(func() {
-			Expect(ioutil.WriteFile(mainConf, []byte("Hi the port is {{port}}."), 0600)).To(Succeed())
+			Expect(os.WriteFile(mainConf, []byte("Hi the port is {{port}}."), 0600)).To(Succeed())
 			os.Setenv("PORT", "8080")
 		})
 
@@ -51,7 +50,7 @@ func testRun(t *testing.T, context spec.G, it spec.S) {
 			err := internal.Run(mainConf, localModulePath, globalModulePath)
 			Expect(err).ToNot(HaveOccurred())
 
-			output, err := ioutil.ReadFile(filepath.Join(workingDir, "nginx.conf"))
+			output, err := os.ReadFile(filepath.Join(workingDir, "nginx.conf"))
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(string(output)).To(Equal("Hi the port is 8080."))
@@ -60,7 +59,7 @@ func testRun(t *testing.T, context spec.G, it spec.S) {
 
 	context("when the template contains an 'env' action", func() {
 		it.Before(func() {
-			Expect(ioutil.WriteFile(filepath.Join(workingDir, "nginx.conf"), []byte(`The env var FOO is {{env "FOO"}}`), 0600)).To(Succeed())
+			Expect(os.WriteFile(filepath.Join(workingDir, "nginx.conf"), []byte(`The env var FOO is {{env "FOO"}}`), 0600)).To(Succeed())
 			os.Setenv("FOO", "BAR")
 		})
 
@@ -68,7 +67,7 @@ func testRun(t *testing.T, context spec.G, it spec.S) {
 			err := internal.Run(mainConf, localModulePath, globalModulePath)
 			Expect(err).ToNot(HaveOccurred())
 
-			output, err := ioutil.ReadFile(filepath.Join(workingDir, "nginx.conf"))
+			output, err := os.ReadFile(filepath.Join(workingDir, "nginx.conf"))
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(string(output)).To(Equal("The env var FOO is BAR"))
@@ -79,23 +78,23 @@ func testRun(t *testing.T, context spec.G, it spec.S) {
 		it.Before(func() {
 			localModulePath = filepath.Join(workingDir, "local_modules")
 			Expect(os.Mkdir(localModulePath, 0744)).To(Succeed())
-			Expect(ioutil.WriteFile(filepath.Join(localModulePath, "local.so"), []byte("dummy data"), 0600)).To(Succeed())
+			Expect(os.WriteFile(filepath.Join(localModulePath, "local.so"), []byte("dummy data"), 0600)).To(Succeed())
 
 			globalModulePath = filepath.Join(workingDir, "global_modules")
 			Expect(os.Mkdir(globalModulePath, 0744)).To(Succeed())
-			Expect(ioutil.WriteFile(filepath.Join(globalModulePath, "global.so"), []byte("dummy data"), 0600)).To(Succeed())
+			Expect(os.WriteFile(filepath.Join(globalModulePath, "global.so"), []byte("dummy data"), 0600)).To(Succeed())
 		})
 
 		context("when the module is in local modules directory", func() {
 			it.Before(func() {
-				Expect(ioutil.WriteFile(filepath.Join(workingDir, "nginx.conf"), []byte(`{{module "local"}}`), 0600)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(workingDir, "nginx.conf"), []byte(`{{module "local"}}`), 0600)).To(Succeed())
 			})
 
 			it("loads the module from the local directory", func() {
 				err := internal.Run(mainConf, localModulePath, globalModulePath)
 				Expect(err).ToNot(HaveOccurred())
 
-				output, err := ioutil.ReadFile(filepath.Join(workingDir, "nginx.conf"))
+				output, err := os.ReadFile(filepath.Join(workingDir, "nginx.conf"))
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(string(output)).To(Equal(fmt.Sprintf("load_module %s/local.so;", localModulePath)))
@@ -104,14 +103,14 @@ func testRun(t *testing.T, context spec.G, it spec.S) {
 
 		context("when the module is in global modules directory", func() {
 			it.Before(func() {
-				Expect(ioutil.WriteFile(filepath.Join(workingDir, "nginx.conf"), []byte(`{{module "global"}}`), 0600)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(workingDir, "nginx.conf"), []byte(`{{module "global"}}`), 0600)).To(Succeed())
 			})
 
 			it("loads the module from the global directory", func() {
 				err := internal.Run(mainConf, localModulePath, globalModulePath)
 				Expect(err).ToNot(HaveOccurred())
 
-				output, err := ioutil.ReadFile(filepath.Join(workingDir, "nginx.conf"))
+				output, err := os.ReadFile(filepath.Join(workingDir, "nginx.conf"))
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(string(output)).To(Equal(fmt.Sprintf("load_module %s/global.so;", globalModulePath)))
@@ -122,7 +121,7 @@ func testRun(t *testing.T, context spec.G, it spec.S) {
 	context("when the template uses include files", func() {
 		context("include file is a complete path", func() {
 			it.Before(func() {
-				Expect(ioutil.WriteFile(filepath.Join(workingDir, "nginx.conf"), []byte(`
+				Expect(os.WriteFile(filepath.Join(workingDir, "nginx.conf"), []byte(`
 	http {
 	include mime.types;
 	include custom.conf;
@@ -131,7 +130,7 @@ func testRun(t *testing.T, context spec.G, it spec.S) {
 	keepalive_timeout 30;
 	port_in_redirect off; # Ensure that redirects don't include the internal container PORT - 8080
 	}`), 0600)).To(Succeed())
-				Expect(ioutil.WriteFile(filepath.Join(workingDir, "custom.conf"), []byte(`Hi the port is {{ port }}.`), 0600)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(workingDir, "custom.conf"), []byte(`Hi the port is {{ port }}.`), 0600)).To(Succeed())
 				os.Setenv("PORT", "8080")
 			})
 
@@ -139,7 +138,7 @@ func testRun(t *testing.T, context spec.G, it spec.S) {
 				err := internal.Run(mainConf, localModulePath, globalModulePath)
 				Expect(err).ToNot(HaveOccurred())
 
-				output, err := ioutil.ReadFile(filepath.Join(workingDir, "custom.conf"))
+				output, err := os.ReadFile(filepath.Join(workingDir, "custom.conf"))
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(string(output)).To(Equal("Hi the port is 8080."))
@@ -149,7 +148,7 @@ func testRun(t *testing.T, context spec.G, it spec.S) {
 		context("include is a file mask", func() {
 			it.Before(func() {
 				Expect(os.MkdirAll(filepath.Join(workingDir, "subdir"), os.ModePerm)).To(Succeed())
-				Expect(ioutil.WriteFile(filepath.Join(workingDir, "nginx.conf"), []byte(`
+				Expect(os.WriteFile(filepath.Join(workingDir, "nginx.conf"), []byte(`
 		http {
 		include mime.types;
 		include ./subdir/*.conf;
@@ -158,9 +157,9 @@ func testRun(t *testing.T, context spec.G, it spec.S) {
 		keepalive_timeout 30;
 		port_in_redirect off; # Ensure that redirects don't include the internal container PORT - 8080
 		}`), 0600)).To(Succeed())
-				Expect(ioutil.WriteFile(filepath.Join(workingDir, "dontFix.conf"), []byte(`Hi the port is {{ port }}.`), 0600)).To(Succeed())
-				Expect(ioutil.WriteFile(filepath.Join(workingDir, "subdir", "custom1.conf"), []byte(`Hi the port is {{ port }}.`), 0600)).To(Succeed())
-				Expect(ioutil.WriteFile(filepath.Join(workingDir, "subdir", "custom2.conf"), []byte(`Hi the port is {{ port }}.`), 0600)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(workingDir, "dontFix.conf"), []byte(`Hi the port is {{ port }}.`), 0600)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(workingDir, "subdir", "custom1.conf"), []byte(`Hi the port is {{ port }}.`), 0600)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(workingDir, "subdir", "custom2.conf"), []byte(`Hi the port is {{ port }}.`), 0600)).To(Succeed())
 				os.Setenv("PORT", "8080")
 			})
 
@@ -168,15 +167,15 @@ func testRun(t *testing.T, context spec.G, it spec.S) {
 				err := internal.Run(mainConf, localModulePath, globalModulePath)
 				Expect(err).ToNot(HaveOccurred())
 
-				output, err := ioutil.ReadFile(filepath.Join(workingDir, "dontFix.conf"))
+				output, err := os.ReadFile(filepath.Join(workingDir, "dontFix.conf"))
 				Expect(err).ToNot(HaveOccurred())
 				Expect(string(output)).To(Equal(`Hi the port is {{ port }}.`))
 
-				output, err = ioutil.ReadFile(filepath.Join(workingDir, "subdir", "custom1.conf"))
+				output, err = os.ReadFile(filepath.Join(workingDir, "subdir", "custom1.conf"))
 				Expect(err).ToNot(HaveOccurred())
 				Expect(string(output)).To(Equal(`Hi the port is 8080.`))
 
-				output, err = ioutil.ReadFile(filepath.Join(workingDir, "subdir", "custom2.conf"))
+				output, err = os.ReadFile(filepath.Join(workingDir, "subdir", "custom2.conf"))
 				Expect(err).ToNot(HaveOccurred())
 				Expect(string(output)).To(Equal(`Hi the port is 8080.`))
 			})
@@ -197,7 +196,7 @@ func testRun(t *testing.T, context spec.G, it spec.S) {
 
 		context("when the template file cannot be written", func() {
 			it.Before(func() {
-				Expect(ioutil.WriteFile(filepath.Join(workingDir, "nginx.conf"), []byte(`{{module "global"}}`), 0444)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(workingDir, "nginx.conf"), []byte(`{{module "global"}}`), 0444)).To(Succeed())
 			})
 
 			it("prints an error and exits non-zero", func() {
@@ -208,7 +207,7 @@ func testRun(t *testing.T, context spec.G, it spec.S) {
 
 		context("when the template is malformed", func() {
 			it.Before(func() {
-				Expect(ioutil.WriteFile(filepath.Join(workingDir, "nginx.conf"), []byte(`{{ port "argument" }}`), 0600)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(workingDir, "nginx.conf"), []byte(`{{ port "argument" }}`), 0600)).To(Succeed())
 			})
 
 			it("prints an error and exits non-zero", func() {
@@ -219,7 +218,7 @@ func testRun(t *testing.T, context spec.G, it spec.S) {
 
 		context("when the include file mask is malformed", func() {
 			it.Before(func() {
-				Expect(ioutil.WriteFile(filepath.Join(workingDir, "nginx.conf"), []byte(`include \/\/.conf;`), 0600)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(workingDir, "nginx.conf"), []byte(`include \/\/.conf;`), 0600)).To(Succeed())
 			})
 
 			it("prints an error and exits non-zero", func() {
