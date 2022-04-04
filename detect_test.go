@@ -2,14 +2,13 @@ package nginx_test
 
 import (
 	"errors"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/paketo-buildpacks/nginx"
 	"github.com/paketo-buildpacks/nginx/fakes"
-	"github.com/paketo-buildpacks/packit"
+	"github.com/paketo-buildpacks/packit/v2"
 	"github.com/sclevine/spec"
 
 	. "github.com/onsi/gomega"
@@ -28,10 +27,10 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 
 	it.Before(func() {
 		var err error
-		workingDir, err = ioutil.TempDir("", "working-dir")
+		workingDir, err = os.MkdirTemp("", "working-dir")
 		Expect(err).NotTo(HaveOccurred())
 
-		cnbPath, err = ioutil.TempDir("", "cnb")
+		cnbPath, err = os.MkdirTemp("", "cnb")
 		Expect(err).NotTo(HaveOccurred())
 
 		versionParser = &fakes.VersionParser{}
@@ -59,7 +58,7 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 
 	context("nginx.conf is present", func() {
 		it.Before(func() {
-			Expect(ioutil.WriteFile(filepath.Join(workingDir, "nginx.conf"),
+			Expect(os.WriteFile(filepath.Join(workingDir, "nginx.conf"),
 				[]byte(`conf`),
 				0644,
 			)).To(Succeed())
@@ -101,6 +100,40 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 				Expect(versionParser.ResolveVersionCall.Receives.CnbPath).To(Equal(cnbPath))
 				Expect(versionParser.ResolveVersionCall.Receives.Version).To(Equal("mainline"))
 
+			})
+		})
+
+		context("and BP_LIVE_RELOAD_ENABLED=true in the build environment", func() {
+			it.Before(func() {
+				os.Setenv("BP_LIVE_RELOAD_ENABLED", "true")
+			})
+
+			it.After(func() {
+				os.Unsetenv("BP_LIVE_RELOAD_ENABLED")
+			})
+
+			it("requires watchexec at launch time", func() {
+				result, err := detect(packit.DetectContext{
+					WorkingDir: workingDir,
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result.Plan.Requires).To(Equal([]packit.BuildPlanRequirement{
+					{
+						Name: "nginx",
+						Metadata: nginx.BuildPlanMetadata{
+							Version:       "1.19.*",
+							VersionSource: "buildpack.toml",
+							Launch:        true,
+						},
+					},
+					{
+						Name: "watchexec",
+						Metadata: map[string]interface{}{
+							"launch": true,
+						},
+					},
+				},
+				))
 			})
 		})
 
@@ -189,7 +222,7 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 		var confPath string
 		it.Before(func() {
 			confPath = filepath.Join(workingDir, "nginx.conf")
-			Expect(ioutil.WriteFile(confPath,
+			Expect(os.WriteFile(confPath,
 				[]byte(`conf`),
 				0644,
 			)).To(Succeed())
@@ -223,6 +256,23 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 				})
 
 				Expect(err).To(MatchError(ContainSubstring("parsing version failed")))
+			})
+		})
+
+		context("when BP_LIVE_RELOAD_ENABLED is set to an invalid value", func() {
+			it.Before(func() {
+				os.Setenv("BP_LIVE_RELOAD_ENABLED", "not-a-bool")
+			})
+
+			it.After(func() {
+				os.Unsetenv("BP_LIVE_RELOAD_ENABLED")
+			})
+
+			it("returns an error", func() {
+				_, err := detect(packit.DetectContext{
+					WorkingDir: workingDir,
+				})
+				Expect(err).To(MatchError(ContainSubstring("failed to parse BP_LIVE_RELOAD_ENABLED value not-a-bool")))
 			})
 		})
 	})

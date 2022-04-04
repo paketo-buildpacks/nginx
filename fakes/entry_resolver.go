@@ -3,7 +3,7 @@ package fakes
 import (
 	"sync"
 
-	"github.com/paketo-buildpacks/packit"
+	packit "github.com/paketo-buildpacks/packit/v2"
 )
 
 type EntryResolver struct {

@@ -75,8 +75,6 @@ func testLogging(t *testing.T, context spec.G, it spec.S) {
 				"  Configuring launch environment",
 				fmt.Sprintf(`    PATH -> "$PATH:/layers/%s/nginx/sbin"`, strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_")),
 				"",
-				MatchRegexp(`  Writing profile.d/configure.sh`),
-				MatchRegexp(`    Calls executable that parses templates in nginx conf`),
 			))
 		})
 	})
@@ -111,8 +109,6 @@ func testLogging(t *testing.T, context spec.G, it spec.S) {
 				"  Configuring launch environment",
 				fmt.Sprintf(`    PATH -> "$PATH:/layers/%s/nginx/sbin"`, strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_")),
 				"",
-				MatchRegexp(`  Writing profile.d/configure.sh`),
-				MatchRegexp(`    Calls executable that parses templates in nginx conf`),
 			))
 		})
 	})

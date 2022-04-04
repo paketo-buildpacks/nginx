@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 
-	"github.com/paketo-buildpacks/packit"
+	"github.com/paketo-buildpacks/packit/v2"
 )
 
 //go:generate faux --interface VersionParser --output fakes/version_parser.go
@@ -93,8 +94,33 @@ func Detect(versionParser VersionParser) packit.DetectFunc {
 			return packit.DetectResult{}, fmt.Errorf("parsing version failed: %w", err)
 		}
 
+		shouldReload, err := checkLiveReloadEnabled()
+		if err != nil {
+			return packit.DetectResult{}, err
+		}
+
+		if shouldReload {
+			requirements = append(requirements, packit.BuildPlanRequirement{
+				Name: "watchexec",
+				Metadata: map[string]interface{}{
+					"launch": true,
+				},
+			})
+		}
+
 		plan.Plan.Requires = requirements
 
 		return plan, nil
 	}
+}
+
+func checkLiveReloadEnabled() (bool, error) {
+	if reload, ok := os.LookupEnv("BP_LIVE_RELOAD_ENABLED"); ok {
+		shouldEnableReload, err := strconv.ParseBool(reload)
+		if err != nil {
+			return false, fmt.Errorf("failed to parse BP_LIVE_RELOAD_ENABLED value %s: %w", reload, err)
+		}
+		return shouldEnableReload, nil
+	}
+	return false, nil
 }

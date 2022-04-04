@@ -95,7 +95,7 @@ func testCaching(t *testing.T, context spec.G, it spec.S) {
 
 		Eventually(container).Should(BeAvailable())
 
-		Expect(secondImage.Buildpacks[0].Layers["nginx"].Metadata["built_at"]).To(Equal(firstImage.Buildpacks[0].Layers["nginx"].Metadata["built_at"]))
+		Expect(secondImage.Buildpacks[0].Layers["nginx"].SHA).To(Equal(firstImage.Buildpacks[0].Layers["nginx"].SHA))
 		Expect(secondImage.Buildpacks[0].Layers["nginx"].Metadata["dependency-sha"]).To(Equal(firstImage.Buildpacks[0].Layers["nginx"].Metadata["dependency-sha"]))
 		Expect(secondImage.Buildpacks[0].Layers["nginx"].Metadata["configure-bin-sha"]).To(Equal(firstImage.Buildpacks[0].Layers["nginx"].Metadata["configure-bin-sha"]))
 		Expect(secondImage.ID).To(Equal(firstImage.ID))
