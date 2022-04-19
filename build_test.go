@@ -478,6 +478,70 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		})
 	})
 
+	context("when BP_NGINX_CONF_LOCATION is set to a relative path", func() {
+		it.Before(func() {
+			os.Setenv("BP_NGINX_CONF_LOCATION", "some-relative-path/nginx.conf")
+		})
+
+		it.After(func() {
+			os.Unsetenv("BP_NGINX_CONF_LOCATION")
+		})
+		it("assumes path is relative to /workspace", func() {
+			result, err := build(packit.BuildContext{
+				CNBPath:    cnbPath,
+				WorkingDir: workspaceDir,
+				Stack:      "some-stack",
+				Plan: packit.BuildpackPlan{
+					Entries: []packit.BuildpackPlanEntry{
+						{
+							Name: "nginx",
+							Metadata: map[string]interface{}{
+								"version-source": "BP_NGINX_VERSION",
+								"version":        "1.19.*",
+								"launch":         true,
+							},
+						},
+					},
+				},
+				Layers: packit.Layers{Path: layersDir},
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.Launch.Processes[0].Args[len(result.Launch.Processes[0].Args)-1]).To(Equal(filepath.Join(workspaceDir, "some-relative-path", "nginx.conf")))
+		})
+	})
+
+	context("when BP_NGINX_CONF_LOCATION is set to an absolute path", func() {
+		it.Before(func() {
+			os.Setenv("BP_NGINX_CONF_LOCATION", "/some-absolute-path/nginx.conf")
+		})
+
+		it.After(func() {
+			os.Unsetenv("BP_NGINX_CONF_LOCATION")
+		})
+		it("uses the location as-is", func() {
+			result, err := build(packit.BuildContext{
+				CNBPath:    cnbPath,
+				WorkingDir: workspaceDir,
+				Stack:      "some-stack",
+				Plan: packit.BuildpackPlan{
+					Entries: []packit.BuildpackPlanEntry{
+						{
+							Name: "nginx",
+							Metadata: map[string]interface{}{
+								"version-source": "BP_NGINX_VERSION",
+								"version":        "1.19.*",
+								"launch":         true,
+							},
+						},
+					},
+				},
+				Layers: packit.Layers{Path: layersDir},
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.Launch.Processes[0].Args[len(result.Launch.Processes[0].Args)-1]).To(Equal("/some-absolute-path/nginx.conf"))
+		})
+	})
+
 	context("failure cases", func() {
 		context("when the dependency cannot be resolved", func() {
 			it.Before(func() {

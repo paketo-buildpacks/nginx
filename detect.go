@@ -31,7 +31,7 @@ func Detect(versionParser VersionParser) packit.DetectFunc {
 			},
 		}
 
-		_, err := os.Stat(filepath.Join(context.WorkingDir, ConfFile))
+		_, err := os.Stat(getNginxConfLocation(context.WorkingDir))
 		if err != nil {
 			if os.IsNotExist(err) {
 				return plan, nil
@@ -123,4 +123,14 @@ func checkLiveReloadEnabled() (bool, error) {
 		return shouldEnableReload, nil
 	}
 	return false, nil
+}
+
+func getNginxConfLocation(workingDir string) string {
+	if customPath, ok := os.LookupEnv("BP_NGINX_CONF_LOCATION"); ok {
+		if filepath.IsAbs(customPath) {
+			return customPath
+		}
+		return filepath.Join(workingDir, customPath)
+	}
+	return filepath.Join(workingDir, ConfFile)
 }
