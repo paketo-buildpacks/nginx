@@ -13,6 +13,7 @@ import (
 	"github.com/paketo-buildpacks/packit/v2/fs"
 	"github.com/paketo-buildpacks/packit/v2/postal"
 	"github.com/paketo-buildpacks/packit/v2/scribe"
+	"github.com/paketo-buildpacks/packit/v2/servicebindings"
 )
 
 func main() {
@@ -31,6 +32,7 @@ func main() {
 			buildEnv,
 			draft.NewPlanner(),
 			postal.NewService(cargo.NewTransport()),
+			servicebindings.NewResolver(),
 			nginx.NewDefaultConfigGenerator(),
 			fs.NewChecksumCalculator(),
 			logger,
