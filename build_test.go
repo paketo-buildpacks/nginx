@@ -33,6 +33,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 		entryResolver     *fakes.EntryResolver
 		dependencyService *fakes.DependencyService
+		config            *fakes.ConfigGenerator
 		calculator        *fakes.Calculator
 
 		buffer *bytes.Buffer
@@ -88,6 +89,8 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			},
 		}
 
+		config = &fakes.ConfigGenerator{}
+
 		calculator = &fakes.Calculator{}
 
 		calculator.SumCall.Returns.String = "some-bin-sha"
@@ -96,7 +99,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(os.Mkdir(filepath.Join(cnbPath, "bin"), os.ModePerm)).To(Succeed())
 		Expect(os.WriteFile(filepath.Join(cnbPath, "bin", "configure"), []byte("binary-contents"), 0600)).To(Succeed())
 
-		build = nginx.Build(entryResolver, dependencyService, calculator, scribe.NewEmitter(buffer), chronos.DefaultClock)
+		build = nginx.Build(entryResolver, dependencyService, config, calculator, scribe.NewEmitter(buffer), chronos.DefaultClock)
 	})
 
 	it("does a build", func() {
@@ -132,6 +135,9 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(layer.SharedEnv).To(Equal(packit.Environment{
 			"PATH.append": filepath.Join(layersDir, "nginx", "sbin"),
 			"PATH.delim":  ":",
+		}))
+		Expect(layer.LaunchEnv).To(Equal(packit.Environment{
+			"APP_ROOT.override": workspaceDir,
 		}))
 		Expect(layer.Metadata).To(Equal(map[string]interface{}{
 			nginx.DepKey:          "some-sha",
@@ -399,7 +405,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		})
 	})
 
-	context("when rebuilding a layer", func() {
+	context("when reusing a layer", func() {
 		it.Before(func() {
 			err := os.WriteFile(filepath.Join(layersDir, "nginx.toml"), []byte(`[metadata]
 			dependency-sha = "some-sha"
@@ -505,7 +511,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				},
 				Layers: packit.Layers{Path: layersDir},
 			})
-			Expect(err).NotTo(HaveOccurred())
 			Expect(result.Launch.Processes[0].Args[len(result.Launch.Processes[0].Args)-1]).To(Equal(filepath.Join(workspaceDir, "some-relative-path", "nginx.conf")))
 		})
 	})
@@ -539,6 +544,67 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.Launch.Processes[0].Args[len(result.Launch.Processes[0].Args)-1]).To(Equal("/some-absolute-path/nginx.conf"))
+		})
+	})
+
+	context("when BP_WEB_SERVER=nginx in the build env", func() {
+		it.Before(func() {
+			Expect(os.Setenv("BP_WEB_SERVER", "nginx")).To(Succeed())
+		})
+		it.After(func() {
+			Expect(os.Unsetenv("BP_WEB_SERVER")).To(Succeed())
+		})
+
+		it("generates a basic nginx.conf", func() {
+			_, err := build(packit.BuildContext{
+				CNBPath:    cnbPath,
+				WorkingDir: workspaceDir,
+				Stack:      "some-stack",
+				Platform:   packit.Platform{Path: "platform"},
+				Plan: packit.BuildpackPlan{
+					Entries: []packit.BuildpackPlanEntry{
+						{
+							Name: "nginx",
+							Metadata: map[string]interface{}{
+								"version-source": "BP_NGINX_VERSION",
+								"version":        "1.19.*",
+								"launch":         true,
+							},
+						},
+					},
+				},
+				Layers: packit.Layers{Path: layersDir},
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(config.GenerateCall.Receives.TemplateSource).To(Equal(filepath.Join(cnbPath, "defaultconfig/template.conf")))
+			Expect(config.GenerateCall.Receives.Destination).To(Equal(filepath.Join(workspaceDir, nginx.ConfFile)))
+		})
+
+		context("and nginx layer is being reused", func() {
+			it("still generates the nginx.conf file", func() {
+				_, err := build(packit.BuildContext{
+					CNBPath:    cnbPath,
+					WorkingDir: workspaceDir,
+					Stack:      "some-stack",
+					Platform:   packit.Platform{Path: "platform"},
+					Plan: packit.BuildpackPlan{
+						Entries: []packit.BuildpackPlanEntry{
+							{
+								Name: "nginx",
+								Metadata: map[string]interface{}{
+									"version-source": "BP_NGINX_VERSION",
+									"version":        "1.19.*",
+									"launch":         true,
+								},
+							},
+						},
+					},
+					Layers: packit.Layers{Path: layersDir},
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(config.GenerateCall.Receives.TemplateSource).To(Equal(filepath.Join(cnbPath, "defaultconfig/template.conf")))
+				Expect(config.GenerateCall.Receives.Destination).To(Equal(filepath.Join(workspaceDir, nginx.ConfFile)))
+			})
 		})
 	})
 
@@ -582,6 +648,27 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				Expect(err).To(HaveOccurred())
 				logsDir := filepath.Join(workspaceDir, "logs")
 				Expect(err).To(MatchError(ContainSubstring(fmt.Sprintf("failed to create logs dir : mkdir %s", logsDir))))
+			})
+		})
+
+		context("unable to generate nginx.conf", func() {
+			it.Before(func() {
+				Expect(os.Setenv("BP_WEB_SERVER", "nginx")).To(Succeed())
+				config.GenerateCall.Returns.Error = errors.New("some config error")
+			})
+			it.After(func() {
+				Expect(os.Unsetenv("BP_WEB_SERVER")).To(Succeed())
+			})
+
+			it("fails with descriptive error", func() {
+				_, err := build(packit.BuildContext{
+					CNBPath:    cnbPath,
+					WorkingDir: workspaceDir,
+					Stack:      "some-stack",
+				})
+
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(MatchError(ContainSubstring("failed to generate nginx.conf : some config error")))
 			})
 		})
 

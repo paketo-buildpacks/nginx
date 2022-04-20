@@ -6,7 +6,7 @@ api = "0.6"
   name = "Paketo Nginx Server Buildpack"
 
 [metadata]
-  include-files = ["bin/build", "bin/detect", "bin/run", "bin/configure", "buildpack.toml"]
+  include-files = ["bin/build", "bin/detect", "bin/run", "bin/configure", "buildpack.toml", "defaultconfig/template.conf"]
   pre-package = "./scripts/build.sh"
   [metadata.default-versions]
     nginx = "1.21.*"

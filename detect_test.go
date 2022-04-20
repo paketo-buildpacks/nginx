@@ -56,6 +56,37 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 		}))
 	})
 
+	context("$BP_WEB_SERVER is set for a no-config nginx build", func() {
+		it.Before(func() {
+			Expect(os.Setenv("BP_WEB_SERVER", "nginx")).To(Succeed())
+		})
+		it.After(func() {
+			Expect(os.Unsetenv("BP_WEB_SERVER")).To(Succeed())
+		})
+		it("requires and provides nginx", func() {
+			result, err := detect(packit.DetectContext{
+				WorkingDir: workingDir,
+				CNBPath:    cnbPath,
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.Plan).To(Equal(packit.BuildPlan{
+				Provides: []packit.BuildPlanProvision{
+					{Name: "nginx"},
+				},
+				Requires: []packit.BuildPlanRequirement{
+					{
+						Name: "nginx",
+						Metadata: nginx.BuildPlanMetadata{
+							Version:       "1.19.*",
+							VersionSource: "buildpack.toml",
+							Launch:        true,
+						},
+					},
+				},
+			}))
+		})
+	})
+
 	context("nginx.conf is present", func() {
 		it.Before(func() {
 			Expect(os.WriteFile(filepath.Join(workingDir, "nginx.conf"),
