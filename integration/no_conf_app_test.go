@@ -53,8 +53,11 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 
 	context("when pushing app with no conf and $BP_WEB_SERVER=nginx", func() {
 		it("generates the default nginx.conf", func() {
-			var err error
-			image, _, err = pack.Build.
+			var (
+				err  error
+				logs fmt.Stringer
+			)
+			image, logs, err = pack.Build.
 				WithBuildpacks(nginxBuildpack).
 				WithEnv(map[string]string{
 					"BP_WEB_SERVER": "nginx",
@@ -62,6 +65,12 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 				WithPullPolicy("never").
 				Execute(name, source)
 			Expect(err).NotTo(HaveOccurred())
+
+			Expect(logs).To(ContainLines(
+				"  Generating /workspace/nginx.conf",
+				`    Setting server root directory to '{{ env "APP_ROOT" }}/public'`,
+				"",
+			))
 
 			container, err = docker.Container.Run.
 				WithEnv(map[string]string{"PORT": "8080"}).
@@ -79,8 +88,11 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 			os.RemoveAll(filepath.Join(source, "public"))
 		})
 		it("generates an nginx.conf with the configuration", func() {
-			var err error
-			image, _, err = pack.Build.
+			var (
+				err  error
+				logs fmt.Stringer
+			)
+			image, logs, err = pack.Build.
 				WithBuildpacks(nginxBuildpack).
 				WithEnv(map[string]string{
 					"BP_WEB_SERVER":                   "nginx",
@@ -97,6 +109,13 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 				Execute(image.ID)
 			Expect(err).ToNot(HaveOccurred())
 
+			Expect(logs).To(ContainLines(
+				"  Generating /workspace/nginx.conf",
+				`    Setting server root directory to '{{ env "APP_ROOT" }}/custom_root'`,
+				"    Enabling push state routing",
+				"",
+			))
+
 			Eventually(container).Should(Serve(ContainSubstring("<p>Hello World!</p>")).OnPort(8080))
 			Eventually(container).Should(Serve(ContainSubstring("<p>Hello World!</p>")).OnPort(8080).WithEndpoint("/test"))
 		})
@@ -104,8 +123,11 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 
 	context("building with no config and forcing HTTPS connections", func() {
 		it("generates an nginx.conf with the required redirect logic", func() {
-			var err error
-			image, _, err = pack.Build.
+			var (
+				err  error
+				logs fmt.Stringer
+			)
+			image, logs, err = pack.Build.
 				WithBuildpacks(nginxBuildpack).
 				WithEnv(map[string]string{
 					"BP_WEB_SERVER":             "nginx",
@@ -114,6 +136,13 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 				WithPullPolicy("never").
 				Execute(name, source)
 			Expect(err).NotTo(HaveOccurred())
+
+			Expect(logs).To(ContainLines(
+				"  Generating /workspace/nginx.conf",
+				`    Setting server root directory to '{{ env "APP_ROOT" }}/public'`,
+				`    Setting server to redirect HTTP requests to HTTPS`,
+				"",
+			))
 
 			container, err = docker.Container.Run.
 				WithEnv(map[string]string{"PORT": "8080"}).
@@ -147,8 +176,11 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 		})
 
 		it("password-protects the served static files", func() {
-			var err error
-			image, _, err = pack.Build.
+			var (
+				err  error
+				logs fmt.Stringer
+			)
+			image, logs, err = pack.Build.
 				WithBuildpacks(nginxBuildpack).
 				WithEnv(map[string]string{
 					"BP_WEB_SERVER":        "nginx",
@@ -158,6 +190,13 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 				WithPullPolicy("never").
 				Execute(name, filepath.Join(source, "app"))
 			Expect(err).NotTo(HaveOccurred())
+
+			Expect(logs).To(ContainLines(
+				"  Generating /workspace/nginx.conf",
+				`    Setting server root directory to '{{ env "APP_ROOT" }}/public'`,
+				`    Enabling basic authentication with .htpasswd credentials`,
+				"",
+			))
 
 			container, err = docker.Container.Run.
 				WithEnv(map[string]string{"PORT": "8080"}).

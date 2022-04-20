@@ -1,6 +1,7 @@
 package nginx_test
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -9,6 +10,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/paketo-buildpacks/nginx"
 	"github.com/paketo-buildpacks/occam"
+	"github.com/paketo-buildpacks/packit/v2/scribe"
 	"github.com/sclevine/spec"
 )
 
@@ -18,6 +20,8 @@ func testDefaultConfigGenerator(t *testing.T, context spec.G, it spec.S) {
 
 		workingDir string
 		sourceDir  string
+		buffer     *bytes.Buffer
+		logs       scribe.Emitter
 		generator  nginx.DefaultConfigGenerator
 	)
 
@@ -29,7 +33,10 @@ func testDefaultConfigGenerator(t *testing.T, context spec.G, it spec.S) {
 		sourceDir, err = occam.Source("defaultconfig")
 		Expect(err).NotTo(HaveOccurred())
 
-		generator = nginx.NewDefaultConfigGenerator()
+		buffer = bytes.NewBuffer(nil)
+		logs = scribe.NewEmitter(buffer)
+
+		generator = nginx.NewDefaultConfigGenerator(logs)
 	})
 
 	context("Generate", func() {

@@ -33,7 +33,7 @@ func main() {
 			draft.NewPlanner(),
 			postal.NewService(cargo.NewTransport()),
 			servicebindings.NewResolver(),
-			nginx.NewDefaultConfigGenerator(),
+			nginx.NewDefaultConfigGenerator(logger),
 			fs.NewChecksumCalculator(),
 			logger,
 			chronos.DefaultClock,
