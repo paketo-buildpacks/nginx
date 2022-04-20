@@ -16,7 +16,7 @@ func NewDefaultConfigGenerator() DefaultConfigGenerator {
 	return DefaultConfigGenerator{}
 }
 
-func (g DefaultConfigGenerator) Generate(templateSource, destination, rootDir string) error {
+func (g DefaultConfigGenerator) Generate(templateSource, destination string, env BuildEnvironment) error {
 	if _, err := os.Stat(templateSource); err != nil {
 		return fmt.Errorf("failed to locate nginx.conf template: %w", err)
 	}
@@ -25,11 +25,11 @@ func (g DefaultConfigGenerator) Generate(templateSource, destination, rootDir st
 		Root: `{{ env "APP_ROOT" }}/public`,
 	}
 
-	if rootDir != "" {
-		if filepath.IsAbs(rootDir) {
-			data.Root = rootDir
+	if env.WebServerRoot != "" {
+		if filepath.IsAbs(env.WebServerRoot) {
+			data.Root = env.WebServerRoot
 		} else {
-			data.Root = filepath.Join(`{{ env "APP_ROOT" }}`, rootDir)
+			data.Root = filepath.Join(`{{ env "APP_ROOT" }}`, env.WebServerRoot)
 		}
 	}
 
