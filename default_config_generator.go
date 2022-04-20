@@ -22,7 +22,8 @@ func (g DefaultConfigGenerator) Generate(templateSource, destination string, env
 	}
 	t := template.Must(template.New("template.conf").Delims("$((", "))").ParseFiles(templateSource))
 	data := nginxConfig{
-		Root: `{{ env "APP_ROOT" }}/public`,
+		Root:      `{{ env "APP_ROOT" }}/public`,
+		PushState: env.WebServerPushStateEnabled,
 	}
 
 	if env.WebServerRoot != "" {
@@ -55,5 +56,6 @@ func (g DefaultConfigGenerator) Generate(templateSource, destination string, env
 }
 
 type nginxConfig struct {
-	Root string
+	Root      string
+	PushState bool
 }

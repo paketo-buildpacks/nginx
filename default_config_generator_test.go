@@ -33,7 +33,11 @@ func testDefaultConfigGenerator(t *testing.T, context spec.G, it spec.S) {
 
 	context("Generate", func() {
 		it.Before(func() {
-			Expect(os.WriteFile(filepath.Join(sourceDir, "template.conf"), []byte("root $(( .Root ));"), os.ModePerm)).To(Succeed())
+			Expect(os.WriteFile(filepath.Join(sourceDir, "template.conf"), []byte(`root $(( .Root ));
+$((- if .PushState ))
+Push state is true
+$(( end -))
+`), os.ModePerm)).To(Succeed())
 		})
 
 		it("writes a default nginx.conf to the working directory", func() {
@@ -64,6 +68,20 @@ func testDefaultConfigGenerator(t *testing.T, context spec.G, it spec.S) {
 			contents, err := os.ReadFile(filepath.Join(workingDir, "nginx.conf"))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(contents)).To(Equal(`root /some/absolute/path;`))
+		})
+
+		it("writes an nginx.conf that conditionally includes the PushState content", func() {
+			err := generator.Generate(filepath.Join(sourceDir, "template.conf"), filepath.Join(workingDir, "nginx.conf"),
+				nginx.BuildEnvironment{
+					WebServerRoot:             "/some/absolute/path",
+					WebServerPushStateEnabled: true,
+				})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(filepath.Join(workingDir, "nginx.conf")).To(BeARegularFile())
+			contents, err := os.ReadFile(filepath.Join(workingDir, "nginx.conf"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(contents)).To(ContainSubstring(`Push state is true`))
 		})
 
 		context("failure cases", func() {

@@ -55,8 +55,9 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 			image, _, err = pack.Build.
 				WithBuildpacks(nginxBuildpack).
 				WithEnv(map[string]string{
-					"BP_WEB_SERVER":      "nginx",
-					"BP_WEB_SERVER_ROOT": "custom_root",
+					"BP_WEB_SERVER":                   "nginx",
+					"BP_WEB_SERVER_ROOT":              "custom_root",
+					"BP_WEB_SERVER_ENABLE_PUSH_STATE": "true",
 				}).
 				WithPullPolicy("never").
 				Execute(name, source)
@@ -85,6 +86,7 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 			Expect(err).ToNot(HaveOccurred())
 
 			Eventually(container).Should(Serve(ContainSubstring("<p>Hello World!</p>")).OnPort(8080))
+			Eventually(container).Should(Serve(ContainSubstring("<p>Hello World!</p>")).OnPort(8080).WithEndpoint("/test"))
 		})
 	})
 }
@@ -109,13 +111,6 @@ events {
 }
 
 http {
- # consider adjusting the buffer size (for POST requests) to best serve the
- # Dockerized context?
- # client_body_buffer_size 10K;
- # client_header_buffer_size 1k;
- # client_max_body_size 8m;
- # large_client_header_buffers 2 1k;
-
 # TODO: Can we write these files to /tmp instead?
   client_body_temp_path /workspace/client_body_temp;
   proxy_temp_path /workspace/proxy_temp;
@@ -267,6 +262,11 @@ http {
     root /workspace/custom_root;
 
     location / {
+				# Send the content at / in response to *any* requested endpoint
+        if (!-e $request_filename) {
+          rewrite ^(.*)$ / break;
+        }
+
         # Specify files sent to client if specific file not requested (e.g.
         # GET www.example.com/). NGINX sends first existing file in the list.
         index index.html index.htm Default.htm;
