@@ -578,7 +578,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				Layers: packit.Layers{Path: layersDir},
 			})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(config.GenerateCall.Receives.TemplateSource).To(Equal(filepath.Join(cnbPath, "defaultconfig/template.conf")))
 			Expect(config.GenerateCall.Receives.Destination).To(Equal(filepath.Join(workspaceDir, nginx.ConfFile)))
 			Expect(config.GenerateCall.Receives.Env).To(Equal(nginx.BuildEnvironment{
 				WebServer:                 "nginx",
@@ -625,7 +624,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					Layers: packit.Layers{Path: layersDir},
 				})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(config.GenerateCall.Receives.TemplateSource).To(Equal(filepath.Join(cnbPath, "defaultconfig/template.conf")))
 				Expect(config.GenerateCall.Receives.Destination).To(Equal(filepath.Join(workspaceDir, nginx.ConfFile)))
 				Expect(config.GenerateCall.Receives.Env).To(Equal(nginx.BuildEnvironment{
 					WebServer:     "nginx",
@@ -656,7 +654,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					Layers: packit.Layers{Path: layersDir},
 				})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(config.GenerateCall.Receives.TemplateSource).To(Equal(filepath.Join(cnbPath, "defaultconfig/template.conf")))
 				Expect(config.GenerateCall.Receives.Destination).To(Equal(filepath.Join(workspaceDir, nginx.ConfFile)))
 			})
 		})

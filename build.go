@@ -40,7 +40,7 @@ type Bindings interface {
 
 //go:generate faux --interface ConfigGenerator --output fakes/config_generator.go
 type ConfigGenerator interface {
-	Generate(templateSource, destination string, env BuildEnvironment) error
+	Generate(destination string, env BuildEnvironment) error
 }
 
 type BuildEnvironment struct {
@@ -117,7 +117,7 @@ func Build(buildEnv BuildEnvironment,
 				buildEnv.BasicAuthFile = filepath.Join(bindingSet[0].Path, ".htpasswd")
 			}
 
-			err = config.Generate(filepath.Join(context.CNBPath, "defaultconfig", "template.conf"), nginxConfPath, buildEnv)
+			err = config.Generate(nginxConfPath, buildEnv)
 			if err != nil {
 				return packit.BuildResult{}, fmt.Errorf("failed to generate nginx.conf : %w", err)
 			}
