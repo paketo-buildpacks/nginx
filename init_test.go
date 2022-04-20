@@ -8,9 +8,10 @@ import (
 )
 
 func TestUnitNGINX(t *testing.T) {
-	suite := spec.New("nginx", spec.Report(report.Terminal{}))
+	suite := spec.New("nginx", spec.Report(report.Terminal{}), spec.Sequential())
 	suite("Build", testBuild)
 	suite("Detect", testDetect)
 	suite("Parse", testParser)
+	suite("DefaultConfigGenerator", testDefaultConfigGenerator)
 	suite.Run(t)
 }

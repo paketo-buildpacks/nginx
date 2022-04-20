@@ -32,7 +32,17 @@ type Calculator interface {
 	Sum(paths ...string) (string, error)
 }
 
-func Build(entryResolver EntryResolver, dependencyService DependencyService, calculator Calculator, logger scribe.Emitter, clock chronos.Clock) packit.BuildFunc {
+//go:generate faux --interface ConfigGenerator --output fakes/config_generator.go
+type ConfigGenerator interface {
+	Generate(templateSource, destination string) error
+}
+
+func Build(entryResolver EntryResolver,
+	dependencyService DependencyService,
+	config ConfigGenerator,
+	calculator Calculator,
+	logger scribe.Emitter,
+	clock chronos.Clock) packit.BuildFunc {
 	return func(context packit.BuildContext) (packit.BuildResult, error) {
 		logger.Title("%s %s", context.BuildpackInfo.Name, context.BuildpackInfo.Version)
 
@@ -70,16 +80,18 @@ func Build(entryResolver EntryResolver, dependencyService DependencyService, cal
 			return packit.BuildResult{}, fmt.Errorf("failed to create logs dir : %w", err)
 		}
 
+		nginxConfPath := getNginxConfLocation(context.WorkingDir)
+
+		if os.Getenv("BP_WEB_SERVER") == "nginx" {
+			err := config.Generate(filepath.Join(context.CNBPath, "defaultconfig", "template.conf"), nginxConfPath)
+			if err != nil {
+				return packit.BuildResult{}, fmt.Errorf("failed to generate nginx.conf : %w", err)
+			}
+		}
+
 		layer, err := context.Layers.Get(NGINX)
 		if err != nil {
 			return packit.BuildResult{}, err
-		}
-
-		nginxConfPath := getNginxConfLocation(context.WorkingDir)
-		configureBinPath := filepath.Join(context.CNBPath, "bin", "configure")
-		currConfigureBinSHA256, err := calculator.Sum(configureBinPath)
-		if err != nil {
-			return packit.BuildResult{}, fmt.Errorf("checksum failed for file %s: %w", configureBinPath, err)
 		}
 
 		bom := dependencyService.GenerateBillOfMaterials(dependency)
@@ -140,6 +152,12 @@ func Build(entryResolver EntryResolver, dependencyService DependencyService, cal
 			}
 		}
 
+		configureBinPath := filepath.Join(context.CNBPath, "bin", "configure")
+		currConfigureBinSHA256, err := calculator.Sum(configureBinPath)
+		if err != nil {
+			return packit.BuildResult{}, fmt.Errorf("checksum failed for file %s: %w", configureBinPath, err)
+		}
+
 		if !shouldInstall(layer.Metadata, currConfigureBinSHA256, dependency.SHA256) {
 			logger.Process("Reusing cached layer %s", layer.Path)
 			logger.Break()
@@ -173,6 +191,7 @@ func Build(entryResolver EntryResolver, dependencyService DependencyService, cal
 		logger.Action("Completed in %s", duration.Round(time.Millisecond))
 		logger.Break()
 
+		layer.LaunchEnv.Override("APP_ROOT", context.WorkingDir)
 		layer.SharedEnv.Append("PATH", filepath.Join(layer.Path, "sbin"), ":")
 		logger.EnvironmentVariables(layer)
 
@@ -183,7 +202,7 @@ func Build(entryResolver EntryResolver, dependencyService DependencyService, cal
 			return packit.BuildResult{}, err
 		}
 
-		err = fs.Copy(filepath.Join(context.CNBPath, "bin", "configure"), filepath.Join(execdDir, "0-configure"))
+		err = fs.Copy(configureBinPath, filepath.Join(execdDir, "0-configure"))
 		if err != nil {
 			return packit.BuildResult{}, err
 		}

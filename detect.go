@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/paketo-buildpacks/packit/v2"
+	"github.com/paketo-buildpacks/packit/v2/fs"
 )
 
 //go:generate faux --interface VersionParser --output fakes/version_parser.go
@@ -31,13 +32,12 @@ func Detect(versionParser VersionParser) packit.DetectFunc {
 			},
 		}
 
-		_, err := os.Stat(getNginxConfLocation(context.WorkingDir))
+		confExists, err := fs.Exists(getNginxConfLocation(context.WorkingDir))
 		if err != nil {
-			if os.IsNotExist(err) {
-				return plan, nil
-			}
-
 			return packit.DetectResult{}, fmt.Errorf("failed to stat nginx.conf: %w", err)
+		}
+		if !confExists && os.Getenv("BP_WEB_SERVER") != "nginx" {
+			return plan, nil
 		}
 
 		version, envVarExists := os.LookupEnv("BP_NGINX_VERSION")

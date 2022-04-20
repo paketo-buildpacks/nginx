@@ -21,6 +21,7 @@ func main() {
 		nginx.Build(
 			draft.NewPlanner(),
 			postal.NewService(cargo.NewTransport()),
+			nginx.NewDefaultConfigGenerator(),
 			fs.NewChecksumCalculator(),
 			logger,
 			chronos.DefaultClock,
