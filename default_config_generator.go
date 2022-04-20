@@ -21,12 +21,9 @@ func NewDefaultConfigGenerator(logs scribe.Emitter) DefaultConfigGenerator {
 	}
 }
 
-func (g DefaultConfigGenerator) Generate(templateSource, destination string, env BuildEnvironment) error {
+func (g DefaultConfigGenerator) Generate(destination string, env BuildEnvironment) error {
 	g.logs.Process("Generating %s", destination)
-	if _, err := os.Stat(templateSource); err != nil {
-		return fmt.Errorf("failed to locate nginx.conf template: %w", err)
-	}
-	t := template.Must(template.New("template.conf").Delims("$((", "))").ParseFiles(templateSource))
+	t := template.Must(template.New("template.conf").Delims("$((", "))").Parse(defaultConf))
 
 	if env.WebServerRoot == "" {
 		env.WebServerRoot = `./public`

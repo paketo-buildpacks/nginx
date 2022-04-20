@@ -1,4 +1,6 @@
-# Number of worker processes running in container
+package nginx
+
+const defaultConf string = `# Number of worker processes running in container
 worker_processes 1;
 
 # Run NGINX in foreground (necessary for containerized NGINX)
@@ -192,3 +194,4 @@ $(( end ))
     }
   }
 }
+`
