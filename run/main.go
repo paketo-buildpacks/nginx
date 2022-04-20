@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Netflix/go-env"
+	"github.com/caarlos0/env/v6"
 	"github.com/paketo-buildpacks/nginx"
 	"github.com/paketo-buildpacks/packit/v2"
 	"github.com/paketo-buildpacks/packit/v2/cargo"
@@ -20,7 +20,7 @@ func main() {
 	logger := scribe.NewEmitter(os.Stdout)
 
 	var buildEnv nginx.BuildEnvironment
-	_, err := env.UnmarshalFromEnviron(&buildEnv)
+	err := env.Parse(&buildEnv)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, fmt.Errorf("failed to parse build configuration: %w", err))
 		os.Exit(1)
