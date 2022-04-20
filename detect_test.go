@@ -36,7 +36,7 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 		versionParser = &fakes.VersionParser{}
 		versionParser.ResolveVersionCall.Returns.ResultVersion = "1.19.*"
 
-		detect = nginx.Detect(versionParser)
+		detect = nginx.Detect(nginx.BuildEnvironment{}, versionParser)
 	})
 
 	it.After(func() {
@@ -58,10 +58,7 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 
 	context("$BP_WEB_SERVER is set for a no-config nginx build", func() {
 		it.Before(func() {
-			Expect(os.Setenv("BP_WEB_SERVER", "nginx")).To(Succeed())
-		})
-		it.After(func() {
-			Expect(os.Unsetenv("BP_WEB_SERVER")).To(Succeed())
+			detect = nginx.Detect(nginx.BuildEnvironment{WebServer: "nginx"}, versionParser)
 		})
 		it("requires and provides nginx", func() {
 			result, err := detect(packit.DetectContext{
@@ -97,13 +94,9 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 
 		context("when version is set via BP_NGINX_VERSION", func() {
 			it.Before(func() {
-				os.Setenv("BP_NGINX_VERSION", "mainline")
+				detect = nginx.Detect(nginx.BuildEnvironment{NginxVersion: "mainline"}, versionParser)
 				versionParser.ResolveVersionCall.Returns.ResultVersion = "1.19.*"
 				versionParser.ResolveVersionCall.Returns.Err = nil
-			})
-
-			it.After(func() {
-				os.Unsetenv("BP_NGINX_VERSION")
 			})
 
 			it("requires the given constraint in buildpack.yml", func() {
@@ -136,11 +129,7 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 
 		context("and BP_LIVE_RELOAD_ENABLED=true in the build environment", func() {
 			it.Before(func() {
-				os.Setenv("BP_LIVE_RELOAD_ENABLED", "true")
-			})
-
-			it.After(func() {
-				os.Unsetenv("BP_LIVE_RELOAD_ENABLED")
+				detect = nginx.Detect(nginx.BuildEnvironment{Reload: true}, versionParser)
 			})
 
 			it("requires watchexec at launch time", func() {
@@ -287,23 +276,6 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 				})
 
 				Expect(err).To(MatchError(ContainSubstring("parsing version failed")))
-			})
-		})
-
-		context("when BP_LIVE_RELOAD_ENABLED is set to an invalid value", func() {
-			it.Before(func() {
-				os.Setenv("BP_LIVE_RELOAD_ENABLED", "not-a-bool")
-			})
-
-			it.After(func() {
-				os.Unsetenv("BP_LIVE_RELOAD_ENABLED")
-			})
-
-			it("returns an error", func() {
-				_, err := detect(packit.DetectContext{
-					WorkingDir: workingDir,
-				})
-				Expect(err).To(MatchError(ContainSubstring("failed to parse BP_LIVE_RELOAD_ENABLED value not-a-bool")))
 			})
 		})
 	})

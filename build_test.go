@@ -53,8 +53,8 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(err).NotTo(HaveOccurred())
 
 		buffer = bytes.NewBuffer(nil)
-		entryResolver = &fakes.EntryResolver{}
 
+		entryResolver = &fakes.EntryResolver{}
 		entryResolver.ResolveCall.Returns.BuildpackPlanEntry = packit.BuildpackPlanEntry{
 			Name: "nginx",
 			Metadata: map[string]interface{}{
@@ -99,7 +99,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(os.Mkdir(filepath.Join(cnbPath, "bin"), os.ModePerm)).To(Succeed())
 		Expect(os.WriteFile(filepath.Join(cnbPath, "bin", "configure"), []byte("binary-contents"), 0600)).To(Succeed())
 
-		build = nginx.Build(entryResolver, dependencyService, config, calculator, scribe.NewEmitter(buffer), chronos.DefaultClock)
+		build = nginx.Build(nginx.BuildEnvironment{}, entryResolver, dependencyService, config, calculator, scribe.NewEmitter(buffer), chronos.DefaultClock)
 	})
 
 	it("does a build", func() {
@@ -209,13 +209,9 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(calculator.SumCall.CallCount).To(Equal(1))
 	})
 
-	context("when BP_LIVE_RELOAD_ENABLED=true in the build environment", func() {
+	context("when live reload is enabled", func() {
 		it.Before(func() {
-			os.Setenv("BP_LIVE_RELOAD_ENABLED", "true")
-		})
-
-		it.After(func() {
-			os.Unsetenv("BP_LIVE_RELOAD_ENABLED")
+			build = nginx.Build(nginx.BuildEnvironment{Reload: true}, entryResolver, dependencyService, config, calculator, scribe.NewEmitter(buffer), chronos.DefaultClock)
 		})
 
 		it("uses watchexec to set the start command", func() {
@@ -549,10 +545,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 	context("when BP_WEB_SERVER=nginx in the build env", func() {
 		it.Before(func() {
-			Expect(os.Setenv("BP_WEB_SERVER", "nginx")).To(Succeed())
-		})
-		it.After(func() {
-			Expect(os.Unsetenv("BP_WEB_SERVER")).To(Succeed())
+			build = nginx.Build(nginx.BuildEnvironment{WebServer: "nginx"}, entryResolver, dependencyService, config, calculator, scribe.NewEmitter(buffer), chronos.DefaultClock)
 		})
 
 		it("generates a basic nginx.conf", func() {
@@ -578,14 +571,16 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(config.GenerateCall.Receives.TemplateSource).To(Equal(filepath.Join(cnbPath, "defaultconfig/template.conf")))
 			Expect(config.GenerateCall.Receives.Destination).To(Equal(filepath.Join(workspaceDir, nginx.ConfFile)))
-			Expect(config.GenerateCall.Receives.RootDir).To(BeEmpty())
+			Expect(config.GenerateCall.Receives.Env).To(Equal(nginx.BuildEnvironment{WebServer: "nginx"}))
 		})
+
 		context("and the user specifies a root dir for the web server", func() {
 			it.Before(func() {
-				Expect(os.Setenv("BP_WEB_SERVER_ROOT", "custom")).To(Succeed())
-			})
-			it.After(func() {
-				Expect(os.Unsetenv("BP_WEB_SERVER_ROOT")).To(Succeed())
+				buildEnv := nginx.BuildEnvironment{
+					WebServer:     "nginx",
+					WebServerRoot: "custom",
+				}
+				build = nginx.Build(buildEnv, entryResolver, dependencyService, config, calculator, scribe.NewEmitter(buffer), chronos.DefaultClock)
 			})
 			it("passes the root dir into the config generator", func() {
 				_, err := build(packit.BuildContext{
@@ -610,7 +605,10 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(config.GenerateCall.Receives.TemplateSource).To(Equal(filepath.Join(cnbPath, "defaultconfig/template.conf")))
 				Expect(config.GenerateCall.Receives.Destination).To(Equal(filepath.Join(workspaceDir, nginx.ConfFile)))
-				Expect(config.GenerateCall.Receives.RootDir).To(Equal("custom"))
+				Expect(config.GenerateCall.Receives.Env).To(Equal(nginx.BuildEnvironment{
+					WebServer:     "nginx",
+					WebServerRoot: "custom",
+				}))
 			})
 		})
 
@@ -687,11 +685,8 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 		context("unable to generate nginx.conf", func() {
 			it.Before(func() {
-				Expect(os.Setenv("BP_WEB_SERVER", "nginx")).To(Succeed())
+				build = nginx.Build(nginx.BuildEnvironment{WebServer: "nginx"}, entryResolver, dependencyService, config, calculator, scribe.NewEmitter(buffer), chronos.DefaultClock)
 				config.GenerateCall.Returns.Error = errors.New("some config error")
-			})
-			it.After(func() {
-				Expect(os.Unsetenv("BP_WEB_SERVER")).To(Succeed())
 			})
 
 			it("fails with descriptive error", func() {
@@ -742,33 +737,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 				Expect(err).To(HaveOccurred())
 				Expect(err).To(MatchError(ContainSubstring("checksum failed for file")))
-			})
-		})
-
-		context("when BP_LIVE_RELOAD_ENABLED is set to an invalid value", func() {
-			it.Before(func() {
-				os.Setenv("BP_LIVE_RELOAD_ENABLED", "not-a-bool")
-			})
-
-			it.After(func() {
-				os.Unsetenv("BP_LIVE_RELOAD_ENABLED")
-			})
-
-			it("returns an error", func() {
-				_, err := build(packit.BuildContext{
-					WorkingDir: workspaceDir,
-					CNBPath:    cnbPath,
-					Stack:      "some-stack",
-					BuildpackInfo: packit.BuildpackInfo{
-						Name:    "Some Buildpack",
-						Version: "some-version",
-					},
-					Plan: packit.BuildpackPlan{
-						Entries: []packit.BuildpackPlanEntry{},
-					},
-					Layers: packit.Layers{Path: layersDir},
-				})
-				Expect(err).To(MatchError(ContainSubstring("failed to parse BP_LIVE_RELOAD_ENABLED value not-a-bool")))
 			})
 		})
 

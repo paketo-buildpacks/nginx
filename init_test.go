@@ -8,7 +8,7 @@ import (
 )
 
 func TestUnitNGINX(t *testing.T) {
-	suite := spec.New("nginx", spec.Report(report.Terminal{}), spec.Sequential())
+	suite := spec.New("nginx", spec.Report(report.Terminal{}))
 	suite("Build", testBuild)
 	suite("Detect", testDetect)
 	suite("Parse", testParser)

@@ -37,7 +37,7 @@ func testDefaultConfigGenerator(t *testing.T, context spec.G, it spec.S) {
 		})
 
 		it("writes a default nginx.conf to the working directory", func() {
-			err := generator.Generate(filepath.Join(sourceDir, "template.conf"), filepath.Join(workingDir, "nginx.conf"), "")
+			err := generator.Generate(filepath.Join(sourceDir, "template.conf"), filepath.Join(workingDir, "nginx.conf"), nginx.BuildEnvironment{})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(filepath.Join(workingDir, "nginx.conf")).To(BeARegularFile())
@@ -47,7 +47,7 @@ func testDefaultConfigGenerator(t *testing.T, context spec.G, it spec.S) {
 		})
 
 		it("writes a nginx.conf with specified relative root directory", func() {
-			err := generator.Generate(filepath.Join(sourceDir, "template.conf"), filepath.Join(workingDir, "nginx.conf"), "custom")
+			err := generator.Generate(filepath.Join(sourceDir, "template.conf"), filepath.Join(workingDir, "nginx.conf"), nginx.BuildEnvironment{WebServerRoot: "custom"})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(filepath.Join(workingDir, "nginx.conf")).To(BeARegularFile())
@@ -57,7 +57,7 @@ func testDefaultConfigGenerator(t *testing.T, context spec.G, it spec.S) {
 		})
 
 		it("writes a nginx.conf with specified absolute path to root directory", func() {
-			err := generator.Generate(filepath.Join(sourceDir, "template.conf"), filepath.Join(workingDir, "nginx.conf"), "/some/absolute/path")
+			err := generator.Generate(filepath.Join(sourceDir, "template.conf"), filepath.Join(workingDir, "nginx.conf"), nginx.BuildEnvironment{WebServerRoot: "/some/absolute/path"})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(filepath.Join(workingDir, "nginx.conf")).To(BeARegularFile())
@@ -69,7 +69,7 @@ func testDefaultConfigGenerator(t *testing.T, context spec.G, it spec.S) {
 		context("failure cases", func() {
 			context("source template cannot be found", func() {
 				it("returns an error", func() {
-					err := generator.Generate("not-a-path", filepath.Join(workingDir, "nginx.conf"), "custom")
+					err := generator.Generate("not-a-path", filepath.Join(workingDir, "nginx.conf"), nginx.BuildEnvironment{})
 					Expect(err).To(MatchError(ContainSubstring("failed to locate nginx.conf template: stat")))
 				})
 			})
@@ -79,7 +79,7 @@ func testDefaultConfigGenerator(t *testing.T, context spec.G, it spec.S) {
 					Expect(os.WriteFile(filepath.Join(workingDir, "nginx.conf"), []byte("read-only file"), 0444)).To(Succeed())
 				})
 				it("returns an error", func() {
-					err := generator.Generate(filepath.Join(sourceDir, "template.conf"), filepath.Join(workingDir, "nginx.conf"), "custom")
+					err := generator.Generate(filepath.Join(sourceDir, "template.conf"), filepath.Join(workingDir, "nginx.conf"), nginx.BuildEnvironment{})
 					Expect(err).To(MatchError(ContainSubstring(fmt.Sprintf("failed to create %[1]s: open %[1]s: permission denied", filepath.Join(workingDir, "nginx.conf")))))
 				})
 			})

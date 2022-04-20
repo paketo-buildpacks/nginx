@@ -34,10 +34,18 @@ type Calculator interface {
 
 //go:generate faux --interface ConfigGenerator --output fakes/config_generator.go
 type ConfigGenerator interface {
-	Generate(templateSource, destination, rootDir string) error
+	Generate(templateSource, destination string, env BuildEnvironment) error
 }
 
-func Build(entryResolver EntryResolver,
+type BuildEnvironment struct {
+	NginxVersion  string `env:"BP_NGINX_VERSION"`
+	WebServer     string `env:"BP_WEB_SERVER"`
+	WebServerRoot string `env:"BP_WEB_SERVER_ROOT"`
+	Reload        bool   `env:"BP_LIVE_RELOAD_ENABLED"`
+}
+
+func Build(buildEnv BuildEnvironment,
+	entryResolver EntryResolver,
 	dependencyService DependencyService,
 	config ConfigGenerator,
 	calculator Calculator,
@@ -82,8 +90,8 @@ func Build(entryResolver EntryResolver,
 
 		nginxConfPath := getNginxConfLocation(context.WorkingDir)
 
-		if os.Getenv("BP_WEB_SERVER") == "nginx" {
-			err := config.Generate(filepath.Join(context.CNBPath, "defaultconfig", "template.conf"), nginxConfPath, os.Getenv("BP_WEB_SERVER_ROOT"))
+		if buildEnv.WebServer == "nginx" {
+			err := config.Generate(filepath.Join(context.CNBPath, "defaultconfig", "template.conf"), nginxConfPath, buildEnv)
 			if err != nil {
 				return packit.BuildResult{}, fmt.Errorf("failed to generate nginx.conf : %w", err)
 			}
@@ -122,12 +130,7 @@ func Build(entryResolver EntryResolver,
 			}
 			launchMetadata.BOM = bom
 
-			shouldReload, err := checkLiveReloadEnabled()
-			if err != nil {
-				return packit.BuildResult{}, err
-			}
-
-			if shouldReload {
+			if buildEnv.Reload {
 				launchMetadata.Processes = []packit.Process{
 					{
 						Type:    "web",
