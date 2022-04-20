@@ -34,7 +34,7 @@ type Calculator interface {
 
 //go:generate faux --interface ConfigGenerator --output fakes/config_generator.go
 type ConfigGenerator interface {
-	Generate(templateSource, destination string) error
+	Generate(templateSource, destination, rootDir string) error
 }
 
 func Build(entryResolver EntryResolver,
@@ -83,7 +83,7 @@ func Build(entryResolver EntryResolver,
 		nginxConfPath := getNginxConfLocation(context.WorkingDir)
 
 		if os.Getenv("BP_WEB_SERVER") == "nginx" {
-			err := config.Generate(filepath.Join(context.CNBPath, "defaultconfig", "template.conf"), nginxConfPath)
+			err := config.Generate(filepath.Join(context.CNBPath, "defaultconfig", "template.conf"), nginxConfPath, os.Getenv("BP_WEB_SERVER_ROOT"))
 			if err != nil {
 				return packit.BuildResult{}, fmt.Errorf("failed to generate nginx.conf : %w", err)
 			}
