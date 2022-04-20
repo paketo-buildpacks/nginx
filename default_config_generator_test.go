@@ -33,9 +33,12 @@ func testDefaultConfigGenerator(t *testing.T, context spec.G, it spec.S) {
 
 	context("Generate", func() {
 		it.Before(func() {
-			Expect(os.WriteFile(filepath.Join(sourceDir, "template.conf"), []byte(`root $(( .Root ));
-$((- if .PushState ))
+			Expect(os.WriteFile(filepath.Join(sourceDir, "template.conf"), []byte(`root $(( .WebServerRoot ));
+$((- if .WebServerPushStateEnabled ))
 Push state is true
+$(( end -))
+$((- if .WebServerForceHTTPS))
+Force HTTPS is true
 $(( end -))
 `), os.ModePerm)).To(Succeed())
 		})
@@ -84,6 +87,20 @@ $(( end -))
 			Expect(string(contents)).To(ContainSubstring(`Push state is true`))
 		})
 
+		it("writes an nginx.conf that conditionally includes the Force HTTPS content", func() {
+			err := generator.Generate(filepath.Join(sourceDir, "template.conf"), filepath.Join(workingDir, "nginx.conf"),
+				nginx.BuildEnvironment{
+					WebServerRoot:       "/some/absolute/path",
+					WebServerForceHTTPS: true,
+				})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(filepath.Join(workingDir, "nginx.conf")).To(BeARegularFile())
+			contents, err := os.ReadFile(filepath.Join(workingDir, "nginx.conf"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(contents)).To(ContainSubstring(`Force HTTPS is true`))
+		})
+
 		context("failure cases", func() {
 			context("source template cannot be found", func() {
 				it("returns an error", func() {
@@ -93,7 +110,7 @@ $(( end -))
 			})
 			context("destination file already exists and it's read-only", func() {
 				it.Before(func() {
-					Expect(os.WriteFile(filepath.Join(sourceDir, "template.conf"), []byte("root $(( .Root ));"), os.ModePerm)).To(Succeed())
+					Expect(os.WriteFile(filepath.Join(sourceDir, "template.conf"), []byte("root $(( .WebServerRoot ));"), os.ModePerm)).To(Succeed())
 					Expect(os.WriteFile(filepath.Join(workingDir, "nginx.conf"), []byte("read-only file"), 0444)).To(Succeed())
 				})
 				it("returns an error", func() {

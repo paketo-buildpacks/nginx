@@ -1,6 +1,8 @@
 package integration_test
 
 import (
+	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"testing"
@@ -50,7 +52,45 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 	})
 
 	context("when pushing app with no conf and $BP_WEB_SERVER=nginx", func() {
-		it("builds with an auto-generated nginx.conf", func() {
+		it("generates the default nginx.conf", func() {
+			var err error
+			image, _, err = pack.Build.
+				WithBuildpacks(nginxBuildpack).
+				WithEnv(map[string]string{
+					"BP_WEB_SERVER": "nginx",
+				}).
+				WithPullPolicy("never").
+				Execute(name, source)
+			Expect(err).NotTo(HaveOccurred())
+
+			configContainer, err = docker.Container.Run.
+				WithEnv(map[string]string{"PORT": "8080"}).
+				WithPublish("8080").
+				WithEntrypoint("launcher").
+				WithCommand(`bash -c "cat /workspace/nginx.conf"`).
+				Execute(image.ID)
+			Expect(err).ToNot(HaveOccurred())
+
+			Eventually(func() (string, error) {
+				cLogs, err := docker.Container.Logs.Execute(configContainer.ID)
+				if err != nil {
+					return "", err
+				}
+				return cLogs.String(), nil
+			}).Should(Equal(expectedDefaultConfig))
+
+			container, err = docker.Container.Run.
+				WithEnv(map[string]string{"PORT": "8080"}).
+				WithPublish("8080").
+				Execute(image.ID)
+			Expect(err).ToNot(HaveOccurred())
+
+			Eventually(container).Should(Serve(ContainSubstring("<p>Hello World!</p>")).OnPort(8080))
+		})
+	})
+
+	context("when using env var configuration options", func() {
+		it("generates an nginx.conf with the configuration", func() {
 			var err error
 			image, _, err = pack.Build.
 				WithBuildpacks(nginxBuildpack).
@@ -77,7 +117,15 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 					return "", err
 				}
 				return cLogs.String(), nil
-			}).Should(Equal(expectedConfig))
+			}).Should(ContainSubstring(expectedPushStateConfig))
+
+			Eventually(func() (string, error) {
+				cLogs, err := docker.Container.Logs.Execute(configContainer.ID)
+				if err != nil {
+					return "", err
+				}
+				return cLogs.String(), nil
+			}).Should(ContainSubstring(expectedCustomRootConfig))
 
 			container, err = docker.Container.Run.
 				WithEnv(map[string]string{"PORT": "8080"}).
@@ -89,21 +137,106 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 			Eventually(container).Should(Serve(ContainSubstring("<p>Hello World!</p>")).OnPort(8080).WithEndpoint("/test"))
 		})
 	})
+
+	context("building with no config and forcing HTTPS connections", func() {
+		it("generates an nginx.conf with the required redirect logic", func() {
+			var err error
+			image, _, err = pack.Build.
+				WithBuildpacks(nginxBuildpack).
+				WithEnv(map[string]string{
+					"BP_WEB_SERVER":             "nginx",
+					"BP_WEB_SERVER_ROOT":        "custom_root",
+					"BP_WEB_SERVER_FORCE_HTTPS": "true",
+				}).
+				WithPullPolicy("never").
+				Execute(name, source)
+			Expect(err).NotTo(HaveOccurred())
+
+			configContainer, err = docker.Container.Run.
+				WithEnv(map[string]string{"PORT": "8080"}).
+				WithPublish("8080").
+				WithEntrypoint("launcher").
+				WithCommand(`bash -c "cat /workspace/nginx.conf"`).
+				Execute(image.ID)
+			Expect(err).ToNot(HaveOccurred())
+
+			Eventually(func() (string, error) {
+				cLogs, err := docker.Container.Logs.Execute(configContainer.ID)
+				if err != nil {
+					return "", err
+				}
+				return cLogs.String(), nil
+			}).Should(ContainSubstring(expectedHTTPSConfig))
+
+			container, err = docker.Container.Run.
+				WithEnv(map[string]string{"PORT": "8080"}).
+				WithPublish("8080").
+				Execute(image.ID)
+			Expect(err).ToNot(HaveOccurred())
+
+			client := &http.Client{
+				CheckRedirect: func(req *http.Request, via []*http.Request) error {
+					return http.ErrUseLastResponse
+				},
+			}
+
+			response, err := client.Get(fmt.Sprintf("http://localhost:%s", container.HostPort("8080")))
+			Expect(err).NotTo(HaveOccurred())
+			defer response.Body.Close()
+
+			Expect(response.StatusCode).To(Equal(http.StatusMovedPermanently))
+
+			_, err = http.Get(fmt.Sprintf("http://localhost:%s", container.HostPort("8080")))
+			// Assert that the server attempts to hit HTTPS URL instead of HTTP
+			Expect(err).To(MatchError(`Get "https://localhost/": dial tcp [::1]:443: connect: connection refused`))
+		})
+	})
 }
 
-var expectedConfig string = `# TODO: Convert from nginx conf comments to go templating comments
-# Number of worker processes running in container
+var expectedCustomRootConfig string = `  server {
+    listen 8080 default_server;
+    server_name _;
+
+    # Directory where static files are located
+    root /workspace/custom_root;
+
+`
+var expectedHTTPSConfig string = `  server {
+    listen 8080 default_server;
+    server_name _;
+
+    # Directory where static files are located
+    root /workspace/custom_root;
+
+    # If HTTP request is made, redirect to HTTPS requests
+    set $updated_host $host;
+    if ($http_x_forwarded_host != "") {
+      set $updated_host $http_x_forwarded_host;
+    }
+
+    if ($http_x_forwarded_proto != "https") {
+      return 301 https://$updated_host$request_uri;
+    }
+`
+
+var expectedPushStateConfig string = `    location / {
+      # Send the content at / in response to *any* requested endpoint
+      if (!-e $request_filename) {
+        rewrite ^(.*)$ / break;
+      }
+`
+
+var expectedDefaultConfig string = `# Number of worker processes running in container
 worker_processes 1;
 
 # Run NGINX in foreground (necessary for containerized NGINX)
 daemon off;
 
 # Set the location of the server's PID file
-pid /workspace/logs/nginx.pid;
+pid /tmp/nginx.pid;
 
 # Set the location of the server's error log
-error_log /workspace/logs/error.log;
-
+error_log stderr;
 
 events {
   # Set number of simultaneous connections each worker process can serve
@@ -111,12 +244,10 @@ events {
 }
 
 http {
-# TODO: Can we write these files to /tmp instead?
-  client_body_temp_path /workspace/client_body_temp;
-  proxy_temp_path /workspace/proxy_temp;
-  fastcgi_temp_path /workspace/fastcgi_temp;
+  client_body_temp_path /tmp/client_body_temp;
+  proxy_temp_path /tmp/proxy_temp;
+  fastcgi_temp_path /tmp/fastcgi_temp;
 
-# TODO: Why set this?
   charset utf-8;
 
   # Map media types to file extensions
@@ -199,10 +330,7 @@ http {
     video/x-msvideo avi;
   }
 
-  # TODO: Rename log format? Leave as is?
-  log_format paketo '$http_x_forwarded_for - $http_referer - [$time_local] "$request" $status $body_bytes_sent';
-  # TODO: write logs to /tmp?
-  access_log /workspace/logs/access.log paketo;
+  access_log /dev/stdout;
 
   # Set the default MIME type of responses; 'application/octet-stream'
   # represents an arbitrary byte stream
@@ -240,7 +368,7 @@ http {
 
   # Set a timeout during which a keep-alive client connection will stay open on
   # the server side
-  # TODO: necessary? vv
+  # TODO: Consider downgrading to 15 seconds
   keepalive_timeout 30;
 
   # Ensure that redirects don't include the internal container PORT - <%=
@@ -252,26 +380,16 @@ http {
   server_tokens off;
 
   server {
-    listen 8080;
-    # TODO: With only one server defined, all requests will be routed to this
-    # one even if they don't match this server name. Is this worth including,
-    # then?
-    server_name localhost;
+    listen 8080 default_server;
+    server_name _;
 
     # Directory where static files are located
-    root /workspace/custom_root;
+    root /workspace/public;
 
     location / {
-				# Send the content at / in response to *any* requested endpoint
-        if (!-e $request_filename) {
-          rewrite ^(.*)$ / break;
-        }
-
-        # Specify files sent to client if specific file not requested (e.g.
-        # GET www.example.com/). NGINX sends first existing file in the list.
-        index index.html index.htm Default.htm;
-
-      # TODO: Allow users to include additional conf files?
+      # Specify files sent to client if specific file not requested (e.g.
+      # GET www.example.com/). NGINX sends first existing file in the list.
+      index index.html index.htm Default.htm;
     }
 
     # (Security) Don't serve dotfiles, except .well-known/, which is needed by

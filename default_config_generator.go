@@ -21,21 +21,17 @@ func (g DefaultConfigGenerator) Generate(templateSource, destination string, env
 		return fmt.Errorf("failed to locate nginx.conf template: %w", err)
 	}
 	t := template.Must(template.New("template.conf").Delims("$((", "))").ParseFiles(templateSource))
-	data := nginxConfig{
-		Root:      `{{ env "APP_ROOT" }}/public`,
-		PushState: env.WebServerPushStateEnabled,
+
+	if env.WebServerRoot == "" {
+		env.WebServerRoot = `./public`
 	}
 
-	if env.WebServerRoot != "" {
-		if filepath.IsAbs(env.WebServerRoot) {
-			data.Root = env.WebServerRoot
-		} else {
-			data.Root = filepath.Join(`{{ env "APP_ROOT" }}`, env.WebServerRoot)
-		}
+	if !filepath.IsAbs(env.WebServerRoot) {
+		env.WebServerRoot = filepath.Join(`{{ env "APP_ROOT" }}`, env.WebServerRoot)
 	}
 
 	var b bytes.Buffer
-	err := t.Execute(&b, data)
+	err := t.Execute(&b, env)
 	if err != nil {
 		// not tested
 		return err
@@ -53,9 +49,4 @@ func (g DefaultConfigGenerator) Generate(templateSource, destination string, env
 		return err
 	}
 	return nil
-}
-
-type nginxConfig struct {
-	Root      string
-	PushState bool
 }
