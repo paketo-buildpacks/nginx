@@ -12,6 +12,7 @@ import (
 	"github.com/paketo-buildpacks/nginx/fakes"
 	"github.com/paketo-buildpacks/packit/v2"
 	"github.com/paketo-buildpacks/packit/v2/chronos"
+	"github.com/paketo-buildpacks/packit/v2/servicebindings"
 
 	//nolint Ignore SA1019, informed usage of deprecated package
 	"github.com/paketo-buildpacks/packit/v2/paketosbom"
@@ -35,6 +36,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		dependencyService *fakes.DependencyService
 		config            *fakes.ConfigGenerator
 		calculator        *fakes.Calculator
+		bindings          *fakes.Bindings
 
 		buffer *bytes.Buffer
 
@@ -89,6 +91,8 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			},
 		}
 
+		bindings = &fakes.Bindings{}
+
 		config = &fakes.ConfigGenerator{}
 
 		calculator = &fakes.Calculator{}
@@ -99,7 +103,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(os.Mkdir(filepath.Join(cnbPath, "bin"), os.ModePerm)).To(Succeed())
 		Expect(os.WriteFile(filepath.Join(cnbPath, "bin", "configure"), []byte("binary-contents"), 0600)).To(Succeed())
 
-		build = nginx.Build(nginx.BuildEnvironment{}, entryResolver, dependencyService, config, calculator, scribe.NewEmitter(buffer), chronos.DefaultClock)
+		build = nginx.Build(nginx.BuildEnvironment{}, entryResolver, dependencyService, bindings, config, calculator, scribe.NewEmitter(buffer), chronos.DefaultClock)
 	})
 
 	it("does a build", func() {
@@ -211,7 +215,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 	context("when live reload is enabled", func() {
 		it.Before(func() {
-			build = nginx.Build(nginx.BuildEnvironment{Reload: true}, entryResolver, dependencyService, config, calculator, scribe.NewEmitter(buffer), chronos.DefaultClock)
+			build = nginx.Build(nginx.BuildEnvironment{Reload: true}, entryResolver, dependencyService, bindings, config, calculator, scribe.NewEmitter(buffer), chronos.DefaultClock)
 		})
 
 		it("uses watchexec to set the start command", func() {
@@ -550,7 +554,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				WebServerRoot:             "custom",
 				WebServerPushStateEnabled: true,
 			}
-			build = nginx.Build(buildEnv, entryResolver, dependencyService, config, calculator, scribe.NewEmitter(buffer), chronos.DefaultClock)
+			build = nginx.Build(buildEnv, entryResolver, dependencyService, bindings, config, calculator, scribe.NewEmitter(buffer), chronos.DefaultClock)
 		})
 
 		it("generates a basic nginx.conf and passes env var configuration into template generator", func() {
@@ -581,6 +585,53 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				WebServerRoot:             "custom",
 				WebServerPushStateEnabled: true,
 			}))
+		})
+
+		context("and a well-formed htpasswd service binding is provided", func() {
+			it.Before(func() {
+				buildEnv := nginx.BuildEnvironment{
+					WebServer: "nginx",
+				}
+				bindings.ResolveCall.Returns.BindingSlice = []servicebindings.Binding{
+					{
+						Name: "first",
+						Type: "htpasswd",
+						Path: "/path/to/binding/",
+						Entries: map[string]*servicebindings.Entry{
+							".htpasswd": servicebindings.NewEntry("/path/to/binding/.htpasswd"),
+						},
+					},
+				}
+				build = nginx.Build(buildEnv, entryResolver, dependencyService, bindings, config, calculator, scribe.NewEmitter(buffer), chronos.DefaultClock)
+			})
+			it("passes the binding path into the conf generator", func() {
+				_, err := build(packit.BuildContext{
+					CNBPath:    cnbPath,
+					WorkingDir: workspaceDir,
+					Stack:      "some-stack",
+					Platform:   packit.Platform{Path: "platform"},
+					Plan: packit.BuildpackPlan{
+						Entries: []packit.BuildpackPlanEntry{
+							{
+								Name: "nginx",
+								Metadata: map[string]interface{}{
+									"version-source": "BP_NGINX_VERSION",
+									"version":        "1.19.*",
+									"launch":         true,
+								},
+							},
+						},
+					},
+					Layers: packit.Layers{Path: layersDir},
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(config.GenerateCall.Receives.TemplateSource).To(Equal(filepath.Join(cnbPath, "defaultconfig/template.conf")))
+				Expect(config.GenerateCall.Receives.Destination).To(Equal(filepath.Join(workspaceDir, nginx.ConfFile)))
+				Expect(config.GenerateCall.Receives.Env).To(Equal(nginx.BuildEnvironment{
+					WebServer:     "nginx",
+					BasicAuthFile: "/path/to/binding/.htpasswd",
+				}))
+			})
 		})
 
 		context("and nginx layer is being reused", func() {
@@ -654,9 +705,89 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			})
 		})
 
+		context("unable to resolve .htpasswd service binding", func() {
+			it.Before(func() {
+				build = nginx.Build(nginx.BuildEnvironment{WebServer: "nginx"}, entryResolver, dependencyService, bindings, config, calculator, scribe.NewEmitter(buffer), chronos.DefaultClock)
+				bindings.ResolveCall.Returns.Error = errors.New("some bindings error")
+			})
+
+			it("fails with descriptive error", func() {
+				_, err := build(packit.BuildContext{
+					CNBPath:    cnbPath,
+					WorkingDir: workspaceDir,
+					Stack:      "some-stack",
+				})
+
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(MatchError(ContainSubstring("some bindings error")))
+			})
+		})
+
+		context("there's more than one htpasswd service binding", func() {
+			it.Before(func() {
+				bindings.ResolveCall.Returns.BindingSlice = []servicebindings.Binding{
+					{
+						Name: "first",
+						Type: "htpasswd",
+						Path: "/path/to/binding/",
+						Entries: map[string]*servicebindings.Entry{
+							".htpasswd": servicebindings.NewEntry("/path/to/binding/.htpasswd"),
+						},
+					},
+					{
+						Name: "second",
+						Type: "htpasswd",
+						Path: "/path/to/binding/",
+						Entries: map[string]*servicebindings.Entry{
+							".htpasswd": servicebindings.NewEntry("/path/to/binding/.htpasswd"),
+						},
+					},
+				}
+				build = nginx.Build(nginx.BuildEnvironment{WebServer: "nginx"}, entryResolver, dependencyService, bindings, config, calculator, scribe.NewEmitter(buffer), chronos.DefaultClock)
+			})
+
+			it("fails with descriptive error", func() {
+				_, err := build(packit.BuildContext{
+					CNBPath:    cnbPath,
+					WorkingDir: workspaceDir,
+					Stack:      "some-stack",
+				})
+
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(MatchError(ContainSubstring("binding resolver found more than one binding of type 'htpasswd'")))
+			})
+		})
+
+		context("the htpasswd service binding is malformed", func() {
+			it.Before(func() {
+				bindings.ResolveCall.Returns.BindingSlice = []servicebindings.Binding{
+					{
+						Name: "first",
+						Type: "htpasswd",
+						Path: "/path/to/binding/",
+						Entries: map[string]*servicebindings.Entry{
+							"some-irrelevant-file": servicebindings.NewEntry("some-irrelevant-path"),
+						},
+					},
+				}
+				build = nginx.Build(nginx.BuildEnvironment{WebServer: "nginx"}, entryResolver, dependencyService, bindings, config, calculator, scribe.NewEmitter(buffer), chronos.DefaultClock)
+			})
+
+			it("fails with descriptive error", func() {
+				_, err := build(packit.BuildContext{
+					CNBPath:    cnbPath,
+					WorkingDir: workspaceDir,
+					Stack:      "some-stack",
+				})
+
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(MatchError(ContainSubstring("binding of type 'htpasswd' does not contain required entry '.htpasswd'")))
+			})
+		})
+
 		context("unable to generate nginx.conf", func() {
 			it.Before(func() {
-				build = nginx.Build(nginx.BuildEnvironment{WebServer: "nginx"}, entryResolver, dependencyService, config, calculator, scribe.NewEmitter(buffer), chronos.DefaultClock)
+				build = nginx.Build(nginx.BuildEnvironment{WebServer: "nginx"}, entryResolver, dependencyService, bindings, config, calculator, scribe.NewEmitter(buffer), chronos.DefaultClock)
 				config.GenerateCall.Returns.Error = errors.New("some config error")
 			})
 

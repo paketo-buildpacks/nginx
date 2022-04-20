@@ -12,6 +12,7 @@ import (
 	"github.com/paketo-buildpacks/packit/v2/fs"
 	"github.com/paketo-buildpacks/packit/v2/postal"
 	"github.com/paketo-buildpacks/packit/v2/scribe"
+	"github.com/paketo-buildpacks/packit/v2/servicebindings"
 )
 
 //go:generate faux --interface EntryResolver --output fakes/entry_resolver.go
@@ -32,12 +33,18 @@ type Calculator interface {
 	Sum(paths ...string) (string, error)
 }
 
+//go:generate faux --interface Bindings --output fakes/binding_resolver.go
+type Bindings interface {
+	Resolve(typ, provider, platformDir string) ([]servicebindings.Binding, error)
+}
+
 //go:generate faux --interface ConfigGenerator --output fakes/config_generator.go
 type ConfigGenerator interface {
 	Generate(templateSource, destination string, env BuildEnvironment) error
 }
 
 type BuildEnvironment struct {
+	BasicAuthFile             string
 	NginxVersion              string `env:"BP_NGINX_VERSION"`
 	WebServer                 string `env:"BP_WEB_SERVER"`
 	WebServerRoot             string `env:"BP_WEB_SERVER_ROOT"`
@@ -49,6 +56,7 @@ type BuildEnvironment struct {
 func Build(buildEnv BuildEnvironment,
 	entryResolver EntryResolver,
 	dependencyService DependencyService,
+	bindings Bindings,
 	config ConfigGenerator,
 	calculator Calculator,
 	logger scribe.Emitter,
@@ -93,7 +101,23 @@ func Build(buildEnv BuildEnvironment,
 		nginxConfPath := getNginxConfLocation(context.WorkingDir)
 
 		if buildEnv.WebServer == "nginx" {
-			err := config.Generate(filepath.Join(context.CNBPath, "defaultconfig", "template.conf"), nginxConfPath, buildEnv)
+			bindingSet, err := bindings.Resolve("htpasswd", "", context.Platform.Path)
+			if err != nil {
+				return packit.BuildResult{}, err
+			}
+
+			if len(bindingSet) > 1 {
+				return packit.BuildResult{}, fmt.Errorf("binding resolver found more than one binding of type 'htpasswd'")
+			}
+
+			if len(bindingSet) == 1 {
+				if _, ok := bindingSet[0].Entries[".htpasswd"]; !ok {
+					return packit.BuildResult{}, fmt.Errorf("binding of type 'htpasswd' does not contain required entry '.htpasswd'")
+				}
+				buildEnv.BasicAuthFile = filepath.Join(bindingSet[0].Path, ".htpasswd")
+			}
+
+			err = config.Generate(filepath.Join(context.CNBPath, "defaultconfig", "template.conf"), nginxConfPath, buildEnv)
 			if err != nil {
 				return packit.BuildResult{}, fmt.Errorf("failed to generate nginx.conf : %w", err)
 			}
