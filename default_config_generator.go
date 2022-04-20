@@ -7,16 +7,22 @@ import (
 	"os"
 	"path/filepath"
 	"text/template"
+
+	"github.com/paketo-buildpacks/packit/v2/scribe"
 )
 
 type DefaultConfigGenerator struct {
+	logs scribe.Emitter
 }
 
-func NewDefaultConfigGenerator() DefaultConfigGenerator {
-	return DefaultConfigGenerator{}
+func NewDefaultConfigGenerator(logs scribe.Emitter) DefaultConfigGenerator {
+	return DefaultConfigGenerator{
+		logs: logs,
+	}
 }
 
 func (g DefaultConfigGenerator) Generate(templateSource, destination string, env BuildEnvironment) error {
+	g.logs.Process("Generating %s", destination)
 	if _, err := os.Stat(templateSource); err != nil {
 		return fmt.Errorf("failed to locate nginx.conf template: %w", err)
 	}
@@ -29,6 +35,22 @@ func (g DefaultConfigGenerator) Generate(templateSource, destination string, env
 	if !filepath.IsAbs(env.WebServerRoot) {
 		env.WebServerRoot = filepath.Join(`{{ env "APP_ROOT" }}`, env.WebServerRoot)
 	}
+
+	g.logs.Subprocess("Setting server root directory to '%s'", env.WebServerRoot)
+
+	if env.WebServerPushStateEnabled {
+		g.logs.Subprocess("Enabling push state routing")
+	}
+
+	if env.WebServerForceHTTPS {
+		g.logs.Subprocess("Setting server to redirect HTTP requests to HTTPS")
+	}
+
+	if env.BasicAuthFile != "" {
+		g.logs.Subprocess("Enabling basic authentication with .htpasswd credentials")
+	}
+
+	g.logs.Break()
 
 	var b bytes.Buffer
 	err := t.Execute(&b, env)
