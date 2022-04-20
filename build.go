@@ -38,10 +38,11 @@ type ConfigGenerator interface {
 }
 
 type BuildEnvironment struct {
-	NginxVersion  string `env:"BP_NGINX_VERSION"`
-	WebServer     string `env:"BP_WEB_SERVER"`
-	WebServerRoot string `env:"BP_WEB_SERVER_ROOT"`
-	Reload        bool   `env:"BP_LIVE_RELOAD_ENABLED"`
+	NginxVersion              string `env:"BP_NGINX_VERSION"`
+	WebServer                 string `env:"BP_WEB_SERVER"`
+	WebServerRoot             string `env:"BP_WEB_SERVER_ROOT"`
+	WebServerPushStateEnabled bool   `env:"BP_WEB_SERVER_ENABLE_PUSH_STATE"`
+	Reload                    bool   `env:"BP_LIVE_RELOAD_ENABLED"`
 }
 
 func Build(buildEnv BuildEnvironment,

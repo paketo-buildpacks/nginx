@@ -545,10 +545,15 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 	context("when BP_WEB_SERVER=nginx in the build env", func() {
 		it.Before(func() {
-			build = nginx.Build(nginx.BuildEnvironment{WebServer: "nginx"}, entryResolver, dependencyService, config, calculator, scribe.NewEmitter(buffer), chronos.DefaultClock)
+			buildEnv := nginx.BuildEnvironment{
+				WebServer:                 "nginx",
+				WebServerRoot:             "custom",
+				WebServerPushStateEnabled: true,
+			}
+			build = nginx.Build(buildEnv, entryResolver, dependencyService, config, calculator, scribe.NewEmitter(buffer), chronos.DefaultClock)
 		})
 
-		it("generates a basic nginx.conf", func() {
+		it("generates a basic nginx.conf and passes env var configuration into template generator", func() {
 			_, err := build(packit.BuildContext{
 				CNBPath:    cnbPath,
 				WorkingDir: workspaceDir,
@@ -571,45 +576,11 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(config.GenerateCall.Receives.TemplateSource).To(Equal(filepath.Join(cnbPath, "defaultconfig/template.conf")))
 			Expect(config.GenerateCall.Receives.Destination).To(Equal(filepath.Join(workspaceDir, nginx.ConfFile)))
-			Expect(config.GenerateCall.Receives.Env).To(Equal(nginx.BuildEnvironment{WebServer: "nginx"}))
-		})
-
-		context("and the user specifies a root dir for the web server", func() {
-			it.Before(func() {
-				buildEnv := nginx.BuildEnvironment{
-					WebServer:     "nginx",
-					WebServerRoot: "custom",
-				}
-				build = nginx.Build(buildEnv, entryResolver, dependencyService, config, calculator, scribe.NewEmitter(buffer), chronos.DefaultClock)
-			})
-			it("passes the root dir into the config generator", func() {
-				_, err := build(packit.BuildContext{
-					CNBPath:    cnbPath,
-					WorkingDir: workspaceDir,
-					Stack:      "some-stack",
-					Platform:   packit.Platform{Path: "platform"},
-					Plan: packit.BuildpackPlan{
-						Entries: []packit.BuildpackPlanEntry{
-							{
-								Name: "nginx",
-								Metadata: map[string]interface{}{
-									"version-source": "BP_NGINX_VERSION",
-									"version":        "1.19.*",
-									"launch":         true,
-								},
-							},
-						},
-					},
-					Layers: packit.Layers{Path: layersDir},
-				})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(config.GenerateCall.Receives.TemplateSource).To(Equal(filepath.Join(cnbPath, "defaultconfig/template.conf")))
-				Expect(config.GenerateCall.Receives.Destination).To(Equal(filepath.Join(workspaceDir, nginx.ConfFile)))
-				Expect(config.GenerateCall.Receives.Env).To(Equal(nginx.BuildEnvironment{
-					WebServer:     "nginx",
-					WebServerRoot: "custom",
-				}))
-			})
+			Expect(config.GenerateCall.Receives.Env).To(Equal(nginx.BuildEnvironment{
+				WebServer:                 "nginx",
+				WebServerRoot:             "custom",
+				WebServerPushStateEnabled: true,
+			}))
 		})
 
 		context("and nginx layer is being reused", func() {
