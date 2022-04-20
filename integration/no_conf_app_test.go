@@ -1,7 +1,6 @@
 package integration_test
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -56,7 +55,8 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 			image, _, err = pack.Build.
 				WithBuildpacks(nginxBuildpack).
 				WithEnv(map[string]string{
-					"BP_WEB_SERVER": "nginx",
+					"BP_WEB_SERVER":      "nginx",
+					"BP_WEB_SERVER_ROOT": "custom_root",
 				}).
 				WithPullPolicy("never").
 				Execute(name, source)
@@ -78,7 +78,6 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 				return cLogs.String(), nil
 			}).Should(Equal(expectedConfig))
 
-			fmt.Println(image.ID)
 			container, err = docker.Container.Run.
 				WithEnv(map[string]string{"PORT": "8080"}).
 				WithPublish("8080").
@@ -265,7 +264,7 @@ http {
     server_name localhost;
 
     # Directory where static files are located
-    root /workspace/public;
+    root /workspace/custom_root;
 
     location / {
         # Specify files sent to client if specific file not requested (e.g.
@@ -273,9 +272,6 @@ http {
         index index.html index.htm Default.htm;
 
       # TODO: Allow users to include additional conf files?
-      # $(( if ne .LocationInclude "" ))
-      #   include $(( .LocationInclude ));
-      # $(( end ))
     }
 
     # (Security) Don't serve dotfiles, except .well-known/, which is needed by
