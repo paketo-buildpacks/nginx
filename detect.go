@@ -2,7 +2,6 @@ package nginx
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 
 	"github.com/paketo-buildpacks/packit/v2"
@@ -31,7 +30,7 @@ func Detect(buildEnv BuildEnvironment, versionParser VersionParser) packit.Detec
 			},
 		}
 
-		confExists, err := fs.Exists(getNginxConfLocation(context.WorkingDir))
+		confExists, err := fs.Exists(cleanNginxConfLocation(buildEnv.ConfLocation, context.WorkingDir))
 		if err != nil {
 			return packit.DetectResult{}, fmt.Errorf("failed to stat nginx.conf: %w", err)
 		}
@@ -107,12 +106,12 @@ func Detect(buildEnv BuildEnvironment, versionParser VersionParser) packit.Detec
 	}
 }
 
-func getNginxConfLocation(workingDir string) string {
-	if customPath, ok := os.LookupEnv("BP_NGINX_CONF_LOCATION"); ok {
-		if filepath.IsAbs(customPath) {
-			return customPath
+func cleanNginxConfLocation(confLocation, workingDir string) string {
+	if confLocation != "" {
+		if filepath.IsAbs(confLocation) {
+			return confLocation
 		}
-		return filepath.Join(workingDir, customPath)
+		return filepath.Join(workingDir, confLocation)
 	}
 	return filepath.Join(workingDir, ConfFile)
 }

@@ -21,8 +21,8 @@ func NewDefaultConfigGenerator(logs scribe.Emitter) DefaultConfigGenerator {
 	}
 }
 
-func (g DefaultConfigGenerator) Generate(destination string, env BuildEnvironment) error {
-	g.logs.Process("Generating %s", destination)
+func (g DefaultConfigGenerator) Generate(env BuildEnvironment) error {
+	g.logs.Process("Generating %s", env.ConfLocation)
 	t := template.Must(template.New("template.conf").Delims("$((", "))").Parse(defaultConf))
 
 	if env.WebServerRoot == "" {
@@ -56,9 +56,9 @@ func (g DefaultConfigGenerator) Generate(destination string, env BuildEnvironmen
 		return err
 	}
 
-	f, err := os.OpenFile(destination, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
+	f, err := os.OpenFile(env.ConfLocation, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
 	if err != nil {
-		return fmt.Errorf("failed to create %s: %w", destination, err)
+		return fmt.Errorf("failed to create %s: %w", env.ConfLocation, err)
 	}
 	defer f.Close()
 
