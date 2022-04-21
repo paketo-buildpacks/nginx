@@ -40,17 +40,18 @@ type Bindings interface {
 
 //go:generate faux --interface ConfigGenerator --output fakes/config_generator.go
 type ConfigGenerator interface {
-	Generate(destination string, env BuildEnvironment) error
+	Generate(env BuildEnvironment) error
 }
 
 type BuildEnvironment struct {
 	BasicAuthFile             string
+	ConfLocation              string `env:"BP_NGINX_CONF_LOCATION"`
 	NginxVersion              string `env:"BP_NGINX_VERSION"`
-	WebServer                 string `env:"BP_WEB_SERVER"`
-	WebServerRoot             string `env:"BP_WEB_SERVER_ROOT"`
-	WebServerPushStateEnabled bool   `env:"BP_WEB_SERVER_ENABLE_PUSH_STATE"`
-	WebServerForceHTTPS       bool   `env:"BP_WEB_SERVER_FORCE_HTTPS"`
 	Reload                    bool   `env:"BP_LIVE_RELOAD_ENABLED"`
+	WebServer                 string `env:"BP_WEB_SERVER"`
+	WebServerForceHTTPS       bool   `env:"BP_WEB_SERVER_FORCE_HTTPS"`
+	WebServerPushStateEnabled bool   `env:"BP_WEB_SERVER_ENABLE_PUSH_STATE"`
+	WebServerRoot             string `env:"BP_WEB_SERVER_ROOT"`
 }
 
 func Build(buildEnv BuildEnvironment,
@@ -98,7 +99,7 @@ func Build(buildEnv BuildEnvironment,
 			return packit.BuildResult{}, fmt.Errorf("failed to create logs dir : %w", err)
 		}
 
-		nginxConfPath := getNginxConfLocation(context.WorkingDir)
+		buildEnv.ConfLocation = cleanNginxConfLocation(buildEnv.ConfLocation, context.WorkingDir)
 
 		if buildEnv.WebServer == "nginx" {
 			bindingSet, err := bindings.Resolve("htpasswd", "", context.Platform.Path)
@@ -117,7 +118,7 @@ func Build(buildEnv BuildEnvironment,
 				buildEnv.BasicAuthFile = filepath.Join(bindingSet[0].Path, ".htpasswd")
 			}
 
-			err = config.Generate(nginxConfPath, buildEnv)
+			err = config.Generate(buildEnv)
 			if err != nil {
 				return packit.BuildResult{}, fmt.Errorf("failed to generate nginx.conf : %w", err)
 			}
@@ -137,13 +138,14 @@ func Build(buildEnv BuildEnvironment,
 		}
 
 		var launchMetadata packit.LaunchMetadata
+
 		if launch {
 			command := "nginx"
 			args := []string{
 				"-p",
 				context.WorkingDir,
 				"-c",
-				nginxConfPath,
+				buildEnv.ConfLocation,
 			}
 			launchMetadata.Processes = []packit.Process{
 				{
@@ -217,14 +219,17 @@ func Build(buildEnv BuildEnvironment,
 			return packit.BuildResult{}, err
 		}
 
+		layer.Metadata = map[string]interface{}{
+			DepKey:          dependency.SHA256,
+			ConfigureBinKey: currConfigureBinSHA256,
+		}
+
 		logger.Action("Completed in %s", duration.Round(time.Millisecond))
 		logger.Break()
 
-		layer.LaunchEnv.Override("APP_ROOT", context.WorkingDir)
-		layer.SharedEnv.Append("PATH", filepath.Join(layer.Path, "sbin"), ":")
-		logger.EnvironmentVariables(layer)
+		layer.SharedEnv.Append("PATH", filepath.Join(layer.Path, "sbin"), string(os.PathListSeparator))
 
-		layer.LaunchEnv.Append("EXECD_CONF", nginxConfPath, string(os.PathListSeparator))
+		layer.LaunchEnv.Override("EXECD_CONF", buildEnv.ConfLocation)
 		execdDir := filepath.Join(layer.Path, "exec.d")
 		err = os.MkdirAll(execdDir, os.ModePerm)
 		if err != nil {
@@ -236,10 +241,11 @@ func Build(buildEnv BuildEnvironment,
 			return packit.BuildResult{}, err
 		}
 
-		layer.Metadata = map[string]interface{}{
-			DepKey:          dependency.SHA256,
-			ConfigureBinKey: currConfigureBinSHA256,
+		if buildEnv.WebServer == "nginx" {
+			layer.LaunchEnv.Override("APP_ROOT", context.WorkingDir)
 		}
+
+		logger.EnvironmentVariables(layer)
 
 		logger.LaunchProcesses(launchMetadata.Processes)
 		return packit.BuildResult{

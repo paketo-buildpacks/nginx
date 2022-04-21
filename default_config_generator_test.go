@@ -36,7 +36,9 @@ func testDefaultConfigGenerator(t *testing.T, context spec.G, it spec.S) {
 
 	context("Generate", func() {
 		it("writes a default nginx.conf to the working directory", func() {
-			err := generator.Generate(filepath.Join(workingDir, "nginx.conf"), nginx.BuildEnvironment{})
+			err := generator.Generate(nginx.BuildEnvironment{
+				ConfLocation: filepath.Join(workingDir, "nginx.conf"),
+			})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(filepath.Join(workingDir, "nginx.conf")).To(BeARegularFile())
@@ -224,7 +226,10 @@ error_log stderr;
 		})
 
 		it("writes a nginx.conf with specified relative root directory", func() {
-			err := generator.Generate(filepath.Join(workingDir, "nginx.conf"), nginx.BuildEnvironment{WebServerRoot: "custom"})
+			err := generator.Generate(nginx.BuildEnvironment{
+				ConfLocation:  filepath.Join(workingDir, "nginx.conf"),
+				WebServerRoot: "custom",
+			})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(filepath.Join(workingDir, "nginx.conf")).To(BeARegularFile())
@@ -234,7 +239,10 @@ error_log stderr;
 		})
 
 		it("writes a nginx.conf with specified absolute path to root directory", func() {
-			err := generator.Generate(filepath.Join(workingDir, "nginx.conf"), nginx.BuildEnvironment{WebServerRoot: "/some/absolute/path"})
+			err := generator.Generate(nginx.BuildEnvironment{
+				ConfLocation:  filepath.Join(workingDir, "nginx.conf"),
+				WebServerRoot: "/some/absolute/path",
+			})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(filepath.Join(workingDir, "nginx.conf")).To(BeARegularFile())
@@ -244,10 +252,10 @@ error_log stderr;
 		})
 
 		it("writes an nginx.conf that conditionally includes the PushState content", func() {
-			err := generator.Generate(filepath.Join(workingDir, "nginx.conf"),
-				nginx.BuildEnvironment{
-					WebServerPushStateEnabled: true,
-				})
+			err := generator.Generate(nginx.BuildEnvironment{
+				ConfLocation:              filepath.Join(workingDir, "nginx.conf"),
+				WebServerPushStateEnabled: true,
+			})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(filepath.Join(workingDir, "nginx.conf")).To(BeARegularFile())
@@ -262,10 +270,10 @@ error_log stderr;
 		})
 
 		it("writes an nginx.conf that conditionally includes the Force HTTPS content", func() {
-			err := generator.Generate(filepath.Join(workingDir, "nginx.conf"),
-				nginx.BuildEnvironment{
-					WebServerForceHTTPS: true,
-				})
+			err := generator.Generate(nginx.BuildEnvironment{
+				ConfLocation:        filepath.Join(workingDir, "nginx.conf"),
+				WebServerForceHTTPS: true,
+			})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(filepath.Join(workingDir, "nginx.conf")).To(BeARegularFile())
@@ -286,10 +294,10 @@ error_log stderr;
 		})
 
 		it("writes an nginx.conf that conditionally includes the Basic Auth content", func() {
-			err := generator.Generate(filepath.Join(workingDir, "nginx.conf"),
-				nginx.BuildEnvironment{
-					BasicAuthFile: "/some/file/path",
-				})
+			err := generator.Generate(nginx.BuildEnvironment{
+				ConfLocation:  filepath.Join(workingDir, "nginx.conf"),
+				BasicAuthFile: "/some/file/path",
+			})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(filepath.Join(workingDir, "nginx.conf")).To(BeARegularFile())
@@ -309,7 +317,9 @@ error_log stderr;
 					Expect(os.WriteFile(filepath.Join(workingDir, "nginx.conf"), []byte("read-only file"), 0444)).To(Succeed())
 				})
 				it("returns an error", func() {
-					err := generator.Generate(filepath.Join(workingDir, "nginx.conf"), nginx.BuildEnvironment{})
+					err := generator.Generate(nginx.BuildEnvironment{
+						ConfLocation: filepath.Join(workingDir, "nginx.conf"),
+					})
 					Expect(err).To(MatchError(ContainSubstring(fmt.Sprintf("failed to create %[1]s: open %[1]s: permission denied", filepath.Join(workingDir, "nginx.conf")))))
 				})
 			})
