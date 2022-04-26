@@ -62,7 +62,7 @@ func testRun(t *testing.T, context spec.G, it spec.S) {
 			Expect(os.WriteFile(mainConf, []byte("Hi the tempDir is {{ tempDir }}."), 0600)).To(Succeed())
 		})
 
-		it("inserts the port value into that location in the text", func() {
+		it("inserts the location of the user's temp directory into that location in the text", func() {
 			err := internal.Run(mainConf, localModulePath, globalModulePath)
 			Expect(err).ToNot(HaveOccurred())
 
