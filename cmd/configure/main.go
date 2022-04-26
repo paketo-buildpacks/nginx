@@ -18,7 +18,7 @@ func main() {
 	}
 
 	err = internal.Run(
-		filepath.Join(wd, "nginx.conf"),
+		os.Getenv("EXECD_CONF"),
 		filepath.Join(wd, "modules"),
 		strings.Replace(filepath.Dir(os.Args[0]), "exec.d", "modules", 1),
 	)

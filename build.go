@@ -75,7 +75,7 @@ func Build(entryResolver EntryResolver, dependencyService DependencyService, cal
 			return packit.BuildResult{}, err
 		}
 
-		nginxConfPath := filepath.Join(context.WorkingDir, ConfFile)
+		nginxConfPath := getNginxConfLocation(context.WorkingDir)
 		configureBinPath := filepath.Join(context.CNBPath, "bin", "configure")
 		currConfigureBinSHA256, err := calculator.Sum(configureBinPath)
 		if err != nil {
@@ -176,6 +176,7 @@ func Build(entryResolver EntryResolver, dependencyService DependencyService, cal
 		layer.SharedEnv.Append("PATH", filepath.Join(layer.Path, "sbin"), ":")
 		logger.EnvironmentVariables(layer)
 
+		layer.LaunchEnv.Append("EXECD_CONF", nginxConfPath, string(os.PathListSeparator))
 		execdDir := filepath.Join(layer.Path, "exec.d")
 		err = os.MkdirAll(execdDir, os.ModePerm)
 		if err != nil {

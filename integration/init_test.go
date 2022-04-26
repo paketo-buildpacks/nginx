@@ -78,5 +78,6 @@ func TestIntegration(t *testing.T) {
 	suite("NoConfApp", testNoConfApp)
 	suite("Offline", testOffline)
 	suite("SimpleApp", testSimpleApp)
+	suite("CustomConfApp", testCustomConfApp)
 	suite.Run(t)
 }
