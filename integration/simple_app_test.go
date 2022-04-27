@@ -39,8 +39,12 @@ func testSimpleApp(t *testing.T, context spec.G, it spec.S) {
 	})
 
 	it.After(func() {
-		Expect(docker.Container.Remove.Execute(container.ID)).To(Succeed())
-		Expect(docker.Image.Remove.Execute(image.ID)).To(Succeed())
+		if container.ID != "" {
+			Expect(docker.Container.Remove.Execute(container.ID)).To(Succeed())
+		}
+		if image.ID != "" {
+			Expect(docker.Image.Remove.Execute(image.ID)).To(Succeed())
+		}
 		Expect(docker.Volume.Remove.Execute(occam.CacheVolumeNames(name))).To(Succeed())
 		Expect(os.RemoveAll(source)).To(Succeed())
 	})
@@ -164,6 +168,31 @@ func testSimpleApp(t *testing.T, context spec.G, it spec.S) {
 			Expect(logs).To(ContainLines("  Assigning launch processes:"))
 			Expect(logs).To(ContainLines(`    web (default): watchexec --restart --watch /workspace --shell none -- nginx -p /workspace -c /workspace/nginx.conf`))
 			Expect(logs).To(ContainLines(`    no-reload:     nginx -p /workspace -c /workspace/nginx.conf`))
+		})
+	})
+	context("when build configuration cannot be parsed", func() {
+		it.Before(func() {
+			var err error
+			source, err = occam.Source(filepath.Join("testdata", "simple_app"))
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		it("fails with a helpful error", func() {
+			var err error
+			var logs fmt.Stringer
+			_, logs, err = pack.Build.
+				WithBuildpacks(
+					watchexecBuildpack,
+					nginxBuildpack,
+				).
+				WithPullPolicy("never").
+				WithEnv(map[string]string{
+					"BP_LIVE_RELOAD_ENABLED": "not-a-bool",
+				}).
+				Execute(name, source)
+			Expect(err).To(HaveOccurred())
+
+			Expect(logs).To(ContainSubstring("invalid syntax"))
 		})
 	})
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/paketo-buildpacks/packit/v2/fs"
 	"github.com/paketo-buildpacks/packit/v2/postal"
 	"github.com/paketo-buildpacks/packit/v2/scribe"
+	"github.com/paketo-buildpacks/packit/v2/servicebindings"
 )
 
 //go:generate faux --interface EntryResolver --output fakes/entry_resolver.go
@@ -32,7 +33,35 @@ type Calculator interface {
 	Sum(paths ...string) (string, error)
 }
 
-func Build(entryResolver EntryResolver, dependencyService DependencyService, calculator Calculator, logger scribe.Emitter, clock chronos.Clock) packit.BuildFunc {
+//go:generate faux --interface Bindings --output fakes/binding_resolver.go
+type Bindings interface {
+	Resolve(typ, provider, platformDir string) ([]servicebindings.Binding, error)
+}
+
+//go:generate faux --interface ConfigGenerator --output fakes/config_generator.go
+type ConfigGenerator interface {
+	Generate(env BuildEnvironment) error
+}
+
+type BuildEnvironment struct {
+	BasicAuthFile             string
+	ConfLocation              string `env:"BP_NGINX_CONF_LOCATION"`
+	NginxVersion              string `env:"BP_NGINX_VERSION"`
+	Reload                    bool   `env:"BP_LIVE_RELOAD_ENABLED"`
+	WebServer                 string `env:"BP_WEB_SERVER"`
+	WebServerForceHTTPS       bool   `env:"BP_WEB_SERVER_FORCE_HTTPS"`
+	WebServerPushStateEnabled bool   `env:"BP_WEB_SERVER_ENABLE_PUSH_STATE"`
+	WebServerRoot             string `env:"BP_WEB_SERVER_ROOT"`
+}
+
+func Build(buildEnv BuildEnvironment,
+	entryResolver EntryResolver,
+	dependencyService DependencyService,
+	bindings Bindings,
+	config ConfigGenerator,
+	calculator Calculator,
+	logger scribe.Emitter,
+	clock chronos.Clock) packit.BuildFunc {
 	return func(context packit.BuildContext) (packit.BuildResult, error) {
 		logger.Title("%s %s", context.BuildpackInfo.Name, context.BuildpackInfo.Version)
 
@@ -70,16 +99,34 @@ func Build(entryResolver EntryResolver, dependencyService DependencyService, cal
 			return packit.BuildResult{}, fmt.Errorf("failed to create logs dir : %w", err)
 		}
 
+		buildEnv.ConfLocation = cleanNginxConfLocation(buildEnv.ConfLocation, context.WorkingDir)
+
+		if buildEnv.WebServer == "nginx" {
+			bindingSet, err := bindings.Resolve("htpasswd", "", context.Platform.Path)
+			if err != nil {
+				return packit.BuildResult{}, err
+			}
+
+			if len(bindingSet) > 1 {
+				return packit.BuildResult{}, fmt.Errorf("binding resolver found more than one binding of type 'htpasswd'")
+			}
+
+			if len(bindingSet) == 1 {
+				if _, ok := bindingSet[0].Entries[".htpasswd"]; !ok {
+					return packit.BuildResult{}, fmt.Errorf("binding of type 'htpasswd' does not contain required entry '.htpasswd'")
+				}
+				buildEnv.BasicAuthFile = filepath.Join(bindingSet[0].Path, ".htpasswd")
+			}
+
+			err = config.Generate(buildEnv)
+			if err != nil {
+				return packit.BuildResult{}, fmt.Errorf("failed to generate nginx.conf : %w", err)
+			}
+		}
+
 		layer, err := context.Layers.Get(NGINX)
 		if err != nil {
 			return packit.BuildResult{}, err
-		}
-
-		nginxConfPath := getNginxConfLocation(context.WorkingDir)
-		configureBinPath := filepath.Join(context.CNBPath, "bin", "configure")
-		currConfigureBinSHA256, err := calculator.Sum(configureBinPath)
-		if err != nil {
-			return packit.BuildResult{}, fmt.Errorf("checksum failed for file %s: %w", configureBinPath, err)
 		}
 
 		bom := dependencyService.GenerateBillOfMaterials(dependency)
@@ -91,13 +138,14 @@ func Build(entryResolver EntryResolver, dependencyService DependencyService, cal
 		}
 
 		var launchMetadata packit.LaunchMetadata
+
 		if launch {
 			command := "nginx"
 			args := []string{
 				"-p",
 				context.WorkingDir,
 				"-c",
-				nginxConfPath,
+				buildEnv.ConfLocation,
 			}
 			launchMetadata.Processes = []packit.Process{
 				{
@@ -110,12 +158,7 @@ func Build(entryResolver EntryResolver, dependencyService DependencyService, cal
 			}
 			launchMetadata.BOM = bom
 
-			shouldReload, err := checkLiveReloadEnabled()
-			if err != nil {
-				return packit.BuildResult{}, err
-			}
-
-			if shouldReload {
+			if buildEnv.Reload {
 				launchMetadata.Processes = []packit.Process{
 					{
 						Type:    "web",
@@ -138,6 +181,12 @@ func Build(entryResolver EntryResolver, dependencyService DependencyService, cal
 					},
 				}
 			}
+		}
+
+		configureBinPath := filepath.Join(context.CNBPath, "bin", "configure")
+		currConfigureBinSHA256, err := calculator.Sum(configureBinPath)
+		if err != nil {
+			return packit.BuildResult{}, fmt.Errorf("checksum failed for file %s: %w", configureBinPath, err)
 		}
 
 		if !shouldInstall(layer.Metadata, currConfigureBinSHA256, dependency.SHA256) {
@@ -170,28 +219,33 @@ func Build(entryResolver EntryResolver, dependencyService DependencyService, cal
 			return packit.BuildResult{}, err
 		}
 
+		layer.Metadata = map[string]interface{}{
+			DepKey:          dependency.SHA256,
+			ConfigureBinKey: currConfigureBinSHA256,
+		}
+
 		logger.Action("Completed in %s", duration.Round(time.Millisecond))
 		logger.Break()
 
-		layer.SharedEnv.Append("PATH", filepath.Join(layer.Path, "sbin"), ":")
-		logger.EnvironmentVariables(layer)
+		layer.SharedEnv.Append("PATH", filepath.Join(layer.Path, "sbin"), string(os.PathListSeparator))
 
-		layer.LaunchEnv.Append("EXECD_CONF", nginxConfPath, string(os.PathListSeparator))
+		layer.LaunchEnv.Override("EXECD_CONF", buildEnv.ConfLocation)
 		execdDir := filepath.Join(layer.Path, "exec.d")
 		err = os.MkdirAll(execdDir, os.ModePerm)
 		if err != nil {
 			return packit.BuildResult{}, err
 		}
 
-		err = fs.Copy(filepath.Join(context.CNBPath, "bin", "configure"), filepath.Join(execdDir, "0-configure"))
+		err = fs.Copy(configureBinPath, filepath.Join(execdDir, "0-configure"))
 		if err != nil {
 			return packit.BuildResult{}, err
 		}
 
-		layer.Metadata = map[string]interface{}{
-			DepKey:          dependency.SHA256,
-			ConfigureBinKey: currConfigureBinSHA256,
+		if buildEnv.WebServer == "nginx" {
+			layer.LaunchEnv.Override("APP_ROOT", context.WorkingDir)
 		}
+
+		logger.EnvironmentVariables(layer)
 
 		logger.LaunchProcesses(launchMetadata.Processes)
 		return packit.BuildResult{

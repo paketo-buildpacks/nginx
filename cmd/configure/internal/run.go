@@ -25,6 +25,9 @@ func Run(mainConf, localModulePath, globalModulePath string) error {
 	confs = append(confs, mainConf)
 	templFuncs := template.FuncMap{
 		"env": os.Getenv,
+		"tempDir": func() string {
+			return os.TempDir()
+		},
 		"port": func() string {
 			return os.Getenv("PORT")
 		},

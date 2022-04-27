@@ -57,6 +57,22 @@ func testRun(t *testing.T, context spec.G, it spec.S) {
 		})
 	})
 
+	context("when the template contains a 'tempDir' action", func() {
+		it.Before(func() {
+			Expect(os.WriteFile(mainConf, []byte("Hi the tempDir is {{ tempDir }}."), 0600)).To(Succeed())
+		})
+
+		it("inserts the location of the user's temp directory into that location in the text", func() {
+			err := internal.Run(mainConf, localModulePath, globalModulePath)
+			Expect(err).ToNot(HaveOccurred())
+
+			output, err := os.ReadFile(filepath.Join(workingDir, "nginx.conf"))
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(string(output)).To(Equal(fmt.Sprintf("Hi the tempDir is %s.", os.TempDir())))
+		})
+	})
+
 	context("when the template contains an 'env' action", func() {
 		it.Before(func() {
 			Expect(os.WriteFile(filepath.Join(workingDir, "nginx.conf"), []byte(`The env var FOO is {{env "FOO"}}`), 0600)).To(Succeed())

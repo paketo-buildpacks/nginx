@@ -73,7 +73,8 @@ func testLogging(t *testing.T, context spec.G, it spec.S) {
 				fmt.Sprintf(`    PATH -> "$PATH:/layers/%s/nginx/sbin"`, strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_")),
 				"",
 				"  Configuring launch environment",
-				fmt.Sprintf(`    PATH -> "$PATH:/layers/%s/nginx/sbin"`, strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_")),
+				`    EXECD_CONF -> "/workspace/nginx.conf"`,
+				fmt.Sprintf(`    PATH       -> "$PATH:/layers/%s/nginx/sbin"`, strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_")),
 				"",
 			))
 		})
@@ -107,7 +108,8 @@ func testLogging(t *testing.T, context spec.G, it spec.S) {
 				fmt.Sprintf(`    PATH -> "$PATH:/layers/%s/nginx/sbin"`, strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_")),
 				"",
 				"  Configuring launch environment",
-				fmt.Sprintf(`    PATH -> "$PATH:/layers/%s/nginx/sbin"`, strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_")),
+				`    EXECD_CONF -> "/workspace/nginx.conf"`,
+				fmt.Sprintf(`    PATH       -> "$PATH:/layers/%s/nginx/sbin"`, strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_")),
 				"",
 			))
 		})
