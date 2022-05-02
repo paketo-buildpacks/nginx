@@ -8,7 +8,7 @@ require (
 	github.com/caarlos0/env/v6 v6.9.1
 	github.com/onsi/gomega v1.19.0
 	github.com/paketo-buildpacks/occam v0.8.0
-	github.com/paketo-buildpacks/packit/v2 v2.2.0
+	github.com/paketo-buildpacks/packit/v2 v2.3.0
 	github.com/sclevine/spec v1.4.0
 	gopkg.in/yaml.v2 v2.4.0
 )
