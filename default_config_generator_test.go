@@ -251,6 +251,19 @@ error_log stderr;
 			Expect(string(contents)).To(ContainSubstring(`root /some/absolute/path;`))
 		})
 
+		it("writes a nginx.conf with specified location path", func() {
+			err := generator.Generate(nginx.BuildEnvironment{
+				ConfLocation:          filepath.Join(workingDir, "nginx.conf"),
+				WebServerLocationPath: "/path",
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(filepath.Join(workingDir, "nginx.conf")).To(BeARegularFile())
+			contents, err := os.ReadFile(filepath.Join(workingDir, "nginx.conf"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(contents)).To(ContainSubstring(`location /path {`))
+		})
+
 		it("writes an nginx.conf that conditionally includes the PushState content", func() {
 			err := generator.Generate(nginx.BuildEnvironment{
 				ConfLocation:              filepath.Join(workingDir, "nginx.conf"),

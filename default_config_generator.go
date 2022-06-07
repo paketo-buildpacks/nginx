@@ -35,6 +35,12 @@ func (g DefaultConfigGenerator) Generate(env BuildEnvironment) error {
 
 	g.logs.Subprocess("Setting server root directory to '%s'", env.WebServerRoot)
 
+	if env.WebServerLocationPath == "" {
+		env.WebServerLocationPath = "/"
+	}
+
+	g.logs.Subprocess("Setting server location path to '%s'", env.WebServerLocationPath)
+
 	if env.WebServerPushStateEnabled {
 		g.logs.Subprocess("Enabling push state routing")
 	}
