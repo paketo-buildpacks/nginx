@@ -174,7 +174,7 @@ $((- if (ne .BasicAuthFile "") ))
     auth_basic "Password Protected";
     auth_basic_user_file $(( .BasicAuthFile ));
 $(( end ))
-    location / {
+    location $(( .WebServerLocationPath )) {
 $((- if .WebServerPushStateEnabled ))
       # Send the content at / in response to *any* requested endpoint
       if (!-e $request_filename) {

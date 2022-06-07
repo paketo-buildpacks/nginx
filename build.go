@@ -52,6 +52,7 @@ type BuildEnvironment struct {
 	WebServerForceHTTPS       bool   `env:"BP_WEB_SERVER_FORCE_HTTPS"`
 	WebServerPushStateEnabled bool   `env:"BP_WEB_SERVER_ENABLE_PUSH_STATE"`
 	WebServerRoot             string `env:"BP_WEB_SERVER_ROOT"`
+	WebServerLocationPath     string `env:"BP_WEB_SERVER_LOCATION_PATH"`
 }
 
 func Build(buildEnv BuildEnvironment,
