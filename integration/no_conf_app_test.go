@@ -69,6 +69,7 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 			Expect(logs).To(ContainLines(
 				"  Generating /workspace/nginx.conf",
 				`    Setting server root directory to '{{ env "APP_ROOT" }}/public'`,
+				"    Setting server location path to '/'",
 				"",
 			))
 
@@ -97,6 +98,7 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 				WithEnv(map[string]string{
 					"BP_WEB_SERVER":                   "nginx",
 					"BP_WEB_SERVER_ROOT":              "custom_root",
+					"BP_WEB_SERVER_LOCATION_PATH":     "/custom_path",
 					"BP_WEB_SERVER_ENABLE_PUSH_STATE": "true",
 				}).
 				WithPullPolicy("never").
@@ -112,12 +114,13 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 			Expect(logs).To(ContainLines(
 				"  Generating /workspace/nginx.conf",
 				`    Setting server root directory to '{{ env "APP_ROOT" }}/custom_root'`,
+				"    Setting server location path to '/custom_path'",
 				"    Enabling push state routing",
 				"",
 			))
 
-			Eventually(container).Should(Serve(ContainSubstring("<p>Hello World!</p>")).OnPort(8080))
-			Eventually(container).Should(Serve(ContainSubstring("<p>Hello World!</p>")).OnPort(8080).WithEndpoint("/test"))
+			Eventually(container).Should(Serve(ContainSubstring("<p>Hello World!</p>")).OnPort(8080).WithEndpoint("/custom_path"))
+			Eventually(container).Should(Serve(ContainSubstring("<p>Hello World!</p>")).OnPort(8080).WithEndpoint("/custom_path/test"))
 		})
 	})
 
@@ -140,6 +143,7 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 			Expect(logs).To(ContainLines(
 				"  Generating /workspace/nginx.conf",
 				`    Setting server root directory to '{{ env "APP_ROOT" }}/public'`,
+				"    Setting server location path to '/'",
 				`    Setting server to redirect HTTP requests to HTTPS`,
 				"",
 			))
@@ -194,6 +198,7 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 			Expect(logs).To(ContainLines(
 				"  Generating /workspace/nginx.conf",
 				`    Setting server root directory to '{{ env "APP_ROOT" }}/public'`,
+				"    Setting server location path to '/'",
 				`    Enabling basic authentication with .htpasswd credentials`,
 				"",
 			))
