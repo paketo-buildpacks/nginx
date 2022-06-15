@@ -2,7 +2,6 @@ package integration_test
 
 import (
 	"fmt"
-	"net/http"
 	"os"
 	"path/filepath"
 	"testing"
@@ -71,10 +70,7 @@ func testSimpleApp(t *testing.T, context spec.G, it spec.S) {
 			Expect(err).ToNot(HaveOccurred())
 
 			Eventually(container).Should(BeAvailable())
-
-			response, err := http.Get(fmt.Sprintf("http://localhost:%s/index.html", container.HostPort("8080")))
-			Expect(err).NotTo(HaveOccurred())
-			Expect(response.StatusCode).To(Equal(http.StatusOK))
+			Eventually(container).Should(Serve(ContainSubstring("Hello World!")).WithEndpoint("/index.html"))
 		})
 	})
 
@@ -100,10 +96,7 @@ func testSimpleApp(t *testing.T, context spec.G, it spec.S) {
 			Expect(err).ToNot(HaveOccurred())
 
 			Eventually(container).Should(BeAvailable())
-
-			response, err := http.Get(fmt.Sprintf("http://localhost:%s/index.html", container.HostPort("8080")))
-			Expect(err).NotTo(HaveOccurred())
-			Expect(response.StatusCode).To(Equal(http.StatusOK))
+			Eventually(container).Should(Serve(ContainSubstring("Exciting Content")).WithEndpoint("/index.html"))
 
 			logs, err := docker.Container.Logs.Execute(container.ID)
 			Expect(err).NotTo(HaveOccurred())
@@ -150,10 +143,7 @@ func testSimpleApp(t *testing.T, context spec.G, it spec.S) {
 			Expect(err).ToNot(HaveOccurred())
 
 			Eventually(container).Should(BeAvailable())
-
-			response, err := http.Get(fmt.Sprintf("http://localhost:%s/index.html", container.HostPort("8080")))
-			Expect(err).NotTo(HaveOccurred())
-			Expect(response.StatusCode).To(Equal(http.StatusOK))
+			Eventually(container).Should(Serve(ContainSubstring("Hello World!")).WithEndpoint("/index.html"))
 
 			noReloadContainer, err = docker.Container.Run.
 				WithEnv(map[string]string{"PORT": "8080"}).
@@ -164,6 +154,7 @@ func testSimpleApp(t *testing.T, context spec.G, it spec.S) {
 			Expect(err).ToNot(HaveOccurred())
 
 			Eventually(noReloadContainer).Should(BeAvailable())
+			Eventually(noReloadContainer).Should(Serve(ContainSubstring("Hello World!")).WithEndpoint("/index.html"))
 
 			Expect(logs).To(ContainLines("  Assigning launch processes:"))
 			Expect(logs).To(ContainLines(`    web (default): watchexec --restart --watch /workspace --shell none -- nginx -p /workspace -c /workspace/nginx.conf`))
