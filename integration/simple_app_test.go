@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/paketo-buildpacks/occam"
@@ -22,8 +23,10 @@ func testSimpleApp(t *testing.T, context spec.G, it spec.S) {
 		pack   occam.Pack
 		docker occam.Docker
 
-		name      string
-		source    string
+		name    string
+		source  string
+		sbomDir string
+
 		image     occam.Image
 		container occam.Container
 	)
@@ -45,7 +48,9 @@ func testSimpleApp(t *testing.T, context spec.G, it spec.S) {
 			Expect(docker.Image.Remove.Execute(image.ID)).To(Succeed())
 		}
 		Expect(docker.Volume.Remove.Execute(occam.CacheVolumeNames(name))).To(Succeed())
+
 		Expect(os.RemoveAll(source)).To(Succeed())
+		Expect(os.RemoveAll(sbomDir)).To(Succeed())
 	})
 
 	context("when pushing a simple app", func() {
@@ -53,6 +58,10 @@ func testSimpleApp(t *testing.T, context spec.G, it spec.S) {
 			var err error
 			source, err = occam.Source(filepath.Join("testdata", "simple_app"))
 			Expect(err).NotTo(HaveOccurred())
+
+			sbomDir, err = os.MkdirTemp("", "sbom")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(os.Chmod(sbomDir, os.ModePerm)).To(Succeed())
 		})
 
 		it("serves up staticfile", func() {
@@ -60,6 +69,7 @@ func testSimpleApp(t *testing.T, context spec.G, it spec.S) {
 			image, _, err = pack.Build.
 				WithBuildpacks(nginxBuildpack).
 				WithPullPolicy("never").
+				WithSBOMOutputDir(sbomDir).
 				Execute(name, source)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -69,8 +79,21 @@ func testSimpleApp(t *testing.T, context spec.G, it spec.S) {
 				Execute(image.ID)
 			Expect(err).ToNot(HaveOccurred())
 
-			Eventually(container).Should(BeAvailable())
 			Eventually(container).Should(Serve(ContainSubstring("Hello World!")).WithEndpoint("/index.html"))
+
+			contents, err := os.ReadFile(filepath.Join(sbomDir, "sbom", "launch", "sbom.legacy.json"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(contents)).To(ContainSubstring(`"name":"Nginx Server"`))
+
+			// check that all required SBOM files are present
+			Expect(filepath.Join(sbomDir, "sbom", "launch", strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_"), "nginx", "sbom.cdx.json")).To(BeARegularFile())
+			Expect(filepath.Join(sbomDir, "sbom", "launch", strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_"), "nginx", "sbom.spdx.json")).To(BeARegularFile())
+			Expect(filepath.Join(sbomDir, "sbom", "launch", strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_"), "nginx", "sbom.syft.json")).To(BeARegularFile())
+
+			// check an SBOM file to make sure it has an entry
+			contents, err = os.ReadFile(filepath.Join(sbomDir, "sbom", "launch", strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_"), "nginx", "sbom.cdx.json"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(contents)).To(ContainSubstring(`"name": "Nginx Server"`))
 		})
 	})
 
@@ -161,6 +184,7 @@ func testSimpleApp(t *testing.T, context spec.G, it spec.S) {
 			Expect(logs).To(ContainLines(`    no-reload:     nginx -p /workspace -c /workspace/nginx.conf`))
 		})
 	})
+
 	context("when build configuration cannot be parsed", func() {
 		it.Before(func() {
 			var err error

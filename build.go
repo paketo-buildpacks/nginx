@@ -11,6 +11,7 @@ import (
 	"github.com/paketo-buildpacks/packit/v2/chronos"
 	"github.com/paketo-buildpacks/packit/v2/fs"
 	"github.com/paketo-buildpacks/packit/v2/postal"
+	"github.com/paketo-buildpacks/packit/v2/sbom"
 	"github.com/paketo-buildpacks/packit/v2/scribe"
 	"github.com/paketo-buildpacks/packit/v2/servicebindings"
 )
@@ -43,6 +44,11 @@ type ConfigGenerator interface {
 	Generate(env BuildEnvironment) error
 }
 
+//go:generate faux --interface SBOMGenerator --output fakes/sbom_generator.go
+type SBOMGenerator interface {
+	GenerateFromDependency(dependency postal.Dependency, dir string) (sbom.SBOM, error)
+}
+
 type BuildEnvironment struct {
 	BasicAuthFile             string
 	ConfLocation              string `env:"BP_NGINX_CONF_LOCATION"`
@@ -61,8 +67,10 @@ func Build(buildEnv BuildEnvironment,
 	bindings Bindings,
 	config ConfigGenerator,
 	calculator Calculator,
+	sbomGenerator SBOMGenerator,
 	logger scribe.Emitter,
-	clock chronos.Clock) packit.BuildFunc {
+	clock chronos.Clock,
+) packit.BuildFunc {
 	return func(context packit.BuildContext) (packit.BuildResult, error) {
 		logger.Title("%s %s", context.BuildpackInfo.Name, context.BuildpackInfo.Version)
 
@@ -249,6 +257,26 @@ func Build(buildEnv BuildEnvironment,
 		logger.EnvironmentVariables(layer)
 
 		logger.LaunchProcesses(launchMetadata.Processes)
+
+		logger.GeneratingSBOM(layer.Path)
+		var sbomContent sbom.SBOM
+		duration, err = clock.Measure(func() error {
+			sbomContent, err = sbomGenerator.GenerateFromDependency(dependency, layer.Path)
+			return err
+		})
+		if err != nil {
+			return packit.BuildResult{}, err
+		}
+
+		logger.Action("Completed in %s", duration.Round(time.Millisecond))
+		logger.Break()
+
+		logger.FormattingSBOM(context.BuildpackInfo.SBOMFormats...)
+		layer.SBOM, err = sbomContent.InFormats(context.BuildpackInfo.SBOMFormats...)
+		if err != nil {
+			return packit.BuildResult{}, err
+		}
+
 		return packit.BuildResult{
 			Layers: []packit.Layer{layer},
 			Build:  buildMetadata,
