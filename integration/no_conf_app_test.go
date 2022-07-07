@@ -10,7 +10,6 @@ import (
 
 	"github.com/paketo-buildpacks/occam"
 	"github.com/paketo-buildpacks/packit/v2/fs"
-
 	"github.com/sclevine/spec"
 
 	. "github.com/onsi/gomega"
@@ -57,6 +56,7 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 				err  error
 				logs fmt.Stringer
 			)
+
 			image, logs, err = pack.Build.
 				WithBuildpacks(nginxBuildpack).
 				WithEnv(map[string]string{
@@ -88,11 +88,13 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 			Expect(fs.Copy(filepath.Join(source, "public"), filepath.Join(source, "custom_root"))).To(Succeed())
 			os.RemoveAll(filepath.Join(source, "public"))
 		})
+
 		it("generates an nginx.conf with the configuration", func() {
 			var (
 				err  error
 				logs fmt.Stringer
 			)
+
 			image, logs, err = pack.Build.
 				WithBuildpacks(nginxBuildpack).
 				WithEnv(map[string]string{
@@ -130,6 +132,7 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 				err  error
 				logs fmt.Stringer
 			)
+
 			image, logs, err = pack.Build.
 				WithBuildpacks(nginxBuildpack).
 				WithEnv(map[string]string{
@@ -163,11 +166,10 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 			response, err := client.Get(fmt.Sprintf("http://localhost:%s", container.HostPort("8080")))
 			Expect(err).NotTo(HaveOccurred())
 			defer response.Body.Close()
-
 			Expect(response.StatusCode).To(Equal(http.StatusMovedPermanently))
 
-			_, err = http.Get(fmt.Sprintf("http://localhost:%s", container.HostPort("8080")))
 			// Assert that the server attempts to hit HTTPS URL instead of HTTP
+			_, err = http.Get(fmt.Sprintf("http://localhost:%s", container.HostPort("8080")))
 			Expect(err).To(MatchError(`Get "https://localhost/": dial tcp [::1]:443: connect: connection refused`))
 		})
 	})
@@ -184,6 +186,7 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 				err  error
 				logs fmt.Stringer
 			)
+
 			image, logs, err = pack.Build.
 				WithBuildpacks(nginxBuildpack).
 				WithEnv(map[string]string{
