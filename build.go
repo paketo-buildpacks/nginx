@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"time"
 
 	"github.com/Masterminds/semver"
@@ -133,6 +134,23 @@ func Build(buildEnv BuildEnvironment,
 			}
 		}
 
+		confs, err := getIncludedConfs(buildEnv.ConfLocation)
+		if err != nil {
+			return packit.BuildResult{}, fmt.Errorf("failed to find configuration files: %w", err)
+		}
+
+		for _, path := range append([]string{buildEnv.ConfLocation}, confs...) {
+			info, err := os.Stat(path)
+			if err != nil {
+				return packit.BuildResult{}, fmt.Errorf("failed to stat configuration files: %w", err)
+			}
+
+			err = os.Chmod(path, info.Mode()|0060)
+			if err != nil {
+				return packit.BuildResult{}, fmt.Errorf("failed to chmod configuration files: %w", err)
+			}
+		}
+
 		layer, err := context.Layers.Get(NGINX)
 		if err != nil {
 			return packit.BuildResult{}, err
@@ -151,10 +169,9 @@ func Build(buildEnv BuildEnvironment,
 		if launch {
 			command := "nginx"
 			args := []string{
-				"-p",
-				context.WorkingDir,
-				"-c",
-				buildEnv.ConfLocation,
+				"-p", context.WorkingDir,
+				"-c", buildEnv.ConfLocation,
+				"-g", "pid /tmp/nginx.pid;",
 			}
 			launchMetadata.Processes = []packit.Process{
 				{
@@ -301,4 +318,32 @@ func shouldInstall(layerMetadata map[string]interface{}, configBinSHA256, depend
 	}
 
 	return false
+}
+
+var IncludeConfRegexp = regexp.MustCompile(`include\s+(\S*.conf);`)
+
+func getIncludedConfs(path string) ([]string, error) {
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("could not read config file (%s): %w", path, err)
+	}
+
+	var files []string
+	for _, match := range IncludeConfRegexp.FindAllStringSubmatch(string(content), -1) {
+		if len(match) == 2 {
+			glob := match[1]
+			if !filepath.IsAbs(glob) {
+				glob = filepath.Join(filepath.Dir(path), glob)
+			}
+
+			matches, err := filepath.Glob(glob)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get 'include' files for %s: %w", glob, err)
+			}
+
+			files = append(files, matches...)
+		}
+	}
+
+	return files, nil
 }

@@ -179,9 +179,11 @@ func testSimpleApp(t *testing.T, context spec.G, it spec.S) {
 			Eventually(noReloadContainer).Should(BeAvailable())
 			Eventually(noReloadContainer).Should(Serve(ContainSubstring("Hello World!")).WithEndpoint("/index.html"))
 
-			Expect(logs).To(ContainLines("  Assigning launch processes:"))
-			Expect(logs).To(ContainLines(`    web (default): watchexec --restart --watch /workspace --shell none -- nginx -p /workspace -c /workspace/nginx.conf`))
-			Expect(logs).To(ContainLines(`    no-reload:     nginx -p /workspace -c /workspace/nginx.conf`))
+			Expect(logs).To(ContainLines(
+				"  Assigning launch processes:",
+				"    web (default): watchexec --restart --watch /workspace --shell none -- nginx -p /workspace -c /workspace/nginx.conf -g pid /tmp/nginx.pid;",
+				"    no-reload:     nginx -p /workspace -c /workspace/nginx.conf -g pid /tmp/nginx.pid;",
+			))
 		})
 	})
 

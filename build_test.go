@@ -94,19 +94,18 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		}
 
 		bindings = &fakes.Bindings{}
-
 		config = &fakes.ConfigGenerator{}
-
 		calculator = &fakes.Calculator{}
-
 		calculator.SumCall.Returns.String = "some-bin-sha"
+
+		sbomGenerator = &fakes.SBOMGenerator{}
+		sbomGenerator.GenerateFromDependencyCall.Returns.SBOM = sbom.SBOM{}
 
 		// create fake configure binary
 		Expect(os.Mkdir(filepath.Join(cnbPath, "bin"), os.ModePerm)).To(Succeed())
 		Expect(os.WriteFile(filepath.Join(cnbPath, "bin", "configure"), []byte("binary-contents"), 0600)).To(Succeed())
 
-		sbomGenerator = &fakes.SBOMGenerator{}
-		sbomGenerator.GenerateFromDependencyCall.Returns.SBOM = sbom.SBOM{}
+		Expect(os.WriteFile(filepath.Join(workspaceDir, "nginx.conf"), []byte("worker_processes 2;"), 0600)).To(Succeed())
 
 		build = nginx.Build(nginx.BuildEnvironment{}, entryResolver, dependencyService, bindings, config, calculator, sbomGenerator, scribe.NewEmitter(buffer), chronos.DefaultClock)
 	})
@@ -175,10 +174,9 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				Type:    "web",
 				Command: "nginx",
 				Args: []string{
-					"-p",
-					workspaceDir,
-					"-c",
-					filepath.Join(workspaceDir, nginx.ConfFile),
+					"-p", workspaceDir,
+					"-c", filepath.Join(workspaceDir, nginx.ConfFile),
+					"-g", "pid /tmp/nginx.pid;",
 				},
 				Direct:  true,
 				Default: true,
@@ -279,10 +277,9 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 						"--shell", "none",
 						"--",
 						"nginx",
-						"-p",
-						workspaceDir,
-						"-c",
-						filepath.Join(workspaceDir, nginx.ConfFile),
+						"-p", workspaceDir,
+						"-c", filepath.Join(workspaceDir, nginx.ConfFile),
+						"-g", "pid /tmp/nginx.pid;",
 					},
 					Direct:  true,
 					Default: true,
@@ -291,10 +288,9 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					Type:    "no-reload",
 					Command: "nginx",
 					Args: []string{
-						"-p",
-						workspaceDir,
-						"-c",
-						filepath.Join(workspaceDir, nginx.ConfFile),
+						"-p", workspaceDir,
+						"-c", filepath.Join(workspaceDir, nginx.ConfFile),
+						"-g", "pid /tmp/nginx.pid;",
 					},
 					Direct: true,
 				},
@@ -385,10 +381,9 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					Type:    "web",
 					Command: "nginx",
 					Args: []string{
-						"-p",
-						workspaceDir,
-						"-c",
-						filepath.Join(workspaceDir, nginx.ConfFile),
+						"-p", workspaceDir,
+						"-c", filepath.Join(workspaceDir, nginx.ConfFile),
+						"-g", "pid /tmp/nginx.pid;",
 					},
 					Direct:  true,
 					Default: true,
@@ -503,10 +498,9 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					Type:    "web",
 					Command: "nginx",
 					Args: []string{
-						"-p",
-						workspaceDir,
-						"-c",
-						filepath.Join(workspaceDir, nginx.ConfFile),
+						"-p", workspaceDir,
+						"-c", filepath.Join(workspaceDir, nginx.ConfFile),
+						"-g", "pid /tmp/nginx.pid;",
 					},
 					Direct:  true,
 					Default: true,
@@ -522,6 +516,10 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			buildEnv := nginx.BuildEnvironment{
 				ConfLocation: "some-relative-path/nginx.conf",
 			}
+
+			Expect(os.Mkdir(filepath.Join(workspaceDir, "some-relative-path"), os.ModePerm)).To(Succeed())
+			Expect(os.WriteFile(filepath.Join(workspaceDir, "some-relative-path", "nginx.conf"), []byte("worker_processes 2;"), 0600)).To(Succeed())
+
 			build = nginx.Build(buildEnv, entryResolver, dependencyService, bindings, config, calculator, sbomGenerator, scribe.NewEmitter(buffer), chronos.DefaultClock)
 		})
 
@@ -545,7 +543,11 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				Layers: packit.Layers{Path: layersDir},
 			})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result.Launch.Processes[0].Args[len(result.Launch.Processes[0].Args)-1]).To(Equal(filepath.Join(workspaceDir, "some-relative-path", "nginx.conf")))
+			Expect(result.Launch.Processes[0].Args).To(Equal([]string{
+				"-p", workspaceDir,
+				"-c", filepath.Join(workspaceDir, "some-relative-path", "nginx.conf"),
+				"-g", "pid /tmp/nginx.pid;",
+			}))
 			Expect(result.Layers[0].LaunchEnv).To(Equal(packit.Environment{
 				"EXECD_CONF.override": filepath.Join(workspaceDir, "some-relative-path/nginx.conf"),
 			}))
@@ -555,8 +557,12 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 	context("when BP_NGINX_CONF_LOCATION is set to an absolute path", func() {
 		it.Before(func() {
 			buildEnv := nginx.BuildEnvironment{
-				ConfLocation: "/some-absolute-path/nginx.conf",
+				ConfLocation: filepath.Join(workspaceDir, "some-absolute-path", "nginx.conf"),
 			}
+
+			Expect(os.Mkdir(filepath.Join(workspaceDir, "some-absolute-path"), os.ModePerm)).To(Succeed())
+			Expect(os.WriteFile(filepath.Join(workspaceDir, "some-absolute-path", "nginx.conf"), []byte("worker_processes 2;"), 0600)).To(Succeed())
+
 			build = nginx.Build(buildEnv, entryResolver, dependencyService, bindings, config, calculator, sbomGenerator, scribe.NewEmitter(buffer), chronos.DefaultClock)
 		})
 
@@ -580,9 +586,13 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				Layers: packit.Layers{Path: layersDir},
 			})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result.Launch.Processes[0].Args[len(result.Launch.Processes[0].Args)-1]).To(Equal("/some-absolute-path/nginx.conf"))
+			Expect(result.Launch.Processes[0].Args).To(Equal([]string{
+				"-p", workspaceDir,
+				"-c", filepath.Join(workspaceDir, "some-absolute-path", "nginx.conf"),
+				"-g", "pid /tmp/nginx.pid;",
+			}))
 			Expect(result.Layers[0].LaunchEnv).To(Equal(packit.Environment{
-				"EXECD_CONF.override": "/some-absolute-path/nginx.conf",
+				"EXECD_CONF.override": filepath.Join(workspaceDir, "some-absolute-path", "nginx.conf"),
 			}))
 		})
 	})
@@ -590,7 +600,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 	context("when BP_WEB_SERVER=nginx in the build env", func() {
 		it.Before(func() {
 			buildEnv := nginx.BuildEnvironment{
-				ConfLocation:  "some-relative-path/nginx.conf",
 				WebServer:     "nginx",
 				WebServerRoot: "custom",
 			}
@@ -619,14 +628,14 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(config.GenerateCall.Receives.Env).To(Equal(nginx.BuildEnvironment{
-				ConfLocation:  filepath.Join(workspaceDir, "some-relative-path/nginx.conf"),
+				ConfLocation:  filepath.Join(workspaceDir, "nginx.conf"),
 				WebServer:     "nginx",
 				WebServerRoot: "custom",
 			}))
 
 			Expect(result.Layers[0].LaunchEnv).To(Equal(packit.Environment{
 				"APP_ROOT.override":   workspaceDir, // generated nginx conf relies on this env var
-				"EXECD_CONF.override": filepath.Join(workspaceDir, "some-relative-path/nginx.conf"),
+				"EXECD_CONF.override": filepath.Join(workspaceDir, "nginx.conf"),
 			}))
 		})
 
@@ -686,9 +695,11 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 				entryResolver.MergeLayerTypesCall.Returns.Launch = true
 			})
+
 			it.After(func() {
 				Expect(os.RemoveAll(filepath.Join(layersDir, "nginx.toml"))).To(Succeed())
 			})
+
 			it("still generates the nginx.conf file", func() {
 				_, err := build(packit.BuildContext{
 					CNBPath:    cnbPath,
@@ -711,11 +722,39 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(config.GenerateCall.Receives.Env).To(Equal(nginx.BuildEnvironment{
-					ConfLocation:  filepath.Join(workspaceDir, "some-relative-path/nginx.conf"),
+					ConfLocation:  filepath.Join(workspaceDir, "nginx.conf"),
 					WebServer:     "nginx",
 					WebServerRoot: "custom",
 				}))
 			})
+		})
+	})
+
+	context("when the nginx.conf and included files need their permissions set", func() {
+		it.Before(func() {
+			Expect(os.WriteFile(filepath.Join(workspaceDir, "nginx.conf"), []byte("include custom.conf;"), 0600)).To(Succeed())
+			Expect(os.WriteFile(filepath.Join(workspaceDir, "custom.conf"), []byte("worker_processes 2;"), 0600)).To(Succeed())
+		})
+
+		it("modifies their permissions to be group read-writable", func() {
+			_, err := build(packit.BuildContext{
+				CNBPath:    cnbPath,
+				WorkingDir: workspaceDir,
+				Stack:      "some-stack",
+				Plan: packit.BuildpackPlan{
+					Entries: []packit.BuildpackPlanEntry{{Name: "nginx"}},
+				},
+				Layers: packit.Layers{Path: layersDir},
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			info, err := os.Stat(filepath.Join(workspaceDir, "nginx.conf"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(info.Mode().String()).To(Equal("-rw-rw----"))
+
+			info, err = os.Stat(filepath.Join(workspaceDir, "custom.conf"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(info.Mode().String()).To(Equal("-rw-rw----"))
 		})
 	})
 
@@ -868,7 +907,8 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 			it("returns an error", func() {
 				_, err := build(packit.BuildContext{
-					CNBPath: cnbPath,
+					CNBPath:    cnbPath,
+					WorkingDir: workspaceDir,
 					Plan: packit.BuildpackPlan{
 						Entries: []packit.BuildpackPlanEntry{
 							{Name: "nginx"},
@@ -911,7 +951,8 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 			it("returns an error", func() {
 				_, err := build(packit.BuildContext{
-					CNBPath: cnbPath,
+					CNBPath:    cnbPath,
+					WorkingDir: workspaceDir,
 					Plan: packit.BuildpackPlan{
 						Entries: []packit.BuildpackPlanEntry{
 							{Name: "nginx"},
@@ -931,7 +972,8 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 			it("returns an error", func() {
 				_, err := build(packit.BuildContext{
-					CNBPath: cnbPath,
+					CNBPath:    cnbPath,
+					WorkingDir: workspaceDir,
 					Plan: packit.BuildpackPlan{
 						Entries: []packit.BuildpackPlanEntry{
 							{Name: "nginx"},
@@ -951,7 +993,8 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 			it("returns an error", func() {
 				_, err := build(packit.BuildContext{
-					CNBPath: cnbPath,
+					CNBPath:    cnbPath,
+					WorkingDir: workspaceDir,
 					Plan: packit.BuildpackPlan{
 						Entries: []packit.BuildpackPlanEntry{
 							{Name: "nginx"},
@@ -964,6 +1007,28 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			})
 		})
 
+		context("when the included confs cannot be fetched", func() {
+			it.Before(func() {
+				Expect(os.Remove(filepath.Join(workspaceDir, "nginx.conf"))).To(Succeed())
+			})
+
+			it("returns an error", func() {
+				_, err := build(packit.BuildContext{
+					CNBPath:    cnbPath,
+					WorkingDir: workspaceDir,
+					Plan: packit.BuildpackPlan{
+						Entries: []packit.BuildpackPlanEntry{
+							{Name: "nginx"},
+						},
+					},
+					Layers: packit.Layers{Path: layersDir},
+					Stack:  "some-stack",
+				})
+				Expect(err).To(MatchError(ContainSubstring("failed to find configuration files")))
+				Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
+			})
+		})
+
 		context("when generating the SBOM returns an error", func() {
 			it.Before(func() {
 				sbomGenerator.GenerateFromDependencyCall.Returns.Error = errors.New("failed to generate SBOM")
@@ -971,7 +1036,8 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 			it("returns an error", func() {
 				_, err := build(packit.BuildContext{
-					CNBPath: cnbPath,
+					CNBPath:    cnbPath,
+					WorkingDir: workspaceDir,
 					Plan: packit.BuildpackPlan{
 						Entries: []packit.BuildpackPlanEntry{
 							{Name: "nginx"},
@@ -989,6 +1055,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				_, err := build(packit.BuildContext{
 					BuildpackInfo: packit.BuildpackInfo{SBOMFormats: []string{"random-format"}},
 					CNBPath:       cnbPath,
+					WorkingDir:    workspaceDir,
 					Plan: packit.BuildpackPlan{
 						Entries: []packit.BuildpackPlanEntry{
 							{Name: "nginx"},

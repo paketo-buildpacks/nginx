@@ -13,12 +13,7 @@ import (
 func Run(mainConf, localModulePath, globalModulePath string) error {
 	log.SetFlags(0)
 
-	body, err := os.ReadFile(mainConf)
-	if err != nil {
-		return fmt.Errorf("could not read config file (%s): %s", mainConf, err)
-	}
-
-	confs, err := getIncludedConfs(string(body), filepath.Dir(mainConf))
+	confs, err := getIncludedConfs(mainConf)
 	if err != nil {
 		return err
 	}
@@ -48,10 +43,7 @@ func Run(mainConf, localModulePath, globalModulePath string) error {
 	}
 
 	for _, conf := range confs {
-		tmpl, err := template.New("configure").
-			Option("missingkey=zero").
-			Funcs(templFuncs).
-			ParseFiles(conf)
+		tmpl, err := template.New("configure").Option("missingkey=zero").Funcs(templFuncs).ParseFiles(conf)
 		if err != nil {
 			return fmt.Errorf("failed to parse template: %s", err)
 		}
@@ -70,23 +62,30 @@ func Run(mainConf, localModulePath, globalModulePath string) error {
 	return nil
 }
 
-func getIncludedConfs(confText string, confDir string) ([]string, error) {
-	includeFiles := []string{}
-	includeRe := regexp.MustCompile(`include\s+(\S*.conf);`)
-	matches := includeRe.FindAllStringSubmatch(confText, -1)
-	for _, v := range matches {
-		if len(v) == 2 {
-			conf := v[1]
-			if !filepath.IsAbs(conf) {
-				conf = filepath.Join(confDir, conf)
+var IncludeConfRegexp = regexp.MustCompile(`include\s+(\S*.conf);`)
+
+func getIncludedConfs(path string) ([]string, error) {
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("could not read config file (%s): %w", path, err)
+	}
+
+	var files []string
+	for _, match := range IncludeConfRegexp.FindAllStringSubmatch(string(content), -1) {
+		if len(match) == 2 {
+			glob := match[1]
+			if !filepath.IsAbs(glob) {
+				glob = filepath.Join(filepath.Dir(path), glob)
 			}
-			matchFiles, err := filepath.Glob(conf)
+
+			matches, err := filepath.Glob(glob)
 			if err != nil {
-				return nil, fmt.Errorf("failed to get 'include' files for %s: %w", conf, err)
+				return nil, fmt.Errorf("failed to get 'include' files for %s: %w", glob, err)
 			}
-			includeFiles = append(includeFiles, matchFiles...)
+
+			files = append(files, matches...)
 		}
 	}
 
-	return includeFiles, nil
+	return files, nil
 }

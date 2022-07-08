@@ -51,9 +51,6 @@ worker_processes 1;
 # Run NGINX in foreground (necessary for containerized NGINX)
 daemon off;
 
-# Set the location of the server's PID file
-pid {{ tempDir }}/nginx.pid;
-
 # Set the location of the server's error log
 error_log stderr;
 
