@@ -170,7 +170,7 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 
 			// Assert that the server attempts to hit HTTPS URL instead of HTTP
 			_, err = http.Get(fmt.Sprintf("http://localhost:%s", container.HostPort("8080")))
-			Expect(err).To(MatchError(`Get "https://localhost/": dial tcp [::1]:443: connect: connection refused`))
+			Expect(err).To(MatchError(MatchRegexp(`Get "https:\/\/localhost\/": dial tcp (127.0.0.1|\[::1\]):443: connect: connection refused`)))
 		})
 	})
 
