@@ -12,6 +12,7 @@ import (
 	"github.com/paketo-buildpacks/nginx/fakes"
 	"github.com/paketo-buildpacks/packit/v2"
 	"github.com/paketo-buildpacks/packit/v2/chronos"
+	"github.com/paketo-buildpacks/packit/v2/sbom"
 	"github.com/paketo-buildpacks/packit/v2/servicebindings"
 
 	//nolint Ignore SA1019, informed usage of deprecated package
@@ -37,6 +38,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		config            *fakes.ConfigGenerator
 		calculator        *fakes.Calculator
 		bindings          *fakes.Bindings
+		sbomGenerator     *fakes.SBOMGenerator
 
 		buffer *bytes.Buffer
 
@@ -103,11 +105,17 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(os.Mkdir(filepath.Join(cnbPath, "bin"), os.ModePerm)).To(Succeed())
 		Expect(os.WriteFile(filepath.Join(cnbPath, "bin", "configure"), []byte("binary-contents"), 0600)).To(Succeed())
 
-		build = nginx.Build(nginx.BuildEnvironment{}, entryResolver, dependencyService, bindings, config, calculator, scribe.NewEmitter(buffer), chronos.DefaultClock)
+		sbomGenerator = &fakes.SBOMGenerator{}
+		sbomGenerator.GenerateFromDependencyCall.Returns.SBOM = sbom.SBOM{}
+
+		build = nginx.Build(nginx.BuildEnvironment{}, entryResolver, dependencyService, bindings, config, calculator, sbomGenerator, scribe.NewEmitter(buffer), chronos.DefaultClock)
 	})
 
 	it("does a build", func() {
 		result, err := build(packit.BuildContext{
+			BuildpackInfo: packit.BuildpackInfo{
+				SBOMFormats: []string{sbom.CycloneDXFormat, sbom.SPDXFormat},
+			},
 			CNBPath:    cnbPath,
 			WorkingDir: workspaceDir,
 			Stack:      "some-stack",
@@ -177,6 +185,17 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			},
 		}))
 
+		Expect(layer.SBOM.Formats()).To(Equal([]packit.SBOMFormat{
+			{
+				Extension: sbom.Format(sbom.CycloneDXFormat).Extension(),
+				Content:   sbom.NewFormattedReader(sbom.SBOM{}, sbom.CycloneDXFormat),
+			},
+			{
+				Extension: sbom.Format(sbom.SPDXFormat).Extension(),
+				Content:   sbom.NewFormattedReader(sbom.SBOM{}, sbom.SPDXFormat),
+			},
+		}))
+
 		Expect(filepath.Join(layersDir, "nginx")).To(BeADirectory())
 		Expect(filepath.Join(workspaceDir, "logs")).To(BeADirectory())
 
@@ -211,11 +230,22 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(dependencyService.DeliverCall.Receives.LayerPath).To(Equal(filepath.Join(layersDir, "nginx")))
 		Expect(dependencyService.DeliverCall.Receives.PlatformPath).To(Equal("platform"))
 		Expect(calculator.SumCall.CallCount).To(Equal(1))
+
+		Expect(sbomGenerator.GenerateFromDependencyCall.Receives.Dependency).To(Equal(postal.Dependency{
+			ID:           "nginx",
+			SHA256:       "some-sha",
+			Source:       "some-source",
+			SourceSHA256: "some-source-sha",
+			Stacks:       []string{"some-stack"},
+			URI:          "some-uri",
+			Version:      "1.19.8",
+		}))
+		Expect(sbomGenerator.GenerateFromDependencyCall.Receives.Dir).To(Equal(filepath.Join(layersDir, "nginx")))
 	})
 
 	context("when live reload is enabled", func() {
 		it.Before(func() {
-			build = nginx.Build(nginx.BuildEnvironment{Reload: true}, entryResolver, dependencyService, bindings, config, calculator, scribe.NewEmitter(buffer), chronos.DefaultClock)
+			build = nginx.Build(nginx.BuildEnvironment{Reload: true}, entryResolver, dependencyService, bindings, config, calculator, sbomGenerator, scribe.NewEmitter(buffer), chronos.DefaultClock)
 		})
 
 		it("uses watchexec to set the start command", func() {
@@ -492,7 +522,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			buildEnv := nginx.BuildEnvironment{
 				ConfLocation: "some-relative-path/nginx.conf",
 			}
-			build = nginx.Build(buildEnv, entryResolver, dependencyService, bindings, config, calculator, scribe.NewEmitter(buffer), chronos.DefaultClock)
+			build = nginx.Build(buildEnv, entryResolver, dependencyService, bindings, config, calculator, sbomGenerator, scribe.NewEmitter(buffer), chronos.DefaultClock)
 		})
 
 		it("assumes path is relative to /workspace", func() {
@@ -527,7 +557,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			buildEnv := nginx.BuildEnvironment{
 				ConfLocation: "/some-absolute-path/nginx.conf",
 			}
-			build = nginx.Build(buildEnv, entryResolver, dependencyService, bindings, config, calculator, scribe.NewEmitter(buffer), chronos.DefaultClock)
+			build = nginx.Build(buildEnv, entryResolver, dependencyService, bindings, config, calculator, sbomGenerator, scribe.NewEmitter(buffer), chronos.DefaultClock)
 		})
 
 		it("uses the location as-is", func() {
@@ -564,7 +594,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				WebServer:     "nginx",
 				WebServerRoot: "custom",
 			}
-			build = nginx.Build(buildEnv, entryResolver, dependencyService, bindings, config, calculator, scribe.NewEmitter(buffer), chronos.DefaultClock)
+			build = nginx.Build(buildEnv, entryResolver, dependencyService, bindings, config, calculator, sbomGenerator, scribe.NewEmitter(buffer), chronos.DefaultClock)
 		})
 
 		it("generates a basic nginx.conf and passes env var configuration into template generator", func() {
@@ -615,7 +645,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 						},
 					},
 				}
-				build = nginx.Build(buildEnv, entryResolver, dependencyService, bindings, config, calculator, scribe.NewEmitter(buffer), chronos.DefaultClock)
+				build = nginx.Build(buildEnv, entryResolver, dependencyService, bindings, config, calculator, sbomGenerator, scribe.NewEmitter(buffer), chronos.DefaultClock)
 			})
 			it("passes the binding path into the conf generator", func() {
 				_, err := build(packit.BuildContext{
@@ -734,7 +764,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 		context("unable to resolve .htpasswd service binding", func() {
 			it.Before(func() {
-				build = nginx.Build(nginx.BuildEnvironment{WebServer: "nginx"}, entryResolver, dependencyService, bindings, config, calculator, scribe.NewEmitter(buffer), chronos.DefaultClock)
+				build = nginx.Build(nginx.BuildEnvironment{WebServer: "nginx"}, entryResolver, dependencyService, bindings, config, calculator, sbomGenerator, scribe.NewEmitter(buffer), chronos.DefaultClock)
 				bindings.ResolveCall.Returns.Error = errors.New("some bindings error")
 			})
 
@@ -770,7 +800,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 						},
 					},
 				}
-				build = nginx.Build(nginx.BuildEnvironment{WebServer: "nginx"}, entryResolver, dependencyService, bindings, config, calculator, scribe.NewEmitter(buffer), chronos.DefaultClock)
+				build = nginx.Build(nginx.BuildEnvironment{WebServer: "nginx"}, entryResolver, dependencyService, bindings, config, calculator, sbomGenerator, scribe.NewEmitter(buffer), chronos.DefaultClock)
 			})
 
 			it("fails with descriptive error", func() {
@@ -797,7 +827,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 						},
 					},
 				}
-				build = nginx.Build(nginx.BuildEnvironment{WebServer: "nginx"}, entryResolver, dependencyService, bindings, config, calculator, scribe.NewEmitter(buffer), chronos.DefaultClock)
+				build = nginx.Build(nginx.BuildEnvironment{WebServer: "nginx"}, entryResolver, dependencyService, bindings, config, calculator, sbomGenerator, scribe.NewEmitter(buffer), chronos.DefaultClock)
 			})
 
 			it("fails with descriptive error", func() {
@@ -814,7 +844,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 		context("unable to generate nginx.conf", func() {
 			it.Before(func() {
-				build = nginx.Build(nginx.BuildEnvironment{WebServer: "nginx"}, entryResolver, dependencyService, bindings, config, calculator, scribe.NewEmitter(buffer), chronos.DefaultClock)
+				build = nginx.Build(nginx.BuildEnvironment{WebServer: "nginx"}, entryResolver, dependencyService, bindings, config, calculator, sbomGenerator, scribe.NewEmitter(buffer), chronos.DefaultClock)
 				config.GenerateCall.Returns.Error = errors.New("some config error")
 			})
 
@@ -932,7 +962,43 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				})
 				Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
 			})
+		})
 
+		context("when generating the SBOM returns an error", func() {
+			it.Before(func() {
+				sbomGenerator.GenerateFromDependencyCall.Returns.Error = errors.New("failed to generate SBOM")
+			})
+
+			it("returns an error", func() {
+				_, err := build(packit.BuildContext{
+					CNBPath: cnbPath,
+					Plan: packit.BuildpackPlan{
+						Entries: []packit.BuildpackPlanEntry{
+							{Name: "nginx"},
+						},
+					},
+					Layers: packit.Layers{Path: layersDir},
+					Stack:  "some-stack",
+				})
+				Expect(err).To(MatchError(ContainSubstring("failed to generate SBOM")))
+			})
+		})
+
+		context("when formatting the SBOM returns an error", func() {
+			it("returns an error", func() {
+				_, err := build(packit.BuildContext{
+					BuildpackInfo: packit.BuildpackInfo{SBOMFormats: []string{"random-format"}},
+					CNBPath:       cnbPath,
+					Plan: packit.BuildpackPlan{
+						Entries: []packit.BuildpackPlanEntry{
+							{Name: "nginx"},
+						},
+					},
+					Layers: packit.Layers{Path: layersDir},
+					Stack:  "some-stack",
+				})
+				Expect(err).To(MatchError("unsupported SBOM format: 'random-format'"))
+			})
 		})
 	})
 }

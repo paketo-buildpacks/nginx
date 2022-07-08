@@ -1,9 +1,12 @@
-api = "0.6"
+api = "0.8"
 
 [buildpack]
+  description = "A buildpack for installing the appropriate Nginx server"
   homepage = "https://github.com/paketo-buildpacks/nginx"
   id = "paketo-buildpacks/nginx"
+  keywords = ["nginx", "server", "distribution"]
   name = "Paketo Nginx Server Buildpack"
+  sbom-formats = ["application/vnd.cyclonedx+json", "application/spdx+json", "application/vnd.syft+json"]
 
 [metadata]
   include-files = ["bin/build", "bin/detect", "bin/run", "bin/configure", "buildpack.toml"]
