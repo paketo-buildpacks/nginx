@@ -13,10 +13,15 @@ import (
 func Run(mainConf, localModulePath, globalModulePath string) error {
 	log.SetFlags(0)
 
+	if _, err := os.Stat(mainConf); err != nil {
+		return nil
+	}
+
 	confs, err := getIncludedConfs(mainConf)
 	if err != nil {
 		return err
 	}
+
 	confs = append(confs, mainConf)
 	templFuncs := template.FuncMap{
 		"env": os.Getenv,

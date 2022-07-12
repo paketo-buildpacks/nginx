@@ -10,11 +10,9 @@ import (
 	"github.com/Masterminds/semver"
 	"github.com/paketo-buildpacks/packit/v2"
 	"github.com/paketo-buildpacks/packit/v2/chronos"
-	"github.com/paketo-buildpacks/packit/v2/fs"
 	"github.com/paketo-buildpacks/packit/v2/postal"
 	"github.com/paketo-buildpacks/packit/v2/sbom"
 	"github.com/paketo-buildpacks/packit/v2/scribe"
-	"github.com/paketo-buildpacks/packit/v2/servicebindings"
 )
 
 //go:generate faux --interface EntryResolver --output fakes/entry_resolver.go
@@ -35,14 +33,9 @@ type Calculator interface {
 	Sum(paths ...string) (string, error)
 }
 
-//go:generate faux --interface Bindings --output fakes/binding_resolver.go
-type Bindings interface {
-	Resolve(typ, provider, platformDir string) ([]servicebindings.Binding, error)
-}
-
 //go:generate faux --interface ConfigGenerator --output fakes/config_generator.go
 type ConfigGenerator interface {
-	Generate(env BuildEnvironment) error
+	Generate(config Configuration) error
 }
 
 //go:generate faux --interface SBOMGenerator --output fakes/sbom_generator.go
@@ -50,23 +43,10 @@ type SBOMGenerator interface {
 	GenerateFromDependency(dependency postal.Dependency, dir string) (sbom.SBOM, error)
 }
 
-type BuildEnvironment struct {
-	BasicAuthFile             string
-	ConfLocation              string `env:"BP_NGINX_CONF_LOCATION"`
-	NginxVersion              string `env:"BP_NGINX_VERSION"`
-	Reload                    bool   `env:"BP_LIVE_RELOAD_ENABLED"`
-	WebServer                 string `env:"BP_WEB_SERVER"`
-	WebServerForceHTTPS       bool   `env:"BP_WEB_SERVER_FORCE_HTTPS"`
-	WebServerPushStateEnabled bool   `env:"BP_WEB_SERVER_ENABLE_PUSH_STATE"`
-	WebServerRoot             string `env:"BP_WEB_SERVER_ROOT"`
-	WebServerLocationPath     string `env:"BP_WEB_SERVER_LOCATION_PATH"`
-}
-
-func Build(buildEnv BuildEnvironment,
+func Build(config Configuration,
 	entryResolver EntryResolver,
 	dependencyService DependencyService,
-	bindings Bindings,
-	config ConfigGenerator,
+	configGenerator ConfigGenerator,
 	calculator Calculator,
 	sbomGenerator SBOMGenerator,
 	logger scribe.Emitter,
@@ -76,17 +56,14 @@ func Build(buildEnv BuildEnvironment,
 		logger.Title("%s %s", context.BuildpackInfo.Name, context.BuildpackInfo.Version)
 
 		logger.Process("Resolving Nginx Server version")
-
-		priorities := []interface{}{
+		entry, sortedEntries := entryResolver.Resolve("nginx", context.Plan.Entries, []interface{}{
 			"BP_NGINX_VERSION",
 			"buildpack.yml",
 			"buildpack.toml",
-		}
-		entry, sortedEntries := entryResolver.Resolve("nginx", context.Plan.Entries, priorities)
-		entryVersion, _ := entry.Metadata["version"].(string)
-
+		})
 		logger.Candidates(sortedEntries)
 
+		entryVersion, _ := entry.Metadata["version"].(string)
 		dependency, err := dependencyService.Resolve(filepath.Join(context.CNBPath, "buildpack.toml"), entry.Name, entryVersion, context.Stack)
 		if err != nil {
 			return packit.BuildResult{}, err
@@ -94,60 +71,46 @@ func Build(buildEnv BuildEnvironment,
 
 		logger.SelectedDependency(entry, dependency, clock.Now())
 
-		versionSource := entry.Metadata["version-source"]
-		if versionSource != nil {
-			if versionSource.(string) == "buildpack.yml" {
-				nextMajorVersion := semver.MustParse(context.BuildpackInfo.Version).IncMajor()
-				logger.Subprocess("WARNING: Setting the server version through buildpack.yml will be deprecated soon in Nginx Server Buildpack v%s.", nextMajorVersion.String())
-				logger.Subprocess("Please specify the version through the $BP_NGINX_VERSION environment variable instead. See docs for more information.")
-				logger.Break()
-			}
+		versionSource, _ := entry.Metadata["version-source"].(string)
+		if versionSource == "buildpack.yml" {
+			nextMajorVersion := semver.MustParse(context.BuildpackInfo.Version).IncMajor()
+			logger.Subprocess("WARNING: Setting the server version through buildpack.yml will be deprecated soon in Nginx Server Buildpack v%s.", nextMajorVersion.String())
+			logger.Subprocess("Please specify the version through the $BP_NGINX_VERSION environment variable instead. See docs for more information.")
+			logger.Break()
 		}
 
-		err = os.MkdirAll(filepath.Join(context.WorkingDir, "logs"), os.ModePerm)
-		if err != nil {
-			return packit.BuildResult{}, fmt.Errorf("failed to create logs dir : %w", err)
+		if !filepath.IsAbs(config.NGINXConfLocation) {
+			config.NGINXConfLocation = filepath.Join(context.WorkingDir, config.NGINXConfLocation)
 		}
 
-		buildEnv.ConfLocation = cleanNginxConfLocation(buildEnv.ConfLocation, context.WorkingDir)
-
-		if buildEnv.WebServer == "nginx" {
-			bindingSet, err := bindings.Resolve("htpasswd", "", context.Platform.Path)
-			if err != nil {
-				return packit.BuildResult{}, err
-			}
-
-			if len(bindingSet) > 1 {
-				return packit.BuildResult{}, fmt.Errorf("binding resolver found more than one binding of type 'htpasswd'")
-			}
-
-			if len(bindingSet) == 1 {
-				if _, ok := bindingSet[0].Entries[".htpasswd"]; !ok {
-					return packit.BuildResult{}, fmt.Errorf("binding of type 'htpasswd' does not contain required entry '.htpasswd'")
-				}
-				buildEnv.BasicAuthFile = filepath.Join(bindingSet[0].Path, ".htpasswd")
-			}
-
-			err = config.Generate(buildEnv)
+		if config.WebServer == "nginx" {
+			err = configGenerator.Generate(config)
 			if err != nil {
 				return packit.BuildResult{}, fmt.Errorf("failed to generate nginx.conf : %w", err)
 			}
 		}
 
-		confs, err := getIncludedConfs(buildEnv.ConfLocation)
-		if err != nil {
-			return packit.BuildResult{}, fmt.Errorf("failed to find configuration files: %w", err)
+		var hasNGINXConf bool
+		if _, err := os.Stat(config.NGINXConfLocation); err == nil {
+			hasNGINXConf = true
 		}
 
-		for _, path := range append([]string{buildEnv.ConfLocation}, confs...) {
-			info, err := os.Stat(path)
+		if hasNGINXConf {
+			confs, err := getIncludedConfs(config.NGINXConfLocation)
 			if err != nil {
-				return packit.BuildResult{}, fmt.Errorf("failed to stat configuration files: %w", err)
+				return packit.BuildResult{}, fmt.Errorf("failed to find configuration files: %w", err)
 			}
 
-			err = os.Chmod(path, info.Mode()|0060)
-			if err != nil {
-				return packit.BuildResult{}, fmt.Errorf("failed to chmod configuration files: %w", err)
+			for _, path := range append([]string{config.NGINXConfLocation}, confs...) {
+				info, err := os.Stat(path)
+				if err != nil {
+					return packit.BuildResult{}, fmt.Errorf("failed to stat configuration files: %w", err)
+				}
+
+				err = os.Chmod(path, info.Mode()|0060)
+				if err != nil {
+					return packit.BuildResult{}, fmt.Errorf("failed to chmod configuration files: %w", err)
+				}
 			}
 		}
 
@@ -165,12 +128,11 @@ func Build(buildEnv BuildEnvironment,
 		}
 
 		var launchMetadata packit.LaunchMetadata
-
-		if launch {
+		if launch && hasNGINXConf {
 			command := "nginx"
 			args := []string{
 				"-p", context.WorkingDir,
-				"-c", buildEnv.ConfLocation,
+				"-c", config.NGINXConfLocation,
 				"-g", "pid /tmp/nginx.pid;",
 			}
 			launchMetadata.Processes = []packit.Process{
@@ -184,7 +146,7 @@ func Build(buildEnv BuildEnvironment,
 			}
 			launchMetadata.BOM = bom
 
-			if buildEnv.Reload {
+			if config.LiveReloadEnabled {
 				launchMetadata.Processes = []packit.Process{
 					{
 						Type:    "web",
@@ -254,21 +216,11 @@ func Build(buildEnv BuildEnvironment,
 		logger.Break()
 
 		layer.SharedEnv.Append("PATH", filepath.Join(layer.Path, "sbin"), string(os.PathListSeparator))
+		layer.LaunchEnv.Default("EXECD_CONF", config.NGINXConfLocation)
+		layer.ExecD = []string{configureBinPath}
 
-		layer.LaunchEnv.Override("EXECD_CONF", buildEnv.ConfLocation)
-		execdDir := filepath.Join(layer.Path, "exec.d")
-		err = os.MkdirAll(execdDir, os.ModePerm)
-		if err != nil {
-			return packit.BuildResult{}, err
-		}
-
-		err = fs.Copy(configureBinPath, filepath.Join(execdDir, "0-configure"))
-		if err != nil {
-			return packit.BuildResult{}, err
-		}
-
-		if buildEnv.WebServer == "nginx" {
-			layer.LaunchEnv.Override("APP_ROOT", context.WorkingDir)
+		if config.WebServer == "nginx" {
+			layer.LaunchEnv.Default("APP_ROOT", context.WorkingDir)
 		}
 
 		logger.EnvironmentVariables(layer)

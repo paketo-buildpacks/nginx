@@ -20,7 +20,7 @@ type BuildPlanMetadata struct {
 	Launch        bool   `toml:"launch"`
 }
 
-func Detect(buildEnv BuildEnvironment, versionParser VersionParser) packit.DetectFunc {
+func Detect(config Configuration, versionParser VersionParser) packit.DetectFunc {
 	return func(context packit.DetectContext) (packit.DetectResult, error) {
 		plan := packit.DetectResult{
 			Plan: packit.BuildPlan{
@@ -30,18 +30,22 @@ func Detect(buildEnv BuildEnvironment, versionParser VersionParser) packit.Detec
 			},
 		}
 
-		confExists, err := fs.Exists(cleanNginxConfLocation(buildEnv.ConfLocation, context.WorkingDir))
+		if !filepath.IsAbs(config.NGINXConfLocation) {
+			config.NGINXConfLocation = filepath.Join(context.WorkingDir, config.NGINXConfLocation)
+		}
+
+		confExists, err := fs.Exists(config.NGINXConfLocation)
 		if err != nil {
 			return packit.DetectResult{}, fmt.Errorf("failed to stat nginx.conf: %w", err)
 		}
-		if !confExists && buildEnv.WebServer != "nginx" {
+		if !confExists && config.WebServer != "nginx" {
 			return plan, nil
 		}
 
 		var requirements []packit.BuildPlanRequirement
 		var version string
-		if buildEnv.NginxVersion != "" {
-			version, err = versionParser.ResolveVersion(context.CNBPath, buildEnv.NginxVersion)
+		if config.NGINXVersion != "" {
+			version, err = versionParser.ResolveVersion(context.CNBPath, config.NGINXVersion)
 			if err != nil {
 				return packit.DetectResult{}, err
 			}
@@ -72,7 +76,7 @@ func Detect(buildEnv BuildEnvironment, versionParser VersionParser) packit.Detec
 			})
 		}
 
-		if buildEnv.NginxVersion == "" && !ymlExists {
+		if config.NGINXVersion == "" && !ymlExists {
 			version, err = versionParser.ResolveVersion(context.CNBPath, "")
 			if err != nil {
 				return packit.DetectResult{}, err
@@ -91,7 +95,7 @@ func Detect(buildEnv BuildEnvironment, versionParser VersionParser) packit.Detec
 			return packit.DetectResult{}, fmt.Errorf("parsing version failed: %w", err)
 		}
 
-		if buildEnv.Reload {
+		if config.LiveReloadEnabled {
 			requirements = append(requirements, packit.BuildPlanRequirement{
 				Name: "watchexec",
 				Metadata: map[string]interface{}{
@@ -104,14 +108,4 @@ func Detect(buildEnv BuildEnvironment, versionParser VersionParser) packit.Detec
 
 		return plan, nil
 	}
-}
-
-func cleanNginxConfLocation(confLocation, workingDir string) string {
-	if confLocation != "" {
-		if filepath.IsAbs(confLocation) {
-			return confLocation
-		}
-		return filepath.Join(workingDir, confLocation)
-	}
-	return filepath.Join(workingDir, ConfFile)
 }
