@@ -54,7 +54,7 @@ func testCustomConfApp(t *testing.T, context spec.G, it spec.S) {
 		it("serves up staticfile", func() {
 			var err error
 			image, _, err = pack.Build.
-				WithBuildpacks(nginxBuildpack).
+				WithBuildpacks(settings.Buildpacks.NGINX.Online).
 				WithPullPolicy("never").
 				WithEnv(map[string]string{
 					"BP_NGINX_CONF_LOCATION": "conf/nginx.conf",

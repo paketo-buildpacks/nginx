@@ -55,7 +55,7 @@ func testCaching(t *testing.T, context spec.G, it spec.S) {
 	})
 
 	it("uses a cached layer and doesn't run twice", func() {
-		build := pack.Build.WithBuildpacks(nginxBuildpack)
+		build := pack.Build.WithBuildpacks(settings.Buildpacks.NGINX.Online)
 
 		firstImage, _, err := build.Execute(name, source)
 		Expect(err).NotTo(HaveOccurred())
@@ -63,7 +63,7 @@ func testCaching(t *testing.T, context spec.G, it spec.S) {
 		imageIDs[firstImage.ID] = struct{}{}
 
 		Expect(firstImage.Buildpacks).To(HaveLen(1))
-		Expect(firstImage.Buildpacks[0].Key).To(Equal(buildpackInfo.Buildpack.ID))
+		Expect(firstImage.Buildpacks[0].Key).To(Equal(settings.Buildpack.ID))
 		Expect(firstImage.Buildpacks[0].Layers).To(HaveKey("nginx"))
 
 		container, err := docker.Container.Run.
@@ -82,7 +82,7 @@ func testCaching(t *testing.T, context spec.G, it spec.S) {
 		imageIDs[secondImage.ID] = struct{}{}
 
 		Expect(secondImage.Buildpacks).To(HaveLen(1))
-		Expect(secondImage.Buildpacks[0].Key).To(Equal(buildpackInfo.Buildpack.ID))
+		Expect(secondImage.Buildpacks[0].Key).To(Equal(settings.Buildpack.ID))
 		Expect(secondImage.Buildpacks[0].Layers).To(HaveKey("nginx"))
 
 		container, err = docker.Container.Run.

@@ -49,13 +49,13 @@ func testLogging(t *testing.T, context spec.G, it spec.S) {
 			var err error
 			var logs fmt.Stringer
 			image, logs, err = pack.Build.
-				WithBuildpacks(nginxBuildpack).
+				WithBuildpacks(settings.Buildpacks.NGINX.Online).
 				WithPullPolicy("never").
 				Execute(name, source)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(logs).To(matchers.ContainLines(
-				fmt.Sprintf("%s 1.2.3", buildpackInfo.Buildpack.Name),
+				fmt.Sprintf("%s 1.2.3", settings.Buildpack.Name),
 				"  Resolving Nginx Server version",
 				"    Candidate version sources (in priority order):",
 				`      buildpack.yml -> "1.21.*"`,
@@ -70,11 +70,11 @@ func testLogging(t *testing.T, context spec.G, it spec.S) {
 				MatchRegexp(`      Completed in (\d+\.\d+|\d{3})`),
 				"",
 				"  Configuring build environment",
-				fmt.Sprintf(`    PATH -> "$PATH:/layers/%s/nginx/sbin"`, strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_")),
+				fmt.Sprintf(`    PATH -> "$PATH:/layers/%s/nginx/sbin"`, strings.ReplaceAll(settings.Buildpack.ID, "/", "_")),
 				"",
 				"  Configuring launch environment",
 				`    EXECD_CONF -> "/workspace/nginx.conf"`,
-				fmt.Sprintf(`    PATH       -> "$PATH:/layers/%s/nginx/sbin"`, strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_")),
+				fmt.Sprintf(`    PATH       -> "$PATH:/layers/%s/nginx/sbin"`, strings.ReplaceAll(settings.Buildpack.ID, "/", "_")),
 				"",
 			))
 		})
@@ -86,13 +86,13 @@ func testLogging(t *testing.T, context spec.G, it spec.S) {
 			var logs fmt.Stringer
 			image, logs, err = pack.Build.
 				WithEnv(map[string]string{"BP_NGINX_VERSION": "stable"}).
-				WithBuildpacks(nginxBuildpack).
+				WithBuildpacks(settings.Buildpacks.NGINX.Online).
 				WithPullPolicy("never").
 				Execute(name, source)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(logs).To(matchers.ContainLines(
-				fmt.Sprintf("%s 1.2.3", buildpackInfo.Buildpack.Name),
+				fmt.Sprintf("%s 1.2.3", settings.Buildpack.Name),
 				"  Resolving Nginx Server version",
 				"    Candidate version sources (in priority order):",
 				`      BP_NGINX_VERSION -> "1.22.*"`,
@@ -105,11 +105,11 @@ func testLogging(t *testing.T, context spec.G, it spec.S) {
 				MatchRegexp(`      Completed in (\d+\.\d+|\d{3})`),
 				"",
 				"  Configuring build environment",
-				fmt.Sprintf(`    PATH -> "$PATH:/layers/%s/nginx/sbin"`, strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_")),
+				fmt.Sprintf(`    PATH -> "$PATH:/layers/%s/nginx/sbin"`, strings.ReplaceAll(settings.Buildpack.ID, "/", "_")),
 				"",
 				"  Configuring launch environment",
 				`    EXECD_CONF -> "/workspace/nginx.conf"`,
-				fmt.Sprintf(`    PATH       -> "$PATH:/layers/%s/nginx/sbin"`, strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_")),
+				fmt.Sprintf(`    PATH       -> "$PATH:/layers/%s/nginx/sbin"`, strings.ReplaceAll(settings.Buildpack.ID, "/", "_")),
 				"",
 			))
 		})

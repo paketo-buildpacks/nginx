@@ -35,7 +35,6 @@ func (p Parser) ParseYml(workingDir string) (string, bool, error) {
 }
 
 func (p Parser) ResolveVersion(cnbPath, version string) (string, error) {
-
 	bpTOML, err := os.Open(filepath.Join(cnbPath, "buildpack.toml"))
 	if err != nil {
 		return "", err

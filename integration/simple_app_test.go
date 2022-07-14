@@ -67,7 +67,7 @@ func testSimpleApp(t *testing.T, context spec.G, it spec.S) {
 		it("serves up staticfile", func() {
 			var err error
 			image, _, err = pack.Build.
-				WithBuildpacks(nginxBuildpack).
+				WithBuildpacks(settings.Buildpacks.NGINX.Online).
 				WithPullPolicy("never").
 				WithSBOMOutputDir(sbomDir).
 				Execute(name, source)
@@ -86,12 +86,12 @@ func testSimpleApp(t *testing.T, context spec.G, it spec.S) {
 			Expect(string(contents)).To(ContainSubstring(`"name":"Nginx Server"`))
 
 			// check that all required SBOM files are present
-			Expect(filepath.Join(sbomDir, "sbom", "launch", strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_"), "nginx", "sbom.cdx.json")).To(BeARegularFile())
-			Expect(filepath.Join(sbomDir, "sbom", "launch", strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_"), "nginx", "sbom.spdx.json")).To(BeARegularFile())
-			Expect(filepath.Join(sbomDir, "sbom", "launch", strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_"), "nginx", "sbom.syft.json")).To(BeARegularFile())
+			Expect(filepath.Join(sbomDir, "sbom", "launch", strings.ReplaceAll(settings.Buildpack.ID, "/", "_"), "nginx", "sbom.cdx.json")).To(BeARegularFile())
+			Expect(filepath.Join(sbomDir, "sbom", "launch", strings.ReplaceAll(settings.Buildpack.ID, "/", "_"), "nginx", "sbom.spdx.json")).To(BeARegularFile())
+			Expect(filepath.Join(sbomDir, "sbom", "launch", strings.ReplaceAll(settings.Buildpack.ID, "/", "_"), "nginx", "sbom.syft.json")).To(BeARegularFile())
 
 			// check an SBOM file to make sure it has an entry
-			contents, err = os.ReadFile(filepath.Join(sbomDir, "sbom", "launch", strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_"), "nginx", "sbom.cdx.json"))
+			contents, err = os.ReadFile(filepath.Join(sbomDir, "sbom", "launch", strings.ReplaceAll(settings.Buildpack.ID, "/", "_"), "nginx", "sbom.cdx.json"))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(contents)).To(ContainSubstring(`"name": "Nginx Server"`))
 		})
@@ -107,7 +107,7 @@ func testSimpleApp(t *testing.T, context spec.G, it spec.S) {
 		it("starts successfully", func() {
 			var err error
 			image, _, err = pack.Build.
-				WithBuildpacks(nginxBuildpack).
+				WithBuildpacks(settings.Buildpacks.NGINX.Online).
 				WithPullPolicy("never").
 				Execute(name, source)
 			Expect(err).NotTo(HaveOccurred())
@@ -148,8 +148,8 @@ func testSimpleApp(t *testing.T, context spec.G, it spec.S) {
 			var logs fmt.Stringer
 			image, logs, err = pack.Build.
 				WithBuildpacks(
-					watchexecBuildpack,
-					nginxBuildpack,
+					settings.Buildpacks.Watchexec.Online,
+					settings.Buildpacks.NGINX.Online,
 				).
 				WithPullPolicy("never").
 				WithEnv(map[string]string{
@@ -199,8 +199,8 @@ func testSimpleApp(t *testing.T, context spec.G, it spec.S) {
 			var logs fmt.Stringer
 			_, logs, err = pack.Build.
 				WithBuildpacks(
-					watchexecBuildpack,
-					nginxBuildpack,
+					settings.Buildpacks.Watchexec.Online,
+					settings.Buildpacks.NGINX.Online,
 				).
 				WithPullPolicy("never").
 				WithEnv(map[string]string{

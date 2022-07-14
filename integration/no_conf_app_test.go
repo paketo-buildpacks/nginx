@@ -58,7 +58,7 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 			)
 
 			image, logs, err = pack.Build.
-				WithBuildpacks(nginxBuildpack).
+				WithBuildpacks(settings.Buildpacks.NGINX.Online).
 				WithEnv(map[string]string{
 					"BP_WEB_SERVER": "nginx",
 				}).
@@ -96,7 +96,7 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 			)
 
 			image, logs, err = pack.Build.
-				WithBuildpacks(nginxBuildpack).
+				WithBuildpacks(settings.Buildpacks.NGINX.Online).
 				WithEnv(map[string]string{
 					"BP_WEB_SERVER":                   "nginx",
 					"BP_WEB_SERVER_ROOT":              "custom_root",
@@ -134,7 +134,7 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 			)
 
 			image, logs, err = pack.Build.
-				WithBuildpacks(nginxBuildpack).
+				WithBuildpacks(settings.Buildpacks.NGINX.Online).
 				WithEnv(map[string]string{
 					"BP_WEB_SERVER":             "nginx",
 					"BP_WEB_SERVER_FORCE_HTTPS": "true",
@@ -188,7 +188,7 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 			)
 
 			image, logs, err = pack.Build.
-				WithBuildpacks(nginxBuildpack).
+				WithBuildpacks(settings.Buildpacks.NGINX.Online).
 				WithEnv(map[string]string{
 					"BP_WEB_SERVER":        "nginx",
 					"SERVICE_BINDING_ROOT": "/bindings",

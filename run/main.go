@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/caarlos0/env/v6"
 	"github.com/paketo-buildpacks/nginx"
 	"github.com/paketo-buildpacks/packit/v2"
 	"github.com/paketo-buildpacks/packit/v2/cargo"
@@ -26,20 +25,18 @@ func (f Generator) GenerateFromDependency(dependency postal.Dependency, path str
 func main() {
 	logger := scribe.NewEmitter(os.Stdout)
 
-	var buildEnv nginx.BuildEnvironment
-	err := env.Parse(&buildEnv)
+	config, err := nginx.LoadConfiguration(os.Environ(), servicebindings.NewResolver(), os.Getenv("CNB_PLATFORM_DIR"))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, fmt.Errorf("failed to parse build configuration: %w", err))
 		os.Exit(1)
 	}
 
 	packit.Run(
-		nginx.Detect(buildEnv, nginx.NewParser()),
+		nginx.Detect(config, nginx.NewParser()),
 		nginx.Build(
-			buildEnv,
+			config,
 			draft.NewPlanner(),
 			postal.NewService(cargo.NewTransport()),
-			servicebindings.NewResolver(),
 			nginx.NewDefaultConfigGenerator(logger),
 			fs.NewChecksumCalculator(),
 			Generator{},

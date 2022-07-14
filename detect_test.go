@@ -36,7 +36,7 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 		versionParser = &fakes.VersionParser{}
 		versionParser.ResolveVersionCall.Returns.ResultVersion = "1.19.*"
 
-		detect = nginx.Detect(nginx.BuildEnvironment{}, versionParser)
+		detect = nginx.Detect(nginx.Configuration{NGINXConfLocation: "./nginx.conf", WebServerRoot: "./public"}, versionParser)
 	})
 
 	it.After(func() {
@@ -58,8 +58,9 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 
 	context("$BP_WEB_SERVER is set for a no-config nginx build", func() {
 		it.Before(func() {
-			detect = nginx.Detect(nginx.BuildEnvironment{WebServer: "nginx"}, versionParser)
+			detect = nginx.Detect(nginx.Configuration{WebServer: "nginx"}, versionParser)
 		})
+
 		it("requires and provides nginx", func() {
 			result, err := detect(packit.DetectContext{
 				WorkingDir: workingDir,
@@ -86,15 +87,12 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 
 	context("nginx.conf is present", func() {
 		it.Before(func() {
-			Expect(os.WriteFile(filepath.Join(workingDir, "nginx.conf"),
-				[]byte(`conf`),
-				0644,
-			)).To(Succeed())
+			Expect(os.WriteFile(filepath.Join(workingDir, "nginx.conf"), []byte(`conf`), 0600)).To(Succeed())
 		})
 
 		context("when version is set via BP_NGINX_VERSION", func() {
 			it.Before(func() {
-				detect = nginx.Detect(nginx.BuildEnvironment{NginxVersion: "mainline"}, versionParser)
+				detect = nginx.Detect(nginx.Configuration{NGINXVersion: "mainline"}, versionParser)
 				versionParser.ResolveVersionCall.Returns.ResultVersion = "1.19.*"
 				versionParser.ResolveVersionCall.Returns.Err = nil
 			})
@@ -129,7 +127,7 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 
 		context("and BP_LIVE_RELOAD_ENABLED=true in the build environment", func() {
 			it.Before(func() {
-				detect = nginx.Detect(nginx.BuildEnvironment{Reload: true}, versionParser)
+				detect = nginx.Detect(nginx.Configuration{LiveReloadEnabled: true}, versionParser)
 			})
 
 			it("requires watchexec at launch time", func() {

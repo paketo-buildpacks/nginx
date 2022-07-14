@@ -11,20 +11,20 @@ type ConfigGenerator struct {
 		mutex     sync.Mutex
 		CallCount int
 		Receives  struct {
-			Env nginx.BuildEnvironment
+			Config nginx.Configuration
 		}
 		Returns struct {
 			Error error
 		}
-		Stub func(nginx.BuildEnvironment) error
+		Stub func(nginx.Configuration) error
 	}
 }
 
-func (f *ConfigGenerator) Generate(param1 nginx.BuildEnvironment) error {
+func (f *ConfigGenerator) Generate(param1 nginx.Configuration) error {
 	f.GenerateCall.mutex.Lock()
 	defer f.GenerateCall.mutex.Unlock()
 	f.GenerateCall.CallCount++
-	f.GenerateCall.Receives.Env = param1
+	f.GenerateCall.Receives.Config = param1
 	if f.GenerateCall.Stub != nil {
 		return f.GenerateCall.Stub(param1)
 	}

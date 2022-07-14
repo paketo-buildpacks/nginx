@@ -32,8 +32,9 @@ func testRun(t *testing.T, context spec.G, it spec.S) {
 	it.Before(func() {
 		var err error
 		workingDir, err = os.MkdirTemp("", "working-dir")
-		mainConf = filepath.Join(workingDir, "nginx.conf")
 		Expect(err).NotTo(HaveOccurred())
+
+		mainConf = filepath.Join(workingDir, "nginx.conf")
 	})
 
 	it.After(func() {
@@ -198,18 +199,18 @@ func testRun(t *testing.T, context spec.G, it spec.S) {
 		})
 	})
 
-	context("failure cases", func() {
-		context("when the template file does not exist", func() {
-			it.Before(func() {
-				mainConf = "/no/such/template.conf"
-			})
-
-			it("prints an error and exits non-zero", func() {
-				err := internal.Run(mainConf, localModulePath, globalModulePath)
-				Expect(err).To(MatchError(ContainSubstring("could not read config file (/no/such/template.conf): open /no/such/template.conf: no such file or directory")))
-			})
+	context("when the template file does not exist", func() {
+		it.Before(func() {
+			mainConf = "/no/such/nginx.conf"
 		})
 
+		it("does nothing", func() {
+			err := internal.Run(mainConf, localModulePath, globalModulePath)
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+
+	context("failure cases", func() {
 		context("when the template file cannot be written", func() {
 			it.Before(func() {
 				Expect(os.WriteFile(filepath.Join(workingDir, "nginx.conf"), []byte(`{{module "global"}}`), 0444)).To(Succeed())

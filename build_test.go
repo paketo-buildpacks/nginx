@@ -3,7 +3,6 @@ package nginx_test
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -13,7 +12,6 @@ import (
 	"github.com/paketo-buildpacks/packit/v2"
 	"github.com/paketo-buildpacks/packit/v2/chronos"
 	"github.com/paketo-buildpacks/packit/v2/sbom"
-	"github.com/paketo-buildpacks/packit/v2/servicebindings"
 
 	//nolint Ignore SA1019, informed usage of deprecated package
 	"github.com/paketo-buildpacks/packit/v2/paketosbom"
@@ -35,9 +33,8 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 		entryResolver     *fakes.EntryResolver
 		dependencyService *fakes.DependencyService
-		config            *fakes.ConfigGenerator
+		configGenerator   *fakes.ConfigGenerator
 		calculator        *fakes.Calculator
-		bindings          *fakes.Bindings
 		sbomGenerator     *fakes.SBOMGenerator
 
 		buffer *bytes.Buffer
@@ -93,21 +90,31 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			},
 		}
 
-		bindings = &fakes.Bindings{}
-		config = &fakes.ConfigGenerator{}
+		configGenerator = &fakes.ConfigGenerator{}
 		calculator = &fakes.Calculator{}
 		calculator.SumCall.Returns.String = "some-bin-sha"
 
 		sbomGenerator = &fakes.SBOMGenerator{}
 		sbomGenerator.GenerateFromDependencyCall.Returns.SBOM = sbom.SBOM{}
 
-		// create fake configure binary
 		Expect(os.Mkdir(filepath.Join(cnbPath, "bin"), os.ModePerm)).To(Succeed())
 		Expect(os.WriteFile(filepath.Join(cnbPath, "bin", "configure"), []byte("binary-contents"), 0600)).To(Succeed())
 
 		Expect(os.WriteFile(filepath.Join(workspaceDir, "nginx.conf"), []byte("worker_processes 2;"), 0600)).To(Succeed())
 
-		build = nginx.Build(nginx.BuildEnvironment{}, entryResolver, dependencyService, bindings, config, calculator, sbomGenerator, scribe.NewEmitter(buffer), chronos.DefaultClock)
+		build = nginx.Build(
+			nginx.Configuration{
+				NGINXConfLocation: "./nginx.conf",
+				WebServerRoot:     "./public",
+			},
+			entryResolver,
+			dependencyService,
+			configGenerator,
+			calculator,
+			sbomGenerator,
+			scribe.NewEmitter(buffer),
+			chronos.DefaultClock,
+		)
 	})
 
 	it("does a build", func() {
@@ -148,12 +155,13 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			"PATH.delim":  ":",
 		}))
 		Expect(layer.LaunchEnv).To(Equal(packit.Environment{
-			"EXECD_CONF.override": filepath.Join(workspaceDir, nginx.ConfFile),
+			"EXECD_CONF.default": filepath.Join(workspaceDir, nginx.ConfFile),
 		}))
 		Expect(layer.Metadata).To(Equal(map[string]interface{}{
 			nginx.DepKey:          "some-sha",
 			nginx.ConfigureBinKey: "some-bin-sha",
 		}))
+		Expect(layer.ExecD).To(Equal([]string{filepath.Join(cnbPath, "bin", "configure")}))
 
 		Expect(result.Launch.BOM).To(Equal([]packit.BOMEntry{
 			{
@@ -195,7 +203,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		}))
 
 		Expect(filepath.Join(layersDir, "nginx")).To(BeADirectory())
-		Expect(filepath.Join(workspaceDir, "logs")).To(BeADirectory())
 
 		Expect(entryResolver.ResolveCall.Receives.BuildpackPlanEntrySlice).To(Equal([]packit.BuildpackPlanEntry{
 			{
@@ -243,7 +250,20 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 	context("when live reload is enabled", func() {
 		it.Before(func() {
-			build = nginx.Build(nginx.BuildEnvironment{Reload: true}, entryResolver, dependencyService, bindings, config, calculator, sbomGenerator, scribe.NewEmitter(buffer), chronos.DefaultClock)
+			build = nginx.Build(
+				nginx.Configuration{
+					NGINXConfLocation: "./nginx.conf",
+					WebServerRoot:     "./public",
+					LiveReloadEnabled: true,
+				},
+				entryResolver,
+				dependencyService,
+				configGenerator,
+				calculator,
+				sbomGenerator,
+				scribe.NewEmitter(buffer),
+				chronos.DefaultClock,
+			)
 		})
 
 		it("uses watchexec to set the start command", func() {
@@ -391,7 +411,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			}))
 
 			Expect(filepath.Join(layersDir, "nginx")).To(BeADirectory())
-			Expect(filepath.Join(workspaceDir, "logs")).To(BeADirectory())
 
 			Expect(entryResolver.ResolveCall.Receives.BuildpackPlanEntrySlice).To(Equal([]packit.BuildpackPlanEntry{
 				{
@@ -513,14 +532,19 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 	context("when BP_NGINX_CONF_LOCATION is set to a relative path", func() {
 		it.Before(func() {
-			buildEnv := nginx.BuildEnvironment{
-				ConfLocation: "some-relative-path/nginx.conf",
-			}
-
 			Expect(os.Mkdir(filepath.Join(workspaceDir, "some-relative-path"), os.ModePerm)).To(Succeed())
 			Expect(os.WriteFile(filepath.Join(workspaceDir, "some-relative-path", "nginx.conf"), []byte("worker_processes 2;"), 0600)).To(Succeed())
 
-			build = nginx.Build(buildEnv, entryResolver, dependencyService, bindings, config, calculator, sbomGenerator, scribe.NewEmitter(buffer), chronos.DefaultClock)
+			build = nginx.Build(
+				nginx.Configuration{NGINXConfLocation: "some-relative-path/nginx.conf"},
+				entryResolver,
+				dependencyService,
+				configGenerator,
+				calculator,
+				sbomGenerator,
+				scribe.NewEmitter(buffer),
+				chronos.DefaultClock,
+			)
 		})
 
 		it("assumes path is relative to /workspace", func() {
@@ -549,21 +573,26 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				"-g", "pid /tmp/nginx.pid;",
 			}))
 			Expect(result.Layers[0].LaunchEnv).To(Equal(packit.Environment{
-				"EXECD_CONF.override": filepath.Join(workspaceDir, "some-relative-path/nginx.conf"),
+				"EXECD_CONF.default": filepath.Join(workspaceDir, "some-relative-path/nginx.conf"),
 			}))
 		})
 	})
 
 	context("when BP_NGINX_CONF_LOCATION is set to an absolute path", func() {
 		it.Before(func() {
-			buildEnv := nginx.BuildEnvironment{
-				ConfLocation: filepath.Join(workspaceDir, "some-absolute-path", "nginx.conf"),
-			}
-
 			Expect(os.Mkdir(filepath.Join(workspaceDir, "some-absolute-path"), os.ModePerm)).To(Succeed())
 			Expect(os.WriteFile(filepath.Join(workspaceDir, "some-absolute-path", "nginx.conf"), []byte("worker_processes 2;"), 0600)).To(Succeed())
 
-			build = nginx.Build(buildEnv, entryResolver, dependencyService, bindings, config, calculator, sbomGenerator, scribe.NewEmitter(buffer), chronos.DefaultClock)
+			build = nginx.Build(
+				nginx.Configuration{NGINXConfLocation: filepath.Join(workspaceDir, "some-absolute-path", "nginx.conf")},
+				entryResolver,
+				dependencyService,
+				configGenerator,
+				calculator,
+				sbomGenerator,
+				scribe.NewEmitter(buffer),
+				chronos.DefaultClock,
+			)
 		})
 
 		it("uses the location as-is", func() {
@@ -592,18 +621,27 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				"-g", "pid /tmp/nginx.pid;",
 			}))
 			Expect(result.Layers[0].LaunchEnv).To(Equal(packit.Environment{
-				"EXECD_CONF.override": filepath.Join(workspaceDir, "some-absolute-path", "nginx.conf"),
+				"EXECD_CONF.default": filepath.Join(workspaceDir, "some-absolute-path", "nginx.conf"),
 			}))
 		})
 	})
 
 	context("when BP_WEB_SERVER=nginx in the build env", func() {
 		it.Before(func() {
-			buildEnv := nginx.BuildEnvironment{
-				WebServer:     "nginx",
-				WebServerRoot: "custom",
-			}
-			build = nginx.Build(buildEnv, entryResolver, dependencyService, bindings, config, calculator, sbomGenerator, scribe.NewEmitter(buffer), chronos.DefaultClock)
+			build = nginx.Build(
+				nginx.Configuration{
+					NGINXConfLocation: "./nginx.conf",
+					WebServer:         "nginx",
+					WebServerRoot:     "custom",
+				},
+				entryResolver,
+				dependencyService,
+				configGenerator,
+				calculator,
+				sbomGenerator,
+				scribe.NewEmitter(buffer),
+				chronos.DefaultClock,
+			)
 		})
 
 		it("generates a basic nginx.conf and passes env var configuration into template generator", func() {
@@ -627,62 +665,16 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				Layers: packit.Layers{Path: layersDir},
 			})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(config.GenerateCall.Receives.Env).To(Equal(nginx.BuildEnvironment{
-				ConfLocation:  filepath.Join(workspaceDir, "nginx.conf"),
-				WebServer:     "nginx",
-				WebServerRoot: "custom",
+			Expect(configGenerator.GenerateCall.Receives.Config).To(Equal(nginx.Configuration{
+				NGINXConfLocation: filepath.Join(workspaceDir, "nginx.conf"),
+				WebServer:         "nginx",
+				WebServerRoot:     "custom",
 			}))
 
 			Expect(result.Layers[0].LaunchEnv).To(Equal(packit.Environment{
-				"APP_ROOT.override":   workspaceDir, // generated nginx conf relies on this env var
-				"EXECD_CONF.override": filepath.Join(workspaceDir, "nginx.conf"),
+				"APP_ROOT.default":   workspaceDir, // generated nginx conf relies on this env var
+				"EXECD_CONF.default": filepath.Join(workspaceDir, "nginx.conf"),
 			}))
-		})
-
-		context("and a well-formed htpasswd service binding is provided", func() {
-			it.Before(func() {
-				buildEnv := nginx.BuildEnvironment{
-					WebServer: "nginx",
-				}
-				bindings.ResolveCall.Returns.BindingSlice = []servicebindings.Binding{
-					{
-						Name: "first",
-						Type: "htpasswd",
-						Path: "/path/to/binding/",
-						Entries: map[string]*servicebindings.Entry{
-							".htpasswd": servicebindings.NewEntry("/path/to/binding/.htpasswd"),
-						},
-					},
-				}
-				build = nginx.Build(buildEnv, entryResolver, dependencyService, bindings, config, calculator, sbomGenerator, scribe.NewEmitter(buffer), chronos.DefaultClock)
-			})
-			it("passes the binding path into the conf generator", func() {
-				_, err := build(packit.BuildContext{
-					CNBPath:    cnbPath,
-					WorkingDir: workspaceDir,
-					Stack:      "some-stack",
-					Platform:   packit.Platform{Path: "platform"},
-					Plan: packit.BuildpackPlan{
-						Entries: []packit.BuildpackPlanEntry{
-							{
-								Name: "nginx",
-								Metadata: map[string]interface{}{
-									"version-source": "BP_NGINX_VERSION",
-									"version":        "1.19.*",
-									"launch":         true,
-								},
-							},
-						},
-					},
-					Layers: packit.Layers{Path: layersDir},
-				})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(config.GenerateCall.Receives.Env).To(Equal(nginx.BuildEnvironment{
-					ConfLocation:  filepath.Join(workspaceDir, nginx.ConfFile),
-					WebServer:     "nginx",
-					BasicAuthFile: "/path/to/binding/.htpasswd",
-				}))
-			})
 		})
 
 		context("and nginx layer is being reused", func() {
@@ -721,10 +713,10 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					Layers: packit.Layers{Path: layersDir},
 				})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(config.GenerateCall.Receives.Env).To(Equal(nginx.BuildEnvironment{
-					ConfLocation:  filepath.Join(workspaceDir, "nginx.conf"),
-					WebServer:     "nginx",
-					WebServerRoot: "custom",
+				Expect(configGenerator.GenerateCall.Receives.Config).To(Equal(nginx.Configuration{
+					NGINXConfLocation: filepath.Join(workspaceDir, "nginx.conf"),
+					WebServer:         "nginx",
+					WebServerRoot:     "custom",
 				}))
 			})
 		})
@@ -758,6 +750,28 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		})
 	})
 
+	context("when there is no configuration file", func() {
+		it.Before(func() {
+			Expect(os.Remove(filepath.Join(workspaceDir, "nginx.conf"))).To(Succeed())
+		})
+
+		it("does not attempt to set permissions or processes", func() {
+			result, err := build(packit.BuildContext{
+				CNBPath:    cnbPath,
+				WorkingDir: workspaceDir,
+				Stack:      "some-stack",
+				Plan: packit.BuildpackPlan{
+					Entries: []packit.BuildpackPlanEntry{{Name: "nginx"}},
+				},
+				Layers: packit.Layers{Path: layersDir},
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(len(result.Layers)).To(Equal(1))
+			Expect(result.Launch.Processes).To(BeEmpty())
+		})
+	})
+
 	context("failure cases", func() {
 		context("when the dependency cannot be resolved", func() {
 			it.Before(func() {
@@ -779,112 +793,19 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			})
 		})
 
-		context("unable to create log directory", func() {
-			it.Before(func() {
-				Expect(os.Chmod(workspaceDir, 0000))
-			})
-
-			it.After(func() {
-				Expect(os.Chmod(workspaceDir, os.ModePerm))
-			})
-
-			it("fails with descriptive error", func() {
-				_, err := build(packit.BuildContext{
-					CNBPath:    cnbPath,
-					WorkingDir: workspaceDir,
-					Stack:      "some-stack",
-				})
-
-				Expect(err).To(HaveOccurred())
-				logsDir := filepath.Join(workspaceDir, "logs")
-				Expect(err).To(MatchError(ContainSubstring(fmt.Sprintf("failed to create logs dir : mkdir %s", logsDir))))
-			})
-		})
-
-		context("unable to resolve .htpasswd service binding", func() {
-			it.Before(func() {
-				build = nginx.Build(nginx.BuildEnvironment{WebServer: "nginx"}, entryResolver, dependencyService, bindings, config, calculator, sbomGenerator, scribe.NewEmitter(buffer), chronos.DefaultClock)
-				bindings.ResolveCall.Returns.Error = errors.New("some bindings error")
-			})
-
-			it("fails with descriptive error", func() {
-				_, err := build(packit.BuildContext{
-					CNBPath:    cnbPath,
-					WorkingDir: workspaceDir,
-					Stack:      "some-stack",
-				})
-
-				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError(ContainSubstring("some bindings error")))
-			})
-		})
-
-		context("there's more than one htpasswd service binding", func() {
-			it.Before(func() {
-				bindings.ResolveCall.Returns.BindingSlice = []servicebindings.Binding{
-					{
-						Name: "first",
-						Type: "htpasswd",
-						Path: "/path/to/binding/",
-						Entries: map[string]*servicebindings.Entry{
-							".htpasswd": servicebindings.NewEntry("/path/to/binding/.htpasswd"),
-						},
-					},
-					{
-						Name: "second",
-						Type: "htpasswd",
-						Path: "/path/to/binding/",
-						Entries: map[string]*servicebindings.Entry{
-							".htpasswd": servicebindings.NewEntry("/path/to/binding/.htpasswd"),
-						},
-					},
-				}
-				build = nginx.Build(nginx.BuildEnvironment{WebServer: "nginx"}, entryResolver, dependencyService, bindings, config, calculator, sbomGenerator, scribe.NewEmitter(buffer), chronos.DefaultClock)
-			})
-
-			it("fails with descriptive error", func() {
-				_, err := build(packit.BuildContext{
-					CNBPath:    cnbPath,
-					WorkingDir: workspaceDir,
-					Stack:      "some-stack",
-				})
-
-				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError(ContainSubstring("binding resolver found more than one binding of type 'htpasswd'")))
-			})
-		})
-
-		context("the htpasswd service binding is malformed", func() {
-			it.Before(func() {
-				bindings.ResolveCall.Returns.BindingSlice = []servicebindings.Binding{
-					{
-						Name: "first",
-						Type: "htpasswd",
-						Path: "/path/to/binding/",
-						Entries: map[string]*servicebindings.Entry{
-							"some-irrelevant-file": servicebindings.NewEntry("some-irrelevant-path"),
-						},
-					},
-				}
-				build = nginx.Build(nginx.BuildEnvironment{WebServer: "nginx"}, entryResolver, dependencyService, bindings, config, calculator, sbomGenerator, scribe.NewEmitter(buffer), chronos.DefaultClock)
-			})
-
-			it("fails with descriptive error", func() {
-				_, err := build(packit.BuildContext{
-					CNBPath:    cnbPath,
-					WorkingDir: workspaceDir,
-					Stack:      "some-stack",
-				})
-
-				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError(ContainSubstring("binding of type 'htpasswd' does not contain required entry '.htpasswd'")))
-			})
-		})
-
 		context("unable to generate nginx.conf", func() {
 			it.Before(func() {
-				build = nginx.Build(nginx.BuildEnvironment{WebServer: "nginx"}, entryResolver, dependencyService, bindings, config, calculator, sbomGenerator, scribe.NewEmitter(buffer), chronos.DefaultClock)
-				config.GenerateCall.Returns.Error = errors.New("some config error")
+				build = nginx.Build(
+					nginx.Configuration{WebServer: "nginx"},
+					entryResolver,
+					dependencyService,
+					configGenerator,
+					calculator,
+					sbomGenerator,
+					scribe.NewEmitter(buffer),
+					chronos.DefaultClock,
+				)
+				configGenerator.GenerateCall.Returns.Error = errors.New("some config error")
 			})
 
 			it("fails with descriptive error", func() {
@@ -983,49 +904,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					Stack:  "some-stack",
 				})
 				Expect(err).To(MatchError("failed to deliver dependency"))
-			})
-		})
-
-		context("when the exec.d binary cannot be copied", func() {
-			it.Before(func() {
-				Expect(os.Remove(filepath.Join(cnbPath, "bin", "configure"))).To(Succeed())
-			})
-
-			it("returns an error", func() {
-				_, err := build(packit.BuildContext{
-					CNBPath:    cnbPath,
-					WorkingDir: workspaceDir,
-					Plan: packit.BuildpackPlan{
-						Entries: []packit.BuildpackPlanEntry{
-							{Name: "nginx"},
-						},
-					},
-					Layers: packit.Layers{Path: layersDir},
-					Stack:  "some-stack",
-				})
-				Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
-			})
-		})
-
-		context("when the included confs cannot be fetched", func() {
-			it.Before(func() {
-				Expect(os.Remove(filepath.Join(workspaceDir, "nginx.conf"))).To(Succeed())
-			})
-
-			it("returns an error", func() {
-				_, err := build(packit.BuildContext{
-					CNBPath:    cnbPath,
-					WorkingDir: workspaceDir,
-					Plan: packit.BuildpackPlan{
-						Entries: []packit.BuildpackPlanEntry{
-							{Name: "nginx"},
-						},
-					},
-					Layers: packit.Layers{Path: layersDir},
-					Stack:  "some-stack",
-				})
-				Expect(err).To(MatchError(ContainSubstring("failed to find configuration files")))
-				Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
 			})
 		})
 

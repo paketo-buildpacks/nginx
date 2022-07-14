@@ -51,7 +51,7 @@ func testOffline(t *testing.T, context spec.G, it spec.S) {
 			var err error
 			image, _, err = pack.WithNoColor().Build.
 				WithPullPolicy("never").
-				WithBuildpacks(offlineNginxBuildpack).
+				WithBuildpacks(settings.Buildpacks.NGINX.Offline).
 				WithNetwork("none").
 				Execute(name, source)
 			Expect(err).NotTo(HaveOccurred())
