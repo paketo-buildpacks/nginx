@@ -7,7 +7,7 @@ require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/Netflix/go-env v0.0.0-20220526054621-78278af1949d
 	github.com/onsi/gomega v1.20.0
-	github.com/paketo-buildpacks/occam v0.9.0
+	github.com/paketo-buildpacks/occam v0.10.0
 	github.com/paketo-buildpacks/packit/v2 v2.3.1
 	github.com/sclevine/spec v1.4.0
 	gopkg.in/yaml.v2 v2.4.0
