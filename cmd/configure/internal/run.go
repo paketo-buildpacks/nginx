@@ -1,6 +1,9 @@
 package internal
 
 import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"log"
@@ -48,19 +51,27 @@ func Run(mainConf, localModulePath, globalModulePath string) error {
 	}
 
 	for _, conf := range confs {
-		tmpl, err := template.New("configure").Option("missingkey=zero").Funcs(templFuncs).ParseFiles(conf)
+		content, err := os.ReadFile(conf)
+		if err != nil {
+			return fmt.Errorf("failed to read config file: %s", err)
+		}
+
+		tmpl, err := template.New("configure").Option("missingkey=zero").Funcs(templFuncs).Parse(string(content))
 		if err != nil {
 			return fmt.Errorf("failed to parse template: %s", err)
 		}
 
-		file, err := os.Create(conf)
+		buffer := bytes.NewBuffer(nil)
+		err = tmpl.Execute(buffer, nil)
 		if err != nil {
-			return fmt.Errorf("failed to create %s: %s", filepath.Base(conf), err)
+			return fmt.Errorf("failed to execute template: %w", err)
 		}
-		defer file.Close()
 
-		if err := tmpl.ExecuteTemplate(file, filepath.Base(conf), nil); err != nil {
-			return fmt.Errorf("failed to execute template: %s", err)
+		if hex.EncodeToString(sha256.New().Sum(content)) != hex.EncodeToString(sha256.New().Sum(buffer.Bytes())) {
+			err = os.WriteFile(conf, buffer.Bytes(), 0600)
+			if err != nil {
+				return fmt.Errorf("failed to overwrite template: %w", err)
+			}
 		}
 	}
 

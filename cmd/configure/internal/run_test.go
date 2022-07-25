@@ -210,6 +210,18 @@ func testRun(t *testing.T, context spec.G, it spec.S) {
 		})
 	})
 
+	context("when the template does not need to be overwritten", func() {
+		it.Before(func() {
+			Expect(os.WriteFile(filepath.Join(workingDir, "nginx.conf"), []byte(`listen 1234;`), 0600)).To(Succeed())
+			Expect(os.Chmod(filepath.Join(workingDir, "nginx.conf"), 0440)).To(Succeed())
+		})
+
+		it("does not overwrite it with the same contents", func() {
+			err := internal.Run(filepath.Join(workingDir, "nginx.conf"), localModulePath, globalModulePath)
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+
 	context("failure cases", func() {
 		context("when the template file cannot be written", func() {
 			it.Before(func() {
@@ -218,7 +230,7 @@ func testRun(t *testing.T, context spec.G, it spec.S) {
 
 			it("prints an error and exits non-zero", func() {
 				err := internal.Run(mainConf, localModulePath, globalModulePath)
-				Expect(err).To(MatchError(MatchRegexp("failed to create nginx.conf: .*: permission denied")))
+				Expect(err).To(MatchError(MatchRegexp("failed to overwrite template: .*: permission denied")))
 			})
 		})
 
