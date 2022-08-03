@@ -23,7 +23,7 @@ func (f Generator) GenerateFromDependency(dependency postal.Dependency, path str
 }
 
 func main() {
-	logger := scribe.NewEmitter(os.Stdout)
+	logger := scribe.NewEmitter(os.Stdout).WithLevel(os.Getenv("BP_LOG_LEVEL"))
 
 	config, err := nginx.LoadConfiguration(os.Environ(), servicebindings.NewResolver(), os.Getenv("CNB_PLATFORM_DIR"))
 	if err != nil {
