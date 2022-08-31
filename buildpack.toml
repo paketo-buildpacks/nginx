@@ -5,7 +5,7 @@ api = "0.8"
   homepage = "https://github.com/paketo-buildpacks/nginx"
   id = "paketo-buildpacks/nginx"
   keywords = ["nginx", "server", "distribution"]
-  name = "Paketo Nginx Server Buildpack"
+  name = "Paketo Buildpack for Nginx Server"
   sbom-formats = ["application/vnd.cyclonedx+json", "application/spdx+json", "application/vnd.syft+json"]
 
 [metadata]
