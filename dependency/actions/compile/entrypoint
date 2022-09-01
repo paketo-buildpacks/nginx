@@ -1,0 +1,128 @@
+#!/usr/bin/env bash
+
+set -eu
+set -o pipefail
+
+function main() {
+  local version output_dir target temp_dir dest_dir
+  version=
+  output_dir=
+  target=
+
+  while [ "${#}" != 0 ]; do
+    case "${1}" in
+      --version)
+        version="${2}"
+        shift 2
+        ;;
+
+      --outputDir)
+        output_dir="${2}"
+        shift 2
+        ;;
+
+      --target)
+        target="${2}"
+        shift 2
+        ;;
+
+      "")
+        shift
+        ;;
+
+      *)
+        echo "unknown argument \"${1}\""
+        exit 1
+    esac
+  done
+
+  if [[ "${version}" == "" ]]; then
+    echo "--version is required"
+    exit 1
+  fi
+
+  if [[ "${output_dir}" == "" ]]; then
+    echo "--outputDir is required"
+    exit 1
+  fi
+
+  if [[ "${target}" == "" ]]; then
+    echo "--target is required"
+    exit 1
+  fi
+
+  temp_dir="$(mktemp -d)"
+  dest_dir="$(mktemp -d)"
+
+  pushd "${temp_dir}"
+
+    echo "Downloading upstream tarball"
+
+    curl "https://nginx.org/download/nginx-${version}.tar.gz" \
+      --silent \
+      --output upstream.tgz
+
+    tar --extract \
+      --file upstream.tgz
+
+    pushd "nginx-${version}"
+      echo "Running NGINX's ./configure script"
+
+      # static options
+      # --with-cc-opt=-fPIE -pie
+      # --with-ld-opt=-fPIE -pie -z now
+
+      ./configure \
+        --prefix=/ \
+        --error-log-path=stderr \
+        --with-http_ssl_module \
+        --with-http_v2_module \
+        --with-http_realip_module \
+        --with-http_gunzip_module \
+        --with-http_gzip_static_module \
+        --with-http_auth_request_module \
+        --with-http_random_index_module \
+        --with-http_secure_link_module \
+        --with-http_stub_status_module \
+        --without-http_uwsgi_module \
+        --without-http_scgi_module \
+        --with-pcre \
+        --with-pcre-jit \
+        --with-debug \
+        --with-cc-opt="-fPIC -pie" \
+        --with-ld-opt="-fPIC -pie -z now" \
+        --with-compat \
+        --with-stream=dynamic \
+        --with-http_sub_module
+
+      echo "Running make and make install"
+
+      make
+      DESTDIR="${dest_dir}" make install
+    popd
+  popd
+
+  pushd "${dest_dir}"
+    rm -Rf ./html ./conf
+    mkdir conf
+    tar zcvf "${output_dir}/temp.tgz" .
+  popd
+
+  pushd "${output_dir}"
+
+    SHA256=$(sha256sum temp.tgz)
+    SHA256="${SHA256:0:64}"
+
+    OUTPUT_TARBALL_NAME="nginx_${version}_linux_x64_${target}_${SHA256:0:8}.tgz"
+    OUTPUT_SHAFILE_NAME="nginx_${version}_linux_x64_${target}_${SHA256:0:8}.tgz.checksum"
+
+    echo "Building tarball ${OUTPUT_TARBALL_NAME}"
+
+    mv temp.tgz "${OUTPUT_TARBALL_NAME}"
+
+    echo "Creating checksum file for ${OUTPUT_TARBALL_NAME}"
+    echo "${SHA256}" > "${OUTPUT_SHAFILE_NAME}"
+  popd
+}
+
+main "${@:-}"
