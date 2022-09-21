@@ -30,15 +30,9 @@ func testRun(t *testing.T, context spec.G, it spec.S) {
 	)
 
 	it.Before(func() {
-		var err error
-		workingDir, err = os.MkdirTemp("", "working-dir")
-		Expect(err).NotTo(HaveOccurred())
+		workingDir = t.TempDir()
 
 		mainConf = filepath.Join(workingDir, "nginx.conf")
-	})
-
-	it.After(func() {
-		Expect(os.RemoveAll(workingDir)).To(Succeed())
 	})
 
 	context("when the template contains a 'port' action", func() {
