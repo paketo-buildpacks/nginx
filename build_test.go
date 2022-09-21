@@ -31,7 +31,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		cnbPath      string
 		workspaceDir string
 
-		entryResolver     *fakes.EntryResolver
 		dependencyService *fakes.DependencyService
 		configGenerator   *fakes.ConfigGenerator
 		calculator        *fakes.Calculator
@@ -49,17 +48,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		workspaceDir = t.TempDir()
 
 		buffer = bytes.NewBuffer(nil)
-
-		entryResolver = &fakes.EntryResolver{}
-		entryResolver.ResolveCall.Returns.BuildpackPlanEntry = packit.BuildpackPlanEntry{
-			Name: "nginx",
-			Metadata: map[string]interface{}{
-				"version-source": "BP_NGINX_VERSION",
-				"version":        "1.19.*",
-				"launch":         true,
-			},
-		}
-		entryResolver.MergeLayerTypesCall.Returns.Launch = true
 
 		dependencyService = &fakes.DependencyService{}
 		dependencyService.ResolveCall.Returns.Dependency = postal.Dependency{
@@ -127,7 +115,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				NGINXConfLocation: "./nginx.conf",
 				WebServerRoot:     "./public",
 			},
-			entryResolver,
 			dependencyService,
 			configGenerator,
 			calculator,
@@ -203,17 +190,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 		Expect(filepath.Join(layersDir, "nginx")).To(BeADirectory())
 
-		Expect(entryResolver.ResolveCall.Receives.BuildpackPlanEntrySlice).To(Equal([]packit.BuildpackPlanEntry{
-			{
-				Name: "nginx",
-				Metadata: map[string]interface{}{
-					"version-source": "BP_NGINX_VERSION",
-					"version":        "1.19.*",
-					"launch":         true,
-				},
-			},
-		}))
-
 		Expect(dependencyService.ResolveCall.Receives.Path).To(Equal(filepath.Join(cnbPath, "buildpack.toml")))
 		Expect(dependencyService.ResolveCall.Receives.Name).To(Equal("nginx"))
 		Expect(dependencyService.ResolveCall.Receives.Version).To(Equal("1.19.*"))
@@ -255,7 +231,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					WebServerRoot:     "./public",
 					LiveReloadEnabled: true,
 				},
-				entryResolver,
 				dependencyService,
 				configGenerator,
 				calculator,
@@ -311,17 +286,12 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				URI:          "some-uri",
 				Version:      "some-bp-yml-version",
 			}
-			entryResolver.ResolveCall.Returns.BuildpackPlanEntry = packit.BuildpackPlanEntry{
-				Name: "nginx",
-				Metadata: map[string]interface{}{
-					"version-source": "buildpack.yml",
-					"version":        "some-bp-yml-version",
-					"launch":         true,
-				},
-			}
 
-			buildContext.Plan.Entries[0].Metadata["version-source"] = "buildpack.yml"
-			buildContext.Plan.Entries[0].Metadata["version"] = "some-bp-yml-version"
+			buildContext.Plan.Entries[0].Metadata = map[string]interface{}{
+				"version-source": "buildpack.yml",
+				"version":        "some-bp-yml-version",
+				"launch":         true,
+			}
 		})
 
 		it("does a build", func() {
@@ -375,17 +345,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 			Expect(filepath.Join(layersDir, "nginx")).To(BeADirectory())
 
-			Expect(entryResolver.ResolveCall.Receives.BuildpackPlanEntrySlice).To(Equal([]packit.BuildpackPlanEntry{
-				{
-					Name: "nginx",
-					Metadata: map[string]interface{}{
-						"version-source": "buildpack.yml",
-						"version":        "some-bp-yml-version",
-						"launch":         true,
-					},
-				},
-			}))
-
 			Expect(dependencyService.ResolveCall.Receives.Path).To(Equal(filepath.Join(cnbPath, "buildpack.toml")))
 			Expect(dependencyService.ResolveCall.Receives.Name).To(Equal("nginx"))
 			Expect(dependencyService.ResolveCall.Receives.Version).To(Equal("some-bp-yml-version"))
@@ -419,8 +378,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			configure-bin-sha = "some-bin-sha"
 			`), 0600)
 			Expect(err).NotTo(HaveOccurred())
-
-			entryResolver.MergeLayerTypesCall.Returns.Launch = true
 
 			buildContext.Plan.Entries[0].Metadata["version"] = "1.17.*"
 		})
@@ -485,7 +442,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 			build = nginx.Build(
 				nginx.Configuration{NGINXConfLocation: "some-relative-path/nginx.conf"},
-				entryResolver,
 				dependencyService,
 				configGenerator,
 				calculator,
@@ -516,7 +472,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 			build = nginx.Build(
 				nginx.Configuration{NGINXConfLocation: filepath.Join(workspaceDir, "some-absolute-path", "nginx.conf")},
-				entryResolver,
 				dependencyService,
 				configGenerator,
 				calculator,
@@ -548,7 +503,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					WebServer:         "nginx",
 					WebServerRoot:     "custom",
 				},
-				entryResolver,
 				dependencyService,
 				configGenerator,
 				calculator,
@@ -580,8 +534,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			configure-bin-sha = "some-bin-sha"
 			`), 0600)
 				Expect(err).NotTo(HaveOccurred())
-
-				entryResolver.MergeLayerTypesCall.Returns.Launch = true
 			})
 
 			it.After(func() {
@@ -650,7 +602,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			it.Before(func() {
 				build = nginx.Build(
 					nginx.Configuration{WebServer: "nginx"},
-					entryResolver,
 					dependencyService,
 					configGenerator,
 					calculator,

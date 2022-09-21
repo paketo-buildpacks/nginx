@@ -10,16 +10,11 @@ import (
 	"github.com/Masterminds/semver"
 	"github.com/paketo-buildpacks/packit/v2"
 	"github.com/paketo-buildpacks/packit/v2/chronos"
+	"github.com/paketo-buildpacks/packit/v2/draft"
 	"github.com/paketo-buildpacks/packit/v2/postal"
 	"github.com/paketo-buildpacks/packit/v2/sbom"
 	"github.com/paketo-buildpacks/packit/v2/scribe"
 )
-
-//go:generate faux --interface EntryResolver --output fakes/entry_resolver.go
-type EntryResolver interface {
-	Resolve(string, []packit.BuildpackPlanEntry, []interface{}) (packit.BuildpackPlanEntry, []packit.BuildpackPlanEntry)
-	MergeLayerTypes(string, []packit.BuildpackPlanEntry) (launch, build bool)
-}
 
 //go:generate faux --interface DependencyService --output fakes/dependency_service.go
 type DependencyService interface {
@@ -44,7 +39,6 @@ type SBOMGenerator interface {
 }
 
 func Build(config Configuration,
-	entryResolver EntryResolver,
 	dependencyService DependencyService,
 	configGenerator ConfigGenerator,
 	calculator Calculator,
@@ -55,8 +49,10 @@ func Build(config Configuration,
 	return func(context packit.BuildContext) (packit.BuildResult, error) {
 		logger.Title("%s %s", context.BuildpackInfo.Name, context.BuildpackInfo.Version)
 
+		planner := draft.NewPlanner()
+
 		logger.Process("Resolving Nginx Server version")
-		entry, sortedEntries := entryResolver.Resolve("nginx", context.Plan.Entries, []interface{}{
+		entry, sortedEntries := planner.Resolve("nginx", context.Plan.Entries, []interface{}{
 			"BP_NGINX_VERSION",
 			"buildpack.yml",
 			"buildpack.toml",
@@ -120,7 +116,7 @@ func Build(config Configuration,
 		}
 
 		bom := dependencyService.GenerateBillOfMaterials(dependency)
-		launch, build := entryResolver.MergeLayerTypes("nginx", context.Plan.Entries)
+		launch, build := planner.MergeLayerTypes("nginx", context.Plan.Entries)
 
 		var buildMetadata packit.BuildMetadata
 		if build {
