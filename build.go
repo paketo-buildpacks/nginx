@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/Masterminds/semver"
@@ -168,12 +169,12 @@ func Build(config Configuration,
 		}
 
 		configureBinPath := filepath.Join(context.CNBPath, "bin", "configure")
-		currConfigureBinSHA256, err := calculator.Sum(configureBinPath)
+		currConfigureBinChecksum, err := calculator.Sum(configureBinPath)
 		if err != nil {
 			return packit.BuildResult{}, fmt.Errorf("checksum failed for file %s: %w", configureBinPath, err)
 		}
 
-		if !shouldInstall(layer.Metadata, currConfigureBinSHA256, dependency.SHA256) { //nolint:staticcheck
+		if !shouldInstall(layer.Metadata, currConfigureBinChecksum, dependency.Checksum) {
 			logger.Process("Reusing cached layer %s", layer.Path)
 			logger.Break()
 
@@ -204,8 +205,8 @@ func Build(config Configuration,
 		}
 
 		layer.Metadata = map[string]interface{}{
-			DepKey:          dependency.SHA256, //nolint:staticcheck
-			ConfigureBinKey: currConfigureBinSHA256,
+			DepKey:          dependency.Checksum,
+			ConfigureBinKey: currConfigureBinChecksum,
 		}
 
 		logger.Action("Completed in %s", duration.Round(time.Millisecond))
@@ -250,18 +251,18 @@ func Build(config Configuration,
 	}
 }
 
-func shouldInstall(layerMetadata map[string]interface{}, configBinSHA256, dependencySHA256 string) bool {
-	prevDepSHA256, depOk := layerMetadata[DepKey].(string)
-	prevBinSHA256, binOk := layerMetadata[ConfigureBinKey].(string)
+func shouldInstall(layerMetadata map[string]interface{}, configBinChecksum, dependencyChecksum string) bool {
+	prevDepChecksum, depOk := layerMetadata[DepKey].(string)
+	prevBinChecksum, binOk := layerMetadata[ConfigureBinKey].(string)
 	if !depOk || !binOk {
 		return true
 	}
 
-	if dependencySHA256 != prevDepSHA256 {
+	if !AreChecksumsEqual(dependencyChecksum, prevDepChecksum) {
 		return true
 	}
 
-	if configBinSHA256 != prevBinSHA256 {
+	if !AreChecksumsEqual(configBinChecksum, prevBinChecksum) {
 		return true
 	}
 
@@ -294,4 +295,26 @@ func getIncludedConfs(path string) ([]string, error) {
 	}
 
 	return files, nil
+}
+
+// AreChecksumsEqual checks for checksum equality, including algorithms.
+// TODO: Remove after https://github.com/paketo-buildpacks/packit/pull/398 is released.
+func AreChecksumsEqual(c1, c2 string) bool {
+	var algorithm1, algorithm2 string
+	split1 := strings.Split(c1, ":")
+	if len(split1) == 2 {
+		algorithm1 = split1[0]
+		c1 = split1[1]
+	} else if len(split1) > 2 {
+		return false
+	}
+	split2 := strings.Split(c2, ":")
+	if len(split2) == 2 {
+		algorithm2 = split2[0]
+		c2 = split2[1]
+	}
+	areAlgorithmsEqual := func(a1, a2 string) bool {
+		return a1 == "" || a2 == "" || a1 == a2
+	}
+	return areAlgorithmsEqual(algorithm1, algorithm2) && c1 == c2
 }

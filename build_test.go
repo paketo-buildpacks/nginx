@@ -51,13 +51,13 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 		dependencyService = &fakes.DependencyService{}
 		dependencyService.ResolveCall.Returns.Dependency = postal.Dependency{
-			ID:           "nginx",
-			SHA256:       "some-sha", //nolint:staticcheck
-			Source:       "some-source",
-			SourceSHA256: "some-source-sha", //nolint:staticcheck
-			Stacks:       []string{"some-stack"},
-			URI:          "some-uri",
-			Version:      "1.19.8",
+			ID:             "nginx",
+			Checksum:       "sha256:some-sha",
+			Source:         "some-source",
+			SourceChecksum: "sha256:some-source-sha",
+			Stacks:         []string{"some-stack"},
+			URI:            "some-uri",
+			Version:        "1.19.8",
 		}
 		dependencyService.GenerateBillOfMaterialsCall.Returns.BOMEntrySlice = []packit.BOMEntry{
 			{
@@ -144,7 +144,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			"EXECD_CONF.default": filepath.Join(workspaceDir, nginx.ConfFile),
 		}))
 		Expect(layer.Metadata).To(Equal(map[string]interface{}{
-			nginx.DepKey:          "some-sha",
+			nginx.DepKey:          "sha256:some-sha",
 			nginx.ConfigureBinKey: "some-bin-sha",
 		}))
 		Expect(layer.ExecD).To(Equal([]string{filepath.Join(cnbPath, "bin", "configure")}))
@@ -197,13 +197,13 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 		Expect(dependencyService.DeliverCall.Receives.Dependency).To(Equal(
 			postal.Dependency{
-				ID:           "nginx",
-				SHA256:       "some-sha", //nolint:staticcheck
-				Source:       "some-source",
-				SourceSHA256: "some-source-sha", //nolint:staticcheck
-				Stacks:       []string{"some-stack"},
-				URI:          "some-uri",
-				Version:      "1.19.8",
+				ID:             "nginx",
+				Checksum:       "sha256:some-sha",
+				Source:         "some-source",
+				SourceChecksum: "sha256:some-source-sha",
+				Stacks:         []string{"some-stack"},
+				URI:            "some-uri",
+				Version:        "1.19.8",
 			},
 		))
 		Expect(dependencyService.DeliverCall.Receives.CnbPath).To(Equal(cnbPath))
@@ -212,13 +212,13 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(calculator.SumCall.CallCount).To(Equal(1))
 
 		Expect(sbomGenerator.GenerateFromDependencyCall.Receives.Dependency).To(Equal(postal.Dependency{
-			ID:           "nginx",
-			SHA256:       "some-sha", //nolint:staticcheck
-			Source:       "some-source",
-			SourceSHA256: "some-source-sha", //nolint:staticcheck
-			Stacks:       []string{"some-stack"},
-			URI:          "some-uri",
-			Version:      "1.19.8",
+			ID:             "nginx",
+			Checksum:       "sha256:some-sha",
+			Source:         "some-source",
+			SourceChecksum: "sha256:some-source-sha",
+			Stacks:         []string{"some-stack"},
+			URI:            "some-uri",
+			Version:        "1.19.8",
 		}))
 		Expect(sbomGenerator.GenerateFromDependencyCall.Receives.Dir).To(Equal(filepath.Join(layersDir, "nginx")))
 	})
@@ -278,13 +278,13 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 	context("when version source is buildpack.yml", func() {
 		it.Before(func() {
 			dependencyService.ResolveCall.Returns.Dependency = postal.Dependency{
-				ID:           "nginx",
-				SHA256:       "some-sha", //nolint:staticcheck
-				Source:       "some-source",
-				SourceSHA256: "some-source-sha", //nolint:staticcheck
-				Stacks:       []string{"some-stack"},
-				URI:          "some-uri",
-				Version:      "some-bp-yml-version",
+				ID:             "nginx",
+				Checksum:       "sha256:some-sha",
+				Source:         "some-source",
+				SourceChecksum: "sha256:some-source-sha",
+				Stacks:         []string{"some-stack"},
+				URI:            "some-uri",
+				Version:        "some-bp-yml-version",
 			}
 
 			buildContext.Plan.Entries[0].Metadata = map[string]interface{}{
@@ -311,7 +311,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				"PATH.delim":  ":",
 			}))
 			Expect(layer.Metadata).To(Equal(map[string]interface{}{
-				nginx.DepKey:          "some-sha",
+				nginx.DepKey:          "sha256:some-sha",
 				nginx.ConfigureBinKey: "some-bin-sha",
 			}))
 
@@ -352,13 +352,13 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 			Expect(dependencyService.DeliverCall.Receives.Dependency).To(Equal(
 				postal.Dependency{
-					ID:           "nginx",
-					SHA256:       "some-sha", //nolint:staticcheck
-					Source:       "some-source",
-					SourceSHA256: "some-source-sha", //nolint:staticcheck
-					Stacks:       []string{"some-stack"},
-					URI:          "some-uri",
-					Version:      "some-bp-yml-version",
+					ID:             "nginx",
+					Checksum:       "sha256:some-sha",
+					Source:         "some-source",
+					SourceChecksum: "sha256:some-source-sha",
+					Stacks:         []string{"some-stack"},
+					URI:            "some-uri",
+					Version:        "some-bp-yml-version",
 				},
 			))
 			Expect(dependencyService.DeliverCall.Receives.CnbPath).To(Equal(cnbPath))
@@ -693,5 +693,36 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				Expect(err).To(MatchError("unsupported SBOM format: 'random-format'"))
 			})
 		})
+	})
+
+	context("AreChecksumsEqual", func() {
+		type testCaseType struct {
+			c1       string
+			c2       string
+			expected bool
+		}
+
+		for _, testCase := range []testCaseType{
+			{"", "", true},
+			{"c", "c", true},
+			{"c", "c", true},
+			{"sha256:c", "c", true},
+			{"c", "sha256:c", true},
+			{"md5:c", "md5:c", true},
+			{":", ":", true},
+			{":c", ":c", true},
+			{"", "c", false},
+			{"c", "", false},
+			{"c", "z", false},
+			{"md5:c", "sha256:c", false},
+			{"md5:c:d", "md5:c:d", false},
+			{"md5:c", "md5:c:d", false},
+			{":", "::", false},
+			{":", ":::", false},
+		} {
+			it("will check result", func() {
+				Expect(nginx.AreChecksumsEqual(testCase.c1, testCase.c2)).To(Equal(testCase.expected))
+			})
+		}
 	})
 }
