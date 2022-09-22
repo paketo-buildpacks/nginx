@@ -69,9 +69,9 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		dependencyService = &fakes.DependencyService{}
 		dependencyService.ResolveCall.Returns.Dependency = postal.Dependency{
 			ID:           "nginx",
-			SHA256:       "some-sha",
+			SHA256:       "some-sha", //nolint:staticcheck
 			Source:       "some-source",
-			SourceSHA256: "some-source-sha",
+			SourceSHA256: "some-source-sha", //nolint:staticcheck
 			Stacks:       []string{"some-stack"},
 			URI:          "some-uri",
 			Version:      "1.19.8",
@@ -223,9 +223,9 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(dependencyService.DeliverCall.Receives.Dependency).To(Equal(
 			postal.Dependency{
 				ID:           "nginx",
-				SHA256:       "some-sha",
+				SHA256:       "some-sha", //nolint:staticcheck
 				Source:       "some-source",
-				SourceSHA256: "some-source-sha",
+				SourceSHA256: "some-source-sha", //nolint:staticcheck
 				Stacks:       []string{"some-stack"},
 				URI:          "some-uri",
 				Version:      "1.19.8",
@@ -238,9 +238,9 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 		Expect(sbomGenerator.GenerateFromDependencyCall.Receives.Dependency).To(Equal(postal.Dependency{
 			ID:           "nginx",
-			SHA256:       "some-sha",
+			SHA256:       "some-sha", //nolint:staticcheck
 			Source:       "some-source",
-			SourceSHA256: "some-source-sha",
+			SourceSHA256: "some-source-sha", //nolint:staticcheck
 			Stacks:       []string{"some-stack"},
 			URI:          "some-uri",
 			Version:      "1.19.8",
@@ -322,9 +322,9 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		it.Before(func() {
 			dependencyService.ResolveCall.Returns.Dependency = postal.Dependency{
 				ID:           "nginx",
-				SHA256:       "some-sha",
+				SHA256:       "some-sha", //nolint:staticcheck
 				Source:       "some-source",
-				SourceSHA256: "some-source-sha",
+				SourceSHA256: "some-source-sha", //nolint:staticcheck
 				Stacks:       []string{"some-stack"},
 				URI:          "some-uri",
 				Version:      "some-bp-yml-version",
@@ -431,9 +431,9 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			Expect(dependencyService.DeliverCall.Receives.Dependency).To(Equal(
 				postal.Dependency{
 					ID:           "nginx",
-					SHA256:       "some-sha",
+					SHA256:       "some-sha", //nolint:staticcheck
 					Source:       "some-source",
-					SourceSHA256: "some-source-sha",
+					SourceSHA256: "some-source-sha", //nolint:staticcheck
 					Stacks:       []string{"some-stack"},
 					URI:          "some-uri",
 					Version:      "some-bp-yml-version",

@@ -177,7 +177,7 @@ func Build(config Configuration,
 			return packit.BuildResult{}, fmt.Errorf("checksum failed for file %s: %w", configureBinPath, err)
 		}
 
-		if !shouldInstall(layer.Metadata, currConfigureBinSHA256, dependency.SHA256) {
+		if !shouldInstall(layer.Metadata, currConfigureBinSHA256, dependency.SHA256) { //nolint:staticcheck
 			logger.Process("Reusing cached layer %s", layer.Path)
 			logger.Break()
 
@@ -208,7 +208,7 @@ func Build(config Configuration,
 		}
 
 		layer.Metadata = map[string]interface{}{
-			DepKey:          dependency.SHA256,
+			DepKey:          dependency.SHA256, //nolint:staticcheck
 			ConfigureBinKey: currConfigureBinSHA256,
 		}
 
