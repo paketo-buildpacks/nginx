@@ -9,6 +9,7 @@ import (
 
 	. "github.com/onsi/gomega"
 	"github.com/paketo-buildpacks/nginx"
+	"github.com/paketo-buildpacks/occam/matchers"
 	"github.com/paketo-buildpacks/packit/v2/scribe"
 	"github.com/sclevine/spec"
 )
@@ -40,11 +41,7 @@ func testDefaultConfigGenerator(t *testing.T, context spec.G, it spec.S) {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(filepath.Join(workingDir, "nginx.conf")).To(BeARegularFile())
-			contents, err := os.ReadFile(filepath.Join(workingDir, "nginx.conf"))
-			Expect(err).NotTo(HaveOccurred())
-			// Top-level context
-			Expect(string(contents)).To(ContainSubstring(`# Number of worker processes running in container
+			topLevelContext := ContainSubstring(`# Number of worker processes running in container
 worker_processes 1;
 
 # Run NGINX in foreground (necessary for containerized NGINX)
@@ -53,24 +50,23 @@ daemon off;
 # Set the location of the server's error log
 error_log stderr;
 
-`))
-			// Events context
-			Expect(string(contents)).To(ContainSubstring(`events {
+`)
+
+			eventsContext := ContainSubstring(`events {
   # Set number of simultaneous connections each worker process can serve
   worker_connections 1024;
 }
 
-`))
-			// Temp file locations
-			Expect(string(contents)).To(ContainSubstring(`
+`)
+
+			tempFileLocations := ContainSubstring(`
   client_body_temp_path {{ tempDir }}/client_body_temp;
   proxy_temp_path {{ tempDir }}/proxy_temp;
   fastcgi_temp_path {{ tempDir }}/fastcgi_temp;
 
-`))
+`)
 
-			// Media type to file extension mapping
-			Expect(string(contents)).To(ContainSubstring(`  types {
+			mediaTypeToFileExtensionMapping := ContainSubstring(`  types {
     text/html html htm shtml;
     text/css css;
     text/xml xml;
@@ -149,15 +145,13 @@ error_log stderr;
     video/x-msvideo avi;
   }
 
-`))
-			// Log to standard out
-			Expect(string(contents)).To(ContainSubstring(` access_log /dev/stdout;`))
+`)
 
-			// Default MIME type of responses
-			Expect(string(contents)).To(ContainSubstring(`  default_type application/octet-stream;`))
+			logToStdOut := ContainSubstring(` access_log /dev/stdout;`)
 
-			// Performance enhancements for page load speed
-			Expect(string(contents)).To(ContainSubstring(`  # (Performance) When sending files, skip copying into buffer before sending.
+			defaultResponseMimeType := ContainSubstring(`  default_type application/octet-stream;`)
+
+			performanceEnhancementsForPageLoadSpeed := ContainSubstring(`  # (Performance) When sending files, skip copying into buffer before sending.
   sendfile on;
   # (Only active with sendfile on) wait for packets to reach max size before
   # sending.
@@ -186,19 +180,15 @@ error_log stderr;
 
   # Don't compress responses if client is Internet Explorer 6
   gzip_disable "msie6";
-`))
+`)
 
-			// Connection timeout
-			Expect(string(contents)).To(ContainSubstring(`  keepalive_timeout 30;`))
+			connectionTimeout := ContainSubstring(`  keepalive_timeout 30;`)
 
-			// Exclude container port in redirects
-			Expect(string(contents)).To(ContainSubstring(`  port_in_redirect off;`))
+			excludeContainerPortInRedirects := ContainSubstring(`  port_in_redirect off;`)
 
-			// Don't include NGINX server info in responses
-			Expect(string(contents)).To(ContainSubstring(`  server_tokens off;`))
+			excludeNginxServerInfoInResponses := ContainSubstring(`  server_tokens off;`)
 
-			// Default 'server' context
-			Expect(string(contents)).To(ContainSubstring(`  server {
+			defaultServerContext := ContainSubstring(`  server {
     listen {{port}} default_server;
     server_name _;
 
@@ -218,7 +208,21 @@ error_log stderr;
       return 404;
     }
   }
-`))
+`)
+
+			Expect(filepath.Join(workingDir, "nginx.conf")).To(matchers.BeAFileMatching(And(
+				topLevelContext,
+				eventsContext,
+				tempFileLocations,
+				mediaTypeToFileExtensionMapping,
+				logToStdOut,
+				defaultResponseMimeType,
+				performanceEnhancementsForPageLoadSpeed,
+				connectionTimeout,
+				excludeContainerPortInRedirects,
+				excludeNginxServerInfoInResponses,
+				defaultServerContext,
+			)))
 		})
 
 		it("writes a nginx.conf with specified relative root directory", func() {
@@ -228,10 +232,8 @@ error_log stderr;
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(filepath.Join(workingDir, "nginx.conf")).To(BeARegularFile())
-			contents, err := os.ReadFile(filepath.Join(workingDir, "nginx.conf"))
-			Expect(err).NotTo(HaveOccurred())
-			Expect(string(contents)).To(ContainSubstring(`root {{ env "APP_ROOT" }}/custom;`))
+			Expect(filepath.Join(workingDir, "nginx.conf")).
+				To(matchers.BeAFileMatching(ContainSubstring(`root {{ env "APP_ROOT" }}/custom;`)))
 		})
 
 		it("writes a nginx.conf with specified absolute path to root directory", func() {
@@ -241,10 +243,8 @@ error_log stderr;
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(filepath.Join(workingDir, "nginx.conf")).To(BeARegularFile())
-			contents, err := os.ReadFile(filepath.Join(workingDir, "nginx.conf"))
-			Expect(err).NotTo(HaveOccurred())
-			Expect(string(contents)).To(ContainSubstring(`root /some/absolute/path;`))
+			Expect(filepath.Join(workingDir, "nginx.conf")).
+				To(matchers.BeAFileMatching(ContainSubstring(`root /some/absolute/path;`)))
 		})
 
 		it("writes a nginx.conf with specified location path", func() {
@@ -254,10 +254,8 @@ error_log stderr;
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(filepath.Join(workingDir, "nginx.conf")).To(BeARegularFile())
-			contents, err := os.ReadFile(filepath.Join(workingDir, "nginx.conf"))
-			Expect(err).NotTo(HaveOccurred())
-			Expect(string(contents)).To(ContainSubstring(`location /path {`))
+			Expect(filepath.Join(workingDir, "nginx.conf")).
+				To(matchers.BeAFileMatching(ContainSubstring(`location /path {`)))
 		})
 
 		it("writes an nginx.conf that conditionally includes the PushState content", func() {
@@ -267,15 +265,13 @@ error_log stderr;
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(filepath.Join(workingDir, "nginx.conf")).To(BeARegularFile())
-			contents, err := os.ReadFile(filepath.Join(workingDir, "nginx.conf"))
-			Expect(err).NotTo(HaveOccurred())
-			Expect(string(contents)).To(ContainSubstring(`    location / {
+			Expect(filepath.Join(workingDir, "nginx.conf")).
+				To(matchers.BeAFileMatching(ContainSubstring(`    location / {
       # Send the content at / in response to *any* requested endpoint
       if (!-e $request_filename) {
         rewrite ^(.*)$ / break;
       }
-`))
+`)))
 		})
 
 		it("writes an nginx.conf that conditionally includes the Force HTTPS content", func() {
@@ -286,10 +282,8 @@ error_log stderr;
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(filepath.Join(workingDir, "nginx.conf")).To(BeARegularFile())
-			contents, err := os.ReadFile(filepath.Join(workingDir, "nginx.conf"))
-			Expect(err).NotTo(HaveOccurred())
-			Expect(string(contents)).To(ContainSubstring(`    root {{ env "APP_ROOT" }}/public;
+			Expect(filepath.Join(workingDir, "nginx.conf")).
+				To(matchers.BeAFileMatching(ContainSubstring(`    root {{ env "APP_ROOT" }}/public;
 
     # If HTTP request is made, redirect to HTTPS requests
     set $updated_host $host;
@@ -300,7 +294,7 @@ error_log stderr;
     if ($http_x_forwarded_proto != "https") {
       return 301 https://$updated_host$request_uri;
     }
-`))
+`)))
 		})
 
 		it("writes an nginx.conf that conditionally includes the Basic Auth content", func() {
@@ -311,15 +305,13 @@ error_log stderr;
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(filepath.Join(workingDir, "nginx.conf")).To(BeARegularFile())
-			contents, err := os.ReadFile(filepath.Join(workingDir, "nginx.conf"))
-			Expect(err).NotTo(HaveOccurred())
-			Expect(string(contents)).To(ContainSubstring(`    root {{ env "APP_ROOT" }}/public;
+			Expect(filepath.Join(workingDir, "nginx.conf")).
+				To(matchers.BeAFileMatching(ContainSubstring(`    root {{ env "APP_ROOT" }}/public;
 
     # Require username + password authentication for access
     auth_basic "Password Protected";
     auth_basic_user_file /some/file/path;
-`))
+`)))
 		})
 
 		context("failure cases", func() {
