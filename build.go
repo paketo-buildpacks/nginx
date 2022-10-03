@@ -5,11 +5,11 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strings"
 	"time"
 
 	"github.com/Masterminds/semver"
 	"github.com/paketo-buildpacks/packit/v2"
+	"github.com/paketo-buildpacks/packit/v2/cargo"
 	"github.com/paketo-buildpacks/packit/v2/chronos"
 	"github.com/paketo-buildpacks/packit/v2/draft"
 	"github.com/paketo-buildpacks/packit/v2/postal"
@@ -258,11 +258,11 @@ func shouldInstall(layerMetadata map[string]interface{}, configBinChecksum, depe
 		return true
 	}
 
-	if !AreChecksumsEqual(dependencyChecksum, prevDepChecksum) {
+	if !cargo.Checksum(dependencyChecksum).Match(cargo.Checksum(prevDepChecksum)) {
 		return true
 	}
 
-	if !AreChecksumsEqual(configBinChecksum, prevBinChecksum) {
+	if !cargo.Checksum(configBinChecksum).Match(cargo.Checksum(prevBinChecksum)) {
 		return true
 	}
 
@@ -295,26 +295,4 @@ func getIncludedConfs(path string) ([]string, error) {
 	}
 
 	return files, nil
-}
-
-// AreChecksumsEqual checks for checksum equality, including algorithms.
-// TODO: Remove after https://github.com/paketo-buildpacks/packit/pull/398 is released.
-func AreChecksumsEqual(c1, c2 string) bool {
-	var algorithm1, algorithm2 string
-	split1 := strings.Split(c1, ":")
-	if len(split1) == 2 {
-		algorithm1 = split1[0]
-		c1 = split1[1]
-	} else if len(split1) > 2 {
-		return false
-	}
-	split2 := strings.Split(c2, ":")
-	if len(split2) == 2 {
-		algorithm2 = split2[0]
-		c2 = split2[1]
-	}
-	areAlgorithmsEqual := func(a1, a2 string) bool {
-		return a1 == "" || a2 == "" || a1 == a2
-	}
-	return areAlgorithmsEqual(algorithm1, algorithm2) && c1 == c2
 }
