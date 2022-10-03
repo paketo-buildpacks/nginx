@@ -26,22 +26,13 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 	)
 
 	it.Before(func() {
-		var err error
-		workingDir, err = os.MkdirTemp("", "working-dir")
-		Expect(err).NotTo(HaveOccurred())
-
-		cnbPath, err = os.MkdirTemp("", "cnb")
-		Expect(err).NotTo(HaveOccurred())
+		workingDir = t.TempDir()
+		cnbPath = t.TempDir()
 
 		versionParser = &fakes.VersionParser{}
 		versionParser.ResolveVersionCall.Returns.ResultVersion = "1.19.*"
 
 		detect = nginx.Detect(nginx.Configuration{NGINXConfLocation: "./nginx.conf", WebServerRoot: "./public"}, versionParser)
-	})
-
-	it.After(func() {
-		Expect(os.RemoveAll(workingDir)).To(Succeed())
-		Expect(os.RemoveAll(cnbPath)).To(Succeed())
 	})
 
 	it("returns a plan that provides nginx", func() {

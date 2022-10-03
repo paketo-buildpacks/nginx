@@ -36,8 +36,7 @@ func testRequire(t *testing.T, context spec.G, it spec.S) {
 		name, err = occam.RandomName()
 		Expect(err).NotTo(HaveOccurred())
 
-		source, err = os.MkdirTemp("", "require")
-		Expect(err).NotTo(HaveOccurred())
+		source = t.TempDir()
 
 		Expect(os.WriteFile(filepath.Join(source, "plan.toml"), []byte(`
 [[requires]]
@@ -59,7 +58,6 @@ func testRequire(t *testing.T, context spec.G, it spec.S) {
 
 		Expect(docker.Volume.Remove.Execute(occam.CacheVolumeNames(name))).To(Succeed())
 
-		Expect(os.RemoveAll(source)).To(Succeed())
 		Expect(os.RemoveAll(sbomDir)).To(Succeed())
 	})
 

@@ -9,17 +9,13 @@ import (
 
 	"github.com/Masterminds/semver"
 	"github.com/paketo-buildpacks/packit/v2"
+	"github.com/paketo-buildpacks/packit/v2/cargo"
 	"github.com/paketo-buildpacks/packit/v2/chronos"
+	"github.com/paketo-buildpacks/packit/v2/draft"
 	"github.com/paketo-buildpacks/packit/v2/postal"
 	"github.com/paketo-buildpacks/packit/v2/sbom"
 	"github.com/paketo-buildpacks/packit/v2/scribe"
 )
-
-//go:generate faux --interface EntryResolver --output fakes/entry_resolver.go
-type EntryResolver interface {
-	Resolve(string, []packit.BuildpackPlanEntry, []interface{}) (packit.BuildpackPlanEntry, []packit.BuildpackPlanEntry)
-	MergeLayerTypes(string, []packit.BuildpackPlanEntry) (launch, build bool)
-}
 
 //go:generate faux --interface DependencyService --output fakes/dependency_service.go
 type DependencyService interface {
@@ -44,7 +40,6 @@ type SBOMGenerator interface {
 }
 
 func Build(config Configuration,
-	entryResolver EntryResolver,
 	dependencyService DependencyService,
 	configGenerator ConfigGenerator,
 	calculator Calculator,
@@ -55,8 +50,10 @@ func Build(config Configuration,
 	return func(context packit.BuildContext) (packit.BuildResult, error) {
 		logger.Title("%s %s", context.BuildpackInfo.Name, context.BuildpackInfo.Version)
 
+		planner := draft.NewPlanner()
+
 		logger.Process("Resolving Nginx Server version")
-		entry, sortedEntries := entryResolver.Resolve("nginx", context.Plan.Entries, []interface{}{
+		entry, sortedEntries := planner.Resolve("nginx", context.Plan.Entries, []interface{}{
 			"BP_NGINX_VERSION",
 			"buildpack.yml",
 			"buildpack.toml",
@@ -120,7 +117,7 @@ func Build(config Configuration,
 		}
 
 		bom := dependencyService.GenerateBillOfMaterials(dependency)
-		launch, build := entryResolver.MergeLayerTypes("nginx", context.Plan.Entries)
+		launch, build := planner.MergeLayerTypes("nginx", context.Plan.Entries)
 
 		var buildMetadata packit.BuildMetadata
 		if build {
@@ -172,12 +169,12 @@ func Build(config Configuration,
 		}
 
 		configureBinPath := filepath.Join(context.CNBPath, "bin", "configure")
-		currConfigureBinSHA256, err := calculator.Sum(configureBinPath)
+		currConfigureBinChecksum, err := calculator.Sum(configureBinPath)
 		if err != nil {
 			return packit.BuildResult{}, fmt.Errorf("checksum failed for file %s: %w", configureBinPath, err)
 		}
 
-		if !shouldInstall(layer.Metadata, currConfigureBinSHA256, dependency.SHA256) { //nolint:staticcheck
+		if !shouldInstall(layer.Metadata, currConfigureBinChecksum, dependency.Checksum) {
 			logger.Process("Reusing cached layer %s", layer.Path)
 			logger.Break()
 
@@ -208,8 +205,8 @@ func Build(config Configuration,
 		}
 
 		layer.Metadata = map[string]interface{}{
-			DepKey:          dependency.SHA256, //nolint:staticcheck
-			ConfigureBinKey: currConfigureBinSHA256,
+			DepKey:          dependency.Checksum,
+			ConfigureBinKey: currConfigureBinChecksum,
 		}
 
 		logger.Action("Completed in %s", duration.Round(time.Millisecond))
@@ -254,18 +251,18 @@ func Build(config Configuration,
 	}
 }
 
-func shouldInstall(layerMetadata map[string]interface{}, configBinSHA256, dependencySHA256 string) bool {
-	prevDepSHA256, depOk := layerMetadata[DepKey].(string)
-	prevBinSHA256, binOk := layerMetadata[ConfigureBinKey].(string)
+func shouldInstall(layerMetadata map[string]interface{}, configBinChecksum, dependencyChecksum string) bool {
+	prevDepChecksum, depOk := layerMetadata[DepKey].(string)
+	prevBinChecksum, binOk := layerMetadata[ConfigureBinKey].(string)
 	if !depOk || !binOk {
 		return true
 	}
 
-	if dependencySHA256 != prevDepSHA256 {
+	if !cargo.Checksum(dependencyChecksum).Match(cargo.Checksum(prevDepChecksum)) {
 		return true
 	}
 
-	if configBinSHA256 != prevBinSHA256 {
+	if !cargo.Checksum(configBinChecksum).Match(cargo.Checksum(prevBinChecksum)) {
 		return true
 	}
 
