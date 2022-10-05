@@ -27,7 +27,7 @@ require (
 	github.com/opencontainers/image-spec v1.1.0-rc1 // indirect
 	github.com/opencontainers/runc v1.1.4 // indirect
 	github.com/paketo-buildpacks/occam v0.13.2
-	github.com/paketo-buildpacks/packit/v2 v2.6.0
+	github.com/paketo-buildpacks/packit/v2 v2.6.1
 	github.com/pierrec/lz4/v4 v4.1.17 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20220927061507-ef77025ab5aa // indirect
 	github.com/rivo/uniseg v0.4.2 // indirect

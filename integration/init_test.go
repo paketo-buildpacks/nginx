@@ -85,6 +85,7 @@ func TestIntegration(t *testing.T) {
 	Expect(err).ToNot(HaveOccurred())
 
 	SetDefaultEventuallyTimeout(5 * time.Second)
+	SetDefaultEventuallyPollingInterval(100 * time.Millisecond)
 
 	suite := spec.New("Integration", spec.Report(report.Terminal{}), spec.Parallel())
 	suite("Caching", testCaching)
