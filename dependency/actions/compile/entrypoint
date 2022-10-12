@@ -5,9 +5,6 @@ set -o pipefail
 
 function main() {
   local version output_dir target temp_dir dest_dir
-  version=
-  output_dir=
-  target=
 
   while [ "${#}" != 0 ]; do
     case "${1}" in
@@ -36,17 +33,17 @@ function main() {
     esac
   done
 
-  if [[ "${version}" == "" ]]; then
+  if [[ -z "${version:-}" ]]; then
     echo "--version is required"
     exit 1
   fi
 
-  if [[ "${output_dir}" == "" ]]; then
+  if [[ -z "${output_dir:-}" ]]; then
     echo "--outputDir is required"
     exit 1
   fi
 
-  if [[ "${target}" == "" ]]; then
+  if [[ -z "${target:-}" ]]; then
     echo "--target is required"
     exit 1
   fi

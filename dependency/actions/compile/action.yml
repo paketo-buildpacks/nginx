@@ -19,19 +19,13 @@ runs:
 
   - name: build compilation
     id: build-compilation
-    env:
-      SKIP_LOGIN: true
-    uses: actions-hub/docker/cli@master
-    with:
-      args: "build -t compilation -f dependency/actions/compile/${{ inputs.target }}.Dockerfile dependency/actions/compile"
+    shell: bash
+    run: docker build -t compilation -f dependency/actions/compile/${{ inputs.target }}.Dockerfile dependency/actions/compile
 
   - name: run compilation
     id: run-compilation
-    uses: actions-hub/docker/cli@master
-    env:
-      SKIP_LOGIN: true
-    with:
-      args: "run -v ${{ inputs.outputDir }}:/home compilation --version ${{ inputs.version }} --outputDir /home --target ${{ inputs.target }}"
+    shell: bash
+    run: docker run -v ${{ inputs.outputDir }}:/home compilation --version ${{ inputs.version }} --outputDir /home --target ${{ inputs.target }}
 
   - name: print contents of output dir
     shell: bash
@@ -39,16 +33,10 @@ runs:
 
   - name: build test
     id: build-test
-    uses: actions-hub/docker/cli@master
-    env:
-      SKIP_LOGIN: true
-    with:
-      args: "build -t test -f dependency/test/${{ inputs.target }}/Dockerfile dependency/test/${{ inputs.target }}"
+    shell: bash
+    run: docker build -t test -f dependency/test/${{ inputs.target }}/Dockerfile dependency/test/${{ inputs.target }}
 
   - name: run test
     id: run-test
-    uses: actions-hub/docker/cli@master
-    env:
-      SKIP_LOGIN: true
-    with:
-      args: "run -v ${{ inputs.outputDir }}:/tarball_path test --version ${{ inputs.version }}"
+    shell: bash
+    run: docker run -v ${{ inputs.outputDir }}:/tarball_path test --version ${{ inputs.version }}
