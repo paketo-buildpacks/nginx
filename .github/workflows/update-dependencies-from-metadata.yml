@@ -26,6 +26,7 @@ jobs:
       metadata-filepath: ${{ steps.retrieve.outputs.metadata-filepath }}
       metadata-json: ${{ steps.retrieve.outputs.metadata-json }}
       id: ${{ steps.retrieve.outputs.id }}
+      length: ${{ steps.retrieve.outputs.length }}
     steps:
       - name: Check out code
         uses: actions/checkout@v2
@@ -48,6 +49,8 @@ jobs:
           id=$(jq -r .[0].id < "${OUTPUT}")
           content=$(jq -r < "${OUTPUT}")
 
+          length=$(echo $content | jq -r '. | length')
+
           content="${content//'%'/'%25'}"
           content="${content//$'\n'/'%0A'}"
           content="${content//$'\r'/'%0D'}"
@@ -55,6 +58,7 @@ jobs:
           echo "::set-output name=metadata-filepath::${OUTPUT}"
           echo "::set-output name=metadata-json::$content"
           echo "::set-output name=id::$id"
+          echo "::set-output name=length::$length"
 
       - name: Upload `${{ steps.retrieve.outputs.metadata-filepath }}`
         uses: actions/upload-artifact@v3
@@ -96,14 +100,14 @@ jobs:
     needs:
       - retrieve
       - get-compile-and-test
+    strategy:
+      matrix:
+        includes: ${{ fromJSON(needs.retrieve.outputs.metadata-json) }}
     # Run job step if
     #   (1) needs.get-compile-and-test.outputs.should-compile -> if there is a dependency/actions/compile directory in the buildpack
     #   (2) needs.get-compile-and-test.outputs.should-test -> if there is a dependency/test directory in the buildpack
     #   (3) See line 113 -> if the dependency checksum and URI field are empty, signaling they need to be calculated
-    if: ${{ fromJSON(needs.retrieve.outputs.metadata-json) != '' && needs.get-compile-and-test.outputs.should-compile == 'true' || needs.get-compile-and-test.outputs.should-test == 'true' }}
-    strategy:
-      matrix:
-        includes: ${{ fromJSON(needs.retrieve.outputs.metadata-json) }}
+    if: ${{ needs.retrieve.outputs.length > 0 && needs.get-compile-and-test.outputs.should-compile == 'true' || needs.get-compile-and-test.outputs.should-test == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
