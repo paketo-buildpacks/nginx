@@ -47,6 +47,10 @@ jobs:
 
           id=$(jq -r .[0].id < "${OUTPUT}")
           content=$(jq -r < "${OUTPUT}")
+      
+          if [ $content == null ];
+            then content="[]";
+          fi
 
           content="${content//'%'/'%25'}"
           content="${content//$'\n'/'%0A'}"
