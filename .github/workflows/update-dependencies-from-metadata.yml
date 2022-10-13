@@ -96,14 +96,14 @@ jobs:
     needs:
       - retrieve
       - get-compile-and-test
-    strategy:
-      matrix:
-        includes: ${{ fromJSON(needs.retrieve.outputs.metadata-json) }}
     # Run job step if
     #   (1) needs.get-compile-and-test.outputs.should-compile -> if there is a dependency/actions/compile directory in the buildpack
     #   (2) needs.get-compile-and-test.outputs.should-test -> if there is a dependency/test directory in the buildpack
     #   (3) See line 113 -> if the dependency checksum and URI field are empty, signaling they need to be calculated
     if: ${{ fromJSON(needs.retrieve.outputs.metadata-json) != '' && needs.get-compile-and-test.outputs.should-compile == 'true' || needs.get-compile-and-test.outputs.should-test == 'true' }}
+    strategy:
+      matrix:
+        includes: ${{ fromJSON(needs.retrieve.outputs.metadata-json) }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
