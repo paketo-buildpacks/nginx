@@ -15,12 +15,12 @@ api = "0.7"
     nginx = "1.21.*"
 
   [[metadata.dependencies]]
+    checksum = "sha256:1690ed3774774a2d5f117d4648171683885c6bbe962fc29b628183e48999867e"
     cpe = "cpe:2.3:a:nginx:nginx:1.21.5:*:*:*:*:*:*:*"
     id = "nginx"
     licenses = ["BSD-2-Clause"]
     name = "Nginx Server"
     purl = "pkg:generic/nginx@1.21.5?checksum=b20f3bf533a518a6f0f3a7967dfeed872d268d31e4cc121a0001329602ddcfbb&download_url=http://nginx.org/download/nginx-1.21.5.tar.gz"
-    checksum = "sha256:1690ed3774774a2d5f117d4648171683885c6bbe962fc29b628183e48999867e"
     source = "http://nginx.org/download/nginx-1.21.5.tar.gz"
     source-checksum = "sha256:b20f3bf533a518a6f0f3a7967dfeed872d268d31e4cc121a0001329602ddcfbb"
     stacks = ["io.buildpacks.stacks.bionic"]
@@ -28,12 +28,12 @@ api = "0.7"
     version = "1.21.5"
 
   [[metadata.dependencies]]
+    checksum = "sha256:739ec0ac0ee83b8e8fd044d9b9313f226deac16157a2574ec035d9f8fa5c044d"
     cpe = "cpe:2.3:a:nginx:nginx:1.21.6:*:*:*:*:*:*:*"
     id = "nginx"
     licenses = ["BSD-2-Clause"]
     name = "Nginx Server"
     purl = "pkg:generic/nginx@1.21.6?checksum=66dc7081488811e9f925719e34d1b4504c2801c81dee2920e5452a86b11405ae&download_url=http://nginx.org/download/nginx-1.21.6.tar.gz"
-    checksum = "sha256:739ec0ac0ee83b8e8fd044d9b9313f226deac16157a2574ec035d9f8fa5c044d"
     source = "http://nginx.org/download/nginx-1.21.6.tar.gz"
     source-checksum = "sha256:66dc7081488811e9f925719e34d1b4504c2801c81dee2920e5452a86b11405ae"
     stacks = ["io.buildpacks.stacks.bionic"]
@@ -41,12 +41,12 @@ api = "0.7"
     version = "1.21.6"
 
   [[metadata.dependencies]]
+    checksum = "sha256:fac163970d462767ad83f3d0289c5ae22c2eed1bfb17e59ff1843ff3a2757c1c"
     cpe = "cpe:2.3:a:nginx:nginx:1.22.0:*:*:*:*:*:*:*"
     id = "nginx"
     licenses = ["BSD-2-Clause"]
     name = "Nginx Server"
     purl = "pkg:generic/nginx@1.22.0?checksum=b33d569a6f11a01433a57ce17e83935e953ad4dc77cdd4d40f896c88ac26eb53&download_url=http://nginx.org/download/nginx-1.22.0.tar.gz"
-    checksum = "sha256:fac163970d462767ad83f3d0289c5ae22c2eed1bfb17e59ff1843ff3a2757c1c"
     source = "http://nginx.org/download/nginx-1.22.0.tar.gz"
     source-checksum = "sha256:b33d569a6f11a01433a57ce17e83935e953ad4dc77cdd4d40f896c88ac26eb53"
     stacks = ["io.buildpacks.stacks.bionic"]
