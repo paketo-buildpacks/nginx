@@ -25,7 +25,12 @@ jobs:
     outputs:
       metadata-filepath: ${{ steps.retrieve.outputs.metadata-filepath }}
       metadata-json: ${{ steps.retrieve.outputs.metadata-json }}
+      # compilation-json is a subset of metadata-json entries which are missing
+      # a `checksum` and `uri`
+      compilation-json: ${{ steps.retrieve.outputs.compilation-json }}
       id: ${{ steps.retrieve.outputs.id }}
+      length: ${{ steps.retrieve.outputs.length }}
+      compilation-length: ${{ steps.retrieve.outputs.compilation-length }}
     steps:
       - name: Check out code
         uses: actions/checkout@v2
@@ -48,13 +53,25 @@ jobs:
           id=$(jq -r .[0].id < "${OUTPUT}")
           content=$(jq -r < "${OUTPUT}")
 
+          length=$(echo $content | jq -r '. | length')
+
+          compilation=$(echo $content | jq -r 'map(select(.checksum == null and .uri == null))'?)
+          complength=$(echo $compilation | jq -r '. | length')
+
           content="${content//'%'/'%25'}"
           content="${content//$'\n'/'%0A'}"
           content="${content//$'\r'/'%0D'}"
 
+          compilation="${compilation//'%'/'%25'}"
+          compilation="${compilation//$'\n'/'%0A'}"
+          compilation="${compilation//$'\r'/'%0D'}"
+
           echo "::set-output name=metadata-filepath::${OUTPUT}"
           echo "::set-output name=metadata-json::$content"
           echo "::set-output name=id::$id"
+          echo "::set-output name=length::$length"
+          echo "::set-output name=compilation-json::$compilation"
+          echo "::set-output name=compilation-length::$complength"
 
       - name: Upload `${{ steps.retrieve.outputs.metadata-filepath }}`
         uses: actions/upload-artifact@v3
@@ -91,19 +108,62 @@ jobs:
             echo "::set-output name=should-test::true"
           fi
 
-  compile:
-    name: Compile and/or Test Dependency
+  test:
+    name: Test Non-Compiled Dependency
     needs:
       - retrieve
       - get-compile-and-test
     strategy:
       matrix:
         includes: ${{ fromJSON(needs.retrieve.outputs.metadata-json) }}
-    # Run job step if
+    # Run job step if BOTH:
+    #   (1) needs.get-compile-and-test.outputs.should-test = TRUE -> if there is a dependency/test directory in the buildpack
+    #   (2) needs.get-compile-and-test.outputs.should-compile = FALSE -> if there is NOT a dependency/actions/compile directory in the buildpack
+    #   AND:
+    #   (3) there is at least one new version to test
+    if: ${{ needs.retrieve.outputs.length > 0 && needs.get-compile-and-test.outputs.should-test == 'true' && needs.get-compile-and-test.outputs.should-compile == 'false' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Make Temporary Artifact Directory
+        id: make-outputdir
+        run: |
+          echo "::set-output name=outputdir::$(mktemp -d)"
+
+      # Download the tarball for testing if:
+      #   (1) dependency testing code is present in the buildpack directory
+      #   (2) URI in metadata.json is available
+      - name: Download upstream tarball (if not compiled)
+        if: ${{ matrix.includes.uri != ''  && needs.get-compile-and-test.outputs.should-test == 'true' }}
+        run: |
+          curl ${{ matrix.includes.uri }} --silent --location --output ${{ steps.make-outputdir.outputs.outputdir }}/dependency.tgz
+
+      # Test the dependency tarball if:
+      #   (1) dependency testing code is present in the buildpack directory
+      - name: Test Upstream Dependency
+        working-directory: dependency
+        if: ${{ needs.get-compile-and-test.outputs.should-test == 'true' }}
+        run: |
+          make test \
+            version="${{ matrix.includes.version }}" \
+            tarballPath="${{ steps.make-outputdir.outputs.outputdir }}/*.tgz"
+
+  compile:
+    name: Compile and Test Dependency
+    needs:
+      - retrieve
+      - get-compile-and-test
+    strategy:
+      matrix:
+        includes: ${{ fromJSON(needs.retrieve.outputs.compilation-json) }}
+    # Run job step if:
     #   (1) needs.get-compile-and-test.outputs.should-compile -> if there is a dependency/actions/compile directory in the buildpack
-    #   (2) needs.get-compile-and-test.outputs.should-test -> if there is a dependency/test directory in the buildpack
-    #   (3) See line 113 -> if the dependency checksum and URI field are empty, signaling they need to be calculated
-    if: ${{ needs.get-compile-and-test.outputs.should-compile == 'true' || needs.get-compile-and-test.outputs.should-test == 'true' }}
+    #   (2) OR needs.get-compile-and-test.outputs.should-test -> if there is a dependency/test directory in the buildpack
+    #   AND:
+    #   (3) there is at least one version to compile/test
+    if: ${{ needs.retrieve.outputs.compilation-length > 0 && (needs.get-compile-and-test.outputs.should-compile == 'true' || needs.get-compile-and-test.outputs.should-test == 'true') }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
@@ -135,14 +195,6 @@ jobs:
           name: '${{ needs.retrieve.outputs.id }}-${{ matrix.includes.version }}-${{ matrix.includes.target }}'
           path: '${{ steps.make-outputdir.outputs.outputdir }}/*'
 
-      # Download the tarball for testing if:
-      #   (1) dependency testing code is present in the buildpack directory
-      #   (2) URI in metadata.json is available
-      - name: Download upstream tarball (if not compiled)
-        if: ${{ matrix.includes.uri != ''  && needs.get-compile-and-test.outputs.should-test == 'true' }}
-        run: |
-          curl ${{ matrix.includes.uri }} --silent --location --output ${{ steps.make-outputdir.outputs.outputdir }}/dependency.tgz
-
       # Test the dependency tarball if:
       #   (1) dependency testing code is present in the buildpack directory
       - name: Test Dependency
@@ -162,15 +214,15 @@ jobs:
       - compile
     strategy:
       matrix:
-        includes: ${{ fromJSON(needs.retrieve.outputs.metadata-json) }}
+        includes: ${{ fromJSON(needs.retrieve.outputs.compilation-json) }}
       # Run metadata update step sequentially so that metadata.json can be
       # modified for each version
       max-parallel: 1
-    if: ${{ needs.get-compile-and-test.outputs.should-compile == 'true' }}
+    if: ${{ needs.retrieve.outputs.compilation-length > 0 && needs.get-compile-and-test.outputs.should-compile == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Download artifact files
         uses: actions/download-artifact@v3
@@ -192,7 +244,7 @@ jobs:
 
       - name: Upload to S3
         id: upload
-        uses: paketo-buildpacks/github-config/actions/upload-to-s3@main
+        uses: paketo-buildpacks/github-config/actions/dependency/upload-to-s3@main
         with:
           bucket-name: "paketo-buildpacks"
           dependency-name: ${{ needs.retrieve.outputs.id }}
@@ -227,13 +279,15 @@ jobs:
     name: Update buildpack.toml
     needs:
       - retrieve
+      - test
       - compile
       - update-metadata
     # Update buildpack.toml only if ALL of the following conditions are met:
-    #   (1) Retrieval step has succeeded
-    #   (2) Compilation/Testing step has succeeded OR been skipped
-    #   (3) Update metadata step has succeeded OR been skipped
-    if: always() && needs.retrieve.result == 'success' && (needs.compile.result == 'success' || needs.compile.result == 'skipped') && (needs.update-metadata.result == 'success' || needs.update-metadata.result == 'skipped')
+    #   (1) Retrieval step has succeeded and has found at least 1 new version
+    #   (2) Testing step has succeeded OR been skipped
+    #   (3) Compilation/Testing step has succeeded OR been skipped
+    #   (4) Update metadata step has succeeded OR been skipped
+    if: always() && needs.retrieve.result == 'success' && needs.retrieve.outputs.length > 0 && (needs.test.result == 'success' || needs.test.result == 'skipped') && (needs.compile.result == 'success' || needs.compile.result == 'skipped') && (needs.update-metadata.result == 'success' || needs.update-metadata.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
