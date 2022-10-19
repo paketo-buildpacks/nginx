@@ -118,7 +118,7 @@ function main() {
     mv temp.tgz "${OUTPUT_TARBALL_NAME}"
 
     echo "Creating checksum file for ${OUTPUT_TARBALL_NAME}"
-    echo "${SHA256}" > "${OUTPUT_SHAFILE_NAME}"
+    echo "sha256:${SHA256}" > "${OUTPUT_SHAFILE_NAME}"
   popd
 }
 
