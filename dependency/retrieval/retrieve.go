@@ -71,9 +71,9 @@ func generateMetadata(hasVersion versionology.VersionFetcher) ([]versionology.De
 	dep := cargo.ConfigMetadataDependency{
 		Version:         nginxVersion,
 		ID:              "nginx",
-		Name:            "NGINX",
+		Name:            "Nginx Server",
 		Source:          nginxURL,
-		SourceChecksum:  sourceSHA,
+		SourceChecksum:  fmt.Sprintf("sha256:%s", sourceSHA),
 		DeprecationDate: nil,
 		Licenses:        retrieve.LookupLicenses(nginxURL, decompress),
 		PURL:            retrieve.GeneratePURL("nginx", nginxVersion, sourceSHA, nginxURL),
