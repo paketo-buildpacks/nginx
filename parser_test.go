@@ -21,12 +21,8 @@ func testParser(t *testing.T, context spec.G, it spec.S) {
 	)
 
 	it.Before(func() {
-		var err error
-		workingDir, err = os.MkdirTemp("", "working-dir")
-		Expect(err).NotTo(HaveOccurred())
-
-		cnbPath, err = os.MkdirTemp("", "cnbPath")
-		Expect(err).NotTo(HaveOccurred())
+		workingDir = t.TempDir()
+		cnbPath = t.TempDir()
 
 		Expect(os.WriteFile(
 			filepath.Join(cnbPath, "buildpack.toml"),

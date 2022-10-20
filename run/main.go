@@ -8,7 +8,6 @@ import (
 	"github.com/paketo-buildpacks/packit/v2"
 	"github.com/paketo-buildpacks/packit/v2/cargo"
 	"github.com/paketo-buildpacks/packit/v2/chronos"
-	"github.com/paketo-buildpacks/packit/v2/draft"
 	"github.com/paketo-buildpacks/packit/v2/fs"
 	"github.com/paketo-buildpacks/packit/v2/postal"
 	"github.com/paketo-buildpacks/packit/v2/sbom"
@@ -23,7 +22,7 @@ func (f Generator) GenerateFromDependency(dependency postal.Dependency, path str
 }
 
 func main() {
-	logger := scribe.NewEmitter(os.Stdout)
+	logger := scribe.NewEmitter(os.Stdout).WithLevel(os.Getenv("BP_LOG_LEVEL"))
 
 	config, err := nginx.LoadConfiguration(os.Environ(), servicebindings.NewResolver(), os.Getenv("CNB_PLATFORM_DIR"))
 	if err != nil {
@@ -35,7 +34,6 @@ func main() {
 		nginx.Detect(config, nginx.NewParser()),
 		nginx.Build(
 			config,
-			draft.NewPlanner(),
 			postal.NewService(cargo.NewTransport()),
 			nginx.NewDefaultConfigGenerator(logger),
 			fs.NewChecksumCalculator(),

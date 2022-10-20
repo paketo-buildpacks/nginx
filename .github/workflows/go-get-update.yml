@@ -2,13 +2,13 @@ name: Go Get Update
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # Once a day at midnight
+    - cron: '0 0 * * 1'  # Once per week, Mondays at midnight
   workflow_dispatch: {}
 
 jobs:
   update:
     name: Go Get Update
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Setup Go
         uses: actions/setup-go@v3
@@ -17,6 +17,11 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Checkout Branch
+        uses: paketo-buildpacks/github-config/actions/pull-request/checkout-branch@main
+        with:
+          branch: automation/tools/go-get-update
 
       - shell: bash
         run: |

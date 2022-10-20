@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/paketo-buildpacks/nginx/cmd/configure/internal"
+	"github.com/paketo-buildpacks/occam/matchers"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 
@@ -30,31 +31,23 @@ func testRun(t *testing.T, context spec.G, it spec.S) {
 	)
 
 	it.Before(func() {
-		var err error
-		workingDir, err = os.MkdirTemp("", "working-dir")
-		Expect(err).NotTo(HaveOccurred())
+		workingDir = t.TempDir()
 
 		mainConf = filepath.Join(workingDir, "nginx.conf")
-	})
-
-	it.After(func() {
-		Expect(os.RemoveAll(workingDir)).To(Succeed())
 	})
 
 	context("when the template contains a 'port' action", func() {
 		it.Before(func() {
 			Expect(os.WriteFile(mainConf, []byte("Hi the port is {{port}}."), 0600)).To(Succeed())
-			os.Setenv("PORT", "8080")
+			t.Setenv("PORT", "8080")
 		})
 
 		it("inserts the port value into that location in the text", func() {
 			err := internal.Run(mainConf, localModulePath, globalModulePath)
 			Expect(err).ToNot(HaveOccurred())
 
-			output, err := os.ReadFile(filepath.Join(workingDir, "nginx.conf"))
-			Expect(err).ToNot(HaveOccurred())
-
-			Expect(string(output)).To(Equal("Hi the port is 8080."))
+			Expect(filepath.Join(workingDir, "nginx.conf")).
+				To(matchers.BeAFileMatching("Hi the port is 8080."))
 		})
 	})
 
@@ -67,27 +60,23 @@ func testRun(t *testing.T, context spec.G, it spec.S) {
 			err := internal.Run(mainConf, localModulePath, globalModulePath)
 			Expect(err).ToNot(HaveOccurred())
 
-			output, err := os.ReadFile(filepath.Join(workingDir, "nginx.conf"))
-			Expect(err).ToNot(HaveOccurred())
-
-			Expect(string(output)).To(Equal(fmt.Sprintf("Hi the tempDir is %s.", os.TempDir())))
+			Expect(filepath.Join(workingDir, "nginx.conf")).
+				To(matchers.BeAFileMatching(fmt.Sprintf("Hi the tempDir is %s.", os.TempDir())))
 		})
 	})
 
 	context("when the template contains an 'env' action", func() {
 		it.Before(func() {
 			Expect(os.WriteFile(filepath.Join(workingDir, "nginx.conf"), []byte(`The env var FOO is {{env "FOO"}}`), 0600)).To(Succeed())
-			os.Setenv("FOO", "BAR")
+			t.Setenv("FOO", "BAR")
 		})
 
 		it("inserts the env variable into that location in the text", func() {
 			err := internal.Run(mainConf, localModulePath, globalModulePath)
 			Expect(err).ToNot(HaveOccurred())
 
-			output, err := os.ReadFile(filepath.Join(workingDir, "nginx.conf"))
-			Expect(err).ToNot(HaveOccurred())
-
-			Expect(string(output)).To(Equal("The env var FOO is BAR"))
+			Expect(filepath.Join(workingDir, "nginx.conf")).
+				To(matchers.BeAFileMatching("The env var FOO is BAR"))
 		})
 	})
 
@@ -111,10 +100,8 @@ func testRun(t *testing.T, context spec.G, it spec.S) {
 				err := internal.Run(mainConf, localModulePath, globalModulePath)
 				Expect(err).ToNot(HaveOccurred())
 
-				output, err := os.ReadFile(filepath.Join(workingDir, "nginx.conf"))
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(string(output)).To(Equal(fmt.Sprintf("load_module %s/local.so;", localModulePath)))
+				Expect(filepath.Join(workingDir, "nginx.conf")).
+					To(matchers.BeAFileMatching(fmt.Sprintf("load_module %s/local.so;", localModulePath)))
 			})
 		})
 
@@ -127,10 +114,8 @@ func testRun(t *testing.T, context spec.G, it spec.S) {
 				err := internal.Run(mainConf, localModulePath, globalModulePath)
 				Expect(err).ToNot(HaveOccurred())
 
-				output, err := os.ReadFile(filepath.Join(workingDir, "nginx.conf"))
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(string(output)).To(Equal(fmt.Sprintf("load_module %s/global.so;", globalModulePath)))
+				Expect(filepath.Join(workingDir, "nginx.conf")).
+					To(matchers.BeAFileMatching(fmt.Sprintf("load_module %s/global.so;", globalModulePath)))
 			})
 		})
 	})
@@ -148,17 +133,15 @@ func testRun(t *testing.T, context spec.G, it spec.S) {
 	port_in_redirect off; # Ensure that redirects don't include the internal container PORT - 8080
 	}`), 0600)).To(Succeed())
 				Expect(os.WriteFile(filepath.Join(workingDir, "custom.conf"), []byte(`Hi the port is {{ port }}.`), 0600)).To(Succeed())
-				os.Setenv("PORT", "8080")
+				t.Setenv("PORT", "8080")
 			})
 
 			it("parses 'include' file and interpolates values", func() {
 				err := internal.Run(mainConf, localModulePath, globalModulePath)
 				Expect(err).ToNot(HaveOccurred())
 
-				output, err := os.ReadFile(filepath.Join(workingDir, "custom.conf"))
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(string(output)).To(Equal("Hi the port is 8080."))
+				Expect(filepath.Join(workingDir, "custom.conf")).
+					To(matchers.BeAFileMatching("Hi the port is 8080."))
 			})
 		})
 
@@ -177,24 +160,21 @@ func testRun(t *testing.T, context spec.G, it spec.S) {
 				Expect(os.WriteFile(filepath.Join(workingDir, "dontFix.conf"), []byte(`Hi the port is {{ port }}.`), 0600)).To(Succeed())
 				Expect(os.WriteFile(filepath.Join(workingDir, "subdir", "custom1.conf"), []byte(`Hi the port is {{ port }}.`), 0600)).To(Succeed())
 				Expect(os.WriteFile(filepath.Join(workingDir, "subdir", "custom2.conf"), []byte(`Hi the port is {{ port }}.`), 0600)).To(Succeed())
-				os.Setenv("PORT", "8080")
+				t.Setenv("PORT", "8080")
 			})
 
 			it("parses 'include' files and interpolates values into all files that match the mask", func() {
 				err := internal.Run(mainConf, localModulePath, globalModulePath)
 				Expect(err).ToNot(HaveOccurred())
 
-				output, err := os.ReadFile(filepath.Join(workingDir, "dontFix.conf"))
-				Expect(err).ToNot(HaveOccurred())
-				Expect(string(output)).To(Equal(`Hi the port is {{ port }}.`))
+				Expect(filepath.Join(workingDir, "dontFix.conf")).
+					To(matchers.BeAFileMatching(`Hi the port is {{ port }}.`))
 
-				output, err = os.ReadFile(filepath.Join(workingDir, "subdir", "custom1.conf"))
-				Expect(err).ToNot(HaveOccurred())
-				Expect(string(output)).To(Equal(`Hi the port is 8080.`))
+				Expect(filepath.Join(workingDir, "subdir", "custom1.conf")).
+					To(matchers.BeAFileMatching(`Hi the port is 8080.`))
 
-				output, err = os.ReadFile(filepath.Join(workingDir, "subdir", "custom2.conf"))
-				Expect(err).ToNot(HaveOccurred())
-				Expect(string(output)).To(Equal(`Hi the port is 8080.`))
+				Expect(filepath.Join(workingDir, "subdir", "custom2.conf")).
+					To(matchers.BeAFileMatching(`Hi the port is 8080.`))
 			})
 		})
 	})

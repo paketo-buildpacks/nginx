@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+parent_dir="$(cd "$(dirname "$0")" && pwd)"
+
+extract_tarball() {
+  rm -rf nginx
+  mkdir nginx
+  tar -xf "tarball_path/nginx_${version}_linux_x64_bionic_"*".tgz" -C nginx
+}
+
+check_version() {
+  actual_version="$(./nginx/sbin/nginx -v 2>&1 | cut -d'/' -f2)"
+  if [[ "${actual_version}" != "${version}" ]]; then
+    echo "Version ${actual_version} does not match expected version ${version}"
+    exit 1
+  fi
+}
+
+check_server() {
+  chmod 0755 nginx
+  mkdir -p nginx/html
+  cp "${parent_dir}/fixtures/nginx.conf" nginx/conf
+  cp "${parent_dir}/fixtures/index.html" nginx/html
+
+  ./nginx/sbin/nginx -p nginx
+
+  set +e
+
+  succeeded=0
+  for _ in {1..5}; do
+    response="$(curl -s http://localhost:8080)"
+    if [[ $response == *"Sample nginx app"* ]]; then
+      succeeded=1
+      break
+    fi
+    sleep 1
+  done
+
+  kill "$(cat nginx/logs/nginx.pid)"
+
+  set -e
+
+  if [[ ${succeeded} -eq 0 ]]; then
+    echo "Failed to curl server"
+    exit 1
+  fi
+}
+
+main() {
+  local version
+  version=
+
+  while test $# -gt 0; do
+    case $1 in
+      --version)
+        version=$2
+        shift
+        ;;
+      *)
+        echo >&2 "Invalid argument: $1"
+        exit 1
+        ;;
+    esac
+    shift
+  done
+
+  if [[ "${version}" == "" ]]; then
+    echo "Version is required"
+    exit 1
+  fi
+
+  extract_tarball
+  check_version
+  check_server
+
+  echo "All NGINX bionic dependency tests passed!"
+}
+
+main "${@:-}"

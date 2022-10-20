@@ -59,8 +59,7 @@ func testSimpleApp(t *testing.T, context spec.G, it spec.S) {
 			source, err = occam.Source(filepath.Join("testdata", "simple_app"))
 			Expect(err).NotTo(HaveOccurred())
 
-			sbomDir, err = os.MkdirTemp("", "sbom")
-			Expect(err).NotTo(HaveOccurred())
+			sbomDir = t.TempDir()
 			Expect(os.Chmod(sbomDir, os.ModePerm)).To(Succeed())
 		})
 
@@ -81,9 +80,8 @@ func testSimpleApp(t *testing.T, context spec.G, it spec.S) {
 
 			Eventually(container).Should(Serve(ContainSubstring("Hello World!")).WithEndpoint("/index.html"))
 
-			contents, err := os.ReadFile(filepath.Join(sbomDir, "sbom", "launch", "sbom.legacy.json"))
-			Expect(err).NotTo(HaveOccurred())
-			Expect(string(contents)).To(ContainSubstring(`"name":"Nginx Server"`))
+			Expect(filepath.Join(sbomDir, "sbom", "launch", "sbom.legacy.json")).
+				To(BeAFileMatching(ContainSubstring(`"name":"Nginx Server"`)))
 
 			// check that all required SBOM files are present
 			Expect(filepath.Join(sbomDir, "sbom", "launch", strings.ReplaceAll(settings.Buildpack.ID, "/", "_"), "nginx", "sbom.cdx.json")).To(BeARegularFile())
@@ -91,9 +89,8 @@ func testSimpleApp(t *testing.T, context spec.G, it spec.S) {
 			Expect(filepath.Join(sbomDir, "sbom", "launch", strings.ReplaceAll(settings.Buildpack.ID, "/", "_"), "nginx", "sbom.syft.json")).To(BeARegularFile())
 
 			// check an SBOM file to make sure it has an entry
-			contents, err = os.ReadFile(filepath.Join(sbomDir, "sbom", "launch", strings.ReplaceAll(settings.Buildpack.ID, "/", "_"), "nginx", "sbom.cdx.json"))
-			Expect(err).NotTo(HaveOccurred())
-			Expect(string(contents)).To(ContainSubstring(`"name": "Nginx Server"`))
+			Expect(filepath.Join(sbomDir, "sbom", "launch", strings.ReplaceAll(settings.Buildpack.ID, "/", "_"), "nginx", "sbom.cdx.json")).
+				To(BeAFileMatching(ContainSubstring(`"name": "Nginx Server"`)))
 		})
 	})
 
