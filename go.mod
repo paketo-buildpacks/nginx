@@ -26,7 +26,7 @@ require (
 	github.com/onsi/gomega v1.26.0
 	github.com/opencontainers/image-spec v1.1.0-rc1 // indirect
 	github.com/opencontainers/runc v1.1.4 // indirect
-	github.com/paketo-buildpacks/occam v0.14.0
+	github.com/paketo-buildpacks/occam v0.15.0
 	github.com/paketo-buildpacks/packit/v2 v2.8.0
 	github.com/pierrec/lz4/v4 v4.1.17 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20220927061507-ef77025ab5aa // indirect
