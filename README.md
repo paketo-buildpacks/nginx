@@ -141,3 +141,7 @@ nginx:
   # any valid semver constraints (e.g. 1.* and 1.21.*) are also acceptable
   version: "1.21.0"
 ```
+
+### `BP_NGINX_STUB_STATUS_PORT`
+The `BP_NGINX_STUB_STATUS_PORT` variable exposes a handful of NGINX Server metrics via the [`stub_status`](https://nginx.org/en/docs/http/ngx_http_stub_status_module.html#stub_status) module which provides basic status information on provided port.
+This comes handy for monitoring the server. For example using [NGINX Prometheus Exporter](https://github.com/nginxinc/nginx-prometheus-exporter)

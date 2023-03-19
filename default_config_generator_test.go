@@ -311,6 +311,27 @@ error_log stderr;
 `)))
 		})
 
+    it("writes an nginx.conf that conditionally includes the stub_status module for basic status information", func() {
+			err := generator.Generate(nginx.Configuration{
+				NGINXConfLocation:   filepath.Join(workingDir, "nginx.conf"),
+				NGINXStubStatusPort: 8083,
+				WebServerRoot:       "./public",
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(filepath.Join(workingDir, "nginx.conf")).
+				To(matchers.BeAFileMatching(ContainSubstring(`  # stub_status
+  server {
+    listen       8083;
+    listen  [::]:8083;
+
+    location /stub_status {
+      stub_status;
+    }
+  }
+`)))
+		})
+
 		it("writes an nginx.conf that conditionally includes the Basic Auth content", func() {
 			err := generator.Generate(nginx.Configuration{
 				NGINXConfLocation: filepath.Join(workingDir, "nginx.conf"),
