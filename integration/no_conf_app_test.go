@@ -234,4 +234,45 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 			Expect(string(contents)).To(ContainSubstring("Hello World!"))
 		})
 	})
+
+	context("building with no config and enabling stub_status module for monitoring", func() {
+		it("generates an nginx.conf with stub_status module enabled", func() {
+			var (
+				err  error
+				logs fmt.Stringer
+			)
+
+			image, logs, err = pack.Build.
+				WithBuildpacks(settings.Buildpacks.NGINX.Online).
+				WithEnv(map[string]string{
+					"BP_WEB_SERVER":             "nginx",
+					"BP_NGINX_STUB_STATUS_PORT": "8083",
+				}).
+				WithPullPolicy("never").
+				Execute(name, source)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(logs).To(ContainLines(
+				"  Generating /workspace/nginx.conf",
+				`    Setting server root directory to '{{ env "APP_ROOT" }}/public'`,
+				"    Setting server location path to '/'",
+				`    Enabling basic status information with stub_status module`,
+				"",
+			))
+
+			container, err = docker.Container.Run.
+				WithEnv(map[string]string{"PORT": "8080"}).
+				WithPublish("8083").
+				Execute(image.ID)
+			Expect(err).ToNot(HaveOccurred())
+
+			response, err := http.Get(fmt.Sprintf("http://localhost:%s/stub_status", container.HostPort("8083")))
+			Expect(err).NotTo(HaveOccurred())
+			defer response.Body.Close()
+
+			contents, err := io.ReadAll(response.Body)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(contents)).To(ContainSubstring("Active connections: 1"))
+		})
+	})
 }
