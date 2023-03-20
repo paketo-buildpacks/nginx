@@ -314,7 +314,7 @@ error_log stderr;
     it("writes an nginx.conf that conditionally includes the stub_status module for basic status information", func() {
 			err := generator.Generate(nginx.Configuration{
 				NGINXConfLocation:   filepath.Join(workingDir, "nginx.conf"),
-				NGINXStubStatusPort: 8083,
+				NGINXStubStatusPort: "8083",
 				WebServerRoot:       "./public",
 			})
 			Expect(err).NotTo(HaveOccurred())
