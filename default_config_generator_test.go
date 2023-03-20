@@ -166,7 +166,21 @@ error_log stderr;
   # For responses above a certain length
   gzip_min_length 1100;
   # That are one of the following MIME types
-  gzip_types text/plain text/css text/js text/xml text/javascript application/javascript application/x-javascript application/json application/xml application/xml+rss;
+  gzip_types
+    text/plain
+    text/css
+    text/js
+    text/xml
+    text/javascript
+    application/javascript
+    application/x-javascript
+    application/json
+    application/xml
+    application/xml+rss
+    font/eot
+    font/otf
+    font/ttf
+    image/svg+xml;
   # Compress responses to a medium degree
   gzip_comp_level 6;
   # Using 16 buffers of 8k bytes each
