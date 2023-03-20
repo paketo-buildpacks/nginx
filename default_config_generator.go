@@ -51,7 +51,7 @@ func (g DefaultConfigGenerator) Generate(config Configuration) error {
 		g.logs.Subprocess("Enabling basic authentication with .htpasswd credentials")
 	}
 
-	if config.NGINXStubStatusPort {
+	if config.NGINXStubStatusPort != "" {
 		g.logs.Subprocess("Enabling basic status information with stub_status module")
 	}
 
