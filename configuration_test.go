@@ -52,7 +52,7 @@ func testConfiguration(t *testing.T, context spec.G, it spec.S) {
 				WebServerEnablePushState: true,
 				WebServerRoot:            "some-root",
 				WebServerLocationPath:    "some-location-path",
-				NGINXStubStatusPort:	  8083,
+				NGINXStubStatusPort:	  "8083",
 			}))
 		})
 
