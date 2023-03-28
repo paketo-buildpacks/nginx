@@ -70,7 +70,6 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 				"  Generating /workspace/nginx.conf",
 				`    Setting server root directory to '{{ env "APP_ROOT" }}/public'`,
 				"    Setting server location path to '/'",
-				"",
 			))
 
 			container, err = docker.Container.Run.
@@ -86,7 +85,7 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 	context("when using env var configuration options", func() {
 		it.Before(func() {
 			Expect(fs.Copy(filepath.Join(source, "public"), filepath.Join(source, "custom_root"))).To(Succeed())
-			os.RemoveAll(filepath.Join(source, "public"))
+			Expect(os.RemoveAll(filepath.Join(source, "public"))).To(Succeed())
 		})
 
 		it("generates an nginx.conf with the configuration", func() {
@@ -118,7 +117,6 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 				`    Setting server root directory to '{{ env "APP_ROOT" }}/custom_root'`,
 				"    Setting server location path to '/custom_path'",
 				"    Enabling push state routing",
-				"",
 			))
 
 			Eventually(container).Should(Serve(ContainSubstring("<p>Hello World!</p>")).OnPort(8080).WithEndpoint("/custom_path"))
@@ -148,7 +146,6 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 				`    Setting server root directory to '{{ env "APP_ROOT" }}/public'`,
 				"    Setting server location path to '/'",
 				`    Setting server to redirect HTTP requests to HTTPS`,
-				"",
 			))
 
 			container, err = docker.Container.Run.
@@ -203,7 +200,6 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 				`    Setting server root directory to '{{ env "APP_ROOT" }}/public'`,
 				"    Setting server location path to '/'",
 				`    Enabling basic authentication with .htpasswd credentials`,
-				"",
 			))
 
 			container, err = docker.Container.Run.
@@ -214,9 +210,14 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 			Expect(err).ToNot(HaveOccurred())
 
 			// Assert that unauthenticated requests fail
-			response, err := http.Get(fmt.Sprintf("http://localhost:%s", container.HostPort("8080")))
-			Expect(err).NotTo(HaveOccurred())
+			var response *http.Response
+			Eventually(func() error {
+				var err error
+				response, err = http.Get(fmt.Sprintf("http://localhost:%s", container.HostPort("8080")))
+				return err
+			}).Should(Succeed())
 			defer response.Body.Close()
+
 			Expect(response.StatusCode).To(Equal(http.StatusUnauthorized))
 
 			// And that authenticated requests succeed
@@ -225,12 +226,16 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 
 			req.SetBasicAuth("user", "password")
 
-			response, err = http.DefaultClient.Do(req)
-			Expect(err).NotTo(HaveOccurred())
+			Eventually(func() error {
+				var err error
+				response, err = http.DefaultClient.Do(req)
+				return err
+			}).Should(Succeed())
 			defer response.Body.Close()
 
 			contents, err := io.ReadAll(response.Body)
 			Expect(err).NotTo(HaveOccurred())
+
 			Expect(string(contents)).To(ContainSubstring("Hello World!"))
 		})
 	})
@@ -257,7 +262,6 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 				`    Setting server root directory to '{{ env "APP_ROOT" }}/public'`,
 				"    Setting server location path to '/'",
 				`    Enabling basic status information with stub_status module`,
-				"",
 			))
 
 			container, err = docker.Container.Run.
@@ -266,13 +270,7 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 				Execute(image.ID)
 			Expect(err).ToNot(HaveOccurred())
 
-			response, err := http.Get(fmt.Sprintf("http://localhost:%s/stub_status", container.HostPort("8083")))
-			Expect(err).NotTo(HaveOccurred())
-			defer response.Body.Close()
-
-			contents, err := io.ReadAll(response.Body)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(string(contents)).To(ContainSubstring("Active connections: 1"))
+			Eventually(container).Should(Serve(ContainSubstring("Active connections: 1")).OnPort(8083).WithEndpoint("/stub_status"))
 		})
 	})
 }
