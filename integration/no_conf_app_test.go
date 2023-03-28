@@ -266,13 +266,7 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 				Execute(image.ID)
 			Expect(err).ToNot(HaveOccurred())
 
-			response, err := http.Get(fmt.Sprintf("http://localhost:%s/stub_status", container.HostPort("8083")))
-			Expect(err).NotTo(HaveOccurred())
-			defer response.Body.Close()
-
-			contents, err := io.ReadAll(response.Body)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(string(contents)).To(ContainSubstring("Active connections: 1"))
+			Eventually(container).Should(Serve(ContainSubstring("Active connections: 1")).OnPort(8083).WithEndpoint("/stub_status"))
 		})
 	})
 }
