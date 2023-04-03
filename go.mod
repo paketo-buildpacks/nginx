@@ -4,15 +4,15 @@ go 1.19
 
 require (
 	github.com/BurntSushi/toml v1.2.1
-	github.com/CycloneDX/cyclonedx-go v0.7.1-0.20221222100750-41a1ac565cce // indirect
+	github.com/CycloneDX/cyclonedx-go v0.7.1 // indirect
 	github.com/DataDog/zstd v1.5.2 // indirect
 	github.com/Masterminds/semver v1.5.0
 	github.com/Microsoft/go-winio v0.6.0 // indirect
 	github.com/Netflix/go-env v0.0.0-20220526054621-78278af1949d
-	github.com/anchore/syft v0.75.0 // indirect
+	github.com/anchore/syft v0.76.0 // indirect
 	github.com/bmatcuk/doublestar/v4 v4.6.0 // indirect
-	github.com/docker/cli v23.0.1+incompatible // indirect
-	github.com/docker/docker v23.0.1+incompatible // indirect
+	github.com/docker/cli v23.0.2+incompatible // indirect
+	github.com/docker/docker v23.0.2+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.7.0 // indirect
 	github.com/facebookincubator/nvdtools v0.1.5 // indirect
 	github.com/imdario/mergo v0.3.15 // indirect
@@ -43,7 +43,7 @@ require (
 	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.6.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
-	google.golang.org/genproto v0.0.0-20230323212658-478b75c54725 // indirect
+	google.golang.org/genproto v0.0.0-20230331144136-dcfb400f0633 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	modernc.org/libc v1.22.3 // indirect
 	modernc.org/sqlite v1.21.0 // indirect
@@ -81,6 +81,7 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/go-containerregistry v0.14.0 // indirect
+	github.com/google/licensecheck v0.3.1 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
