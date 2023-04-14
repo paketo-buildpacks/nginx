@@ -563,6 +563,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			Expect(result.Layers[0].LaunchEnv).To(Equal(packit.Environment{
 				"APP_ROOT.default":   workspaceDir, // generated nginx conf relies on this env var
 				"EXECD_CONF.default": filepath.Join(workspaceDir, "nginx.conf"),
+				"PORT.default":       "8080",
 			}))
 		})
 
