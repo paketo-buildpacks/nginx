@@ -218,6 +218,7 @@ func Build(config Configuration,
 
 		if config.WebServer == "nginx" {
 			layer.LaunchEnv.Default("APP_ROOT", context.WorkingDir)
+			layer.LaunchEnv.Default("PORT", "8080")
 		}
 
 		logger.EnvironmentVariables(layer)

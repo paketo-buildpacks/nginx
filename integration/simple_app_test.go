@@ -73,8 +73,8 @@ func testSimpleApp(t *testing.T, context spec.G, it spec.S) {
 			Expect(err).NotTo(HaveOccurred())
 
 			container, err = docker.Container.Run.
-				WithEnv(map[string]string{"PORT": "8080"}).
-				WithPublish("8080").
+				WithEnv(map[string]string{"PORT": "8083"}).
+				WithPublish("8083").
 				Execute(image.ID)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -92,6 +92,42 @@ func testSimpleApp(t *testing.T, context spec.G, it spec.S) {
 			Expect(filepath.Join(sbomDir, "sbom", "launch", strings.ReplaceAll(settings.Buildpack.ID, "/", "_"), "nginx", "sbom.cdx.json")).
 				To(BeAFileMatching(ContainSubstring(`"name": "Nginx Server"`)))
 		})
+
+		it("nginx serves on default port", func() {
+			var err error
+			image, _, err = pack.Build.
+				WithBuildpacks(settings.Buildpacks.NGINX.Online).
+				WithPullPolicy("never").
+				WithEnv(map[string]string{"BP_WEB_SERVER": "nginx"}).
+				Execute(name, source)
+			Expect(err).NotTo(HaveOccurred())
+
+			container, err = docker.Container.Run.
+				WithPublish("8080").
+				Execute(image.ID)
+			Expect(err).ToNot(HaveOccurred())
+
+			Eventually(container).Should(Serve(ContainSubstring("Hello World!")).WithEndpoint("/index.html"))
+		})
+
+		it("nginx serves on custom port", func() {
+			var err error
+			image, _, err = pack.Build.
+				WithBuildpacks(settings.Buildpacks.NGINX.Online).
+				WithPullPolicy("never").
+				WithEnv(map[string]string{"BP_WEB_SERVER": "nginx"}).
+				Execute(name, source)
+			Expect(err).NotTo(HaveOccurred())
+
+			container, err = docker.Container.Run.
+				WithEnv(map[string]string{"PORT": "8081"}).
+				WithPublish("8081").
+				Execute(image.ID)
+			Expect(err).ToNot(HaveOccurred())
+
+			Eventually(container).Should(Serve(ContainSubstring("Hello World!")).WithEndpoint("/index.html"))
+		})
+
 	})
 
 	context("when an nginx app uses the stream module", func() {
