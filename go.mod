@@ -9,7 +9,7 @@ require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/Netflix/go-env v0.0.0-20220526054621-78278af1949d
-	github.com/anchore/syft v0.80.0 // indirect
+	github.com/anchore/syft v0.79.0 // indirect
 	github.com/bmatcuk/doublestar/v4 v4.6.0 // indirect
 	github.com/docker/cli v23.0.5+incompatible // indirect
 	github.com/docker/docker v23.0.5+incompatible // indirect
