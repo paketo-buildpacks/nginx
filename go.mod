@@ -9,7 +9,7 @@ require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/Netflix/go-env v0.0.0-20220526054621-78278af1949d
-	github.com/anchore/syft v0.79.0 // indirect
+	github.com/anchore/syft v0.80.0 // indirect
 	github.com/bmatcuk/doublestar/v4 v4.6.0 // indirect
 	github.com/docker/cli v23.0.5+incompatible // indirect
 	github.com/docker/docker v23.0.5+incompatible // indirect
@@ -27,7 +27,7 @@ require (
 	github.com/opencontainers/image-spec v1.1.0-rc3 // indirect
 	github.com/opencontainers/runc v1.1.5 // indirect
 	github.com/paketo-buildpacks/occam v0.16.0
-	github.com/paketo-buildpacks/packit/v2 v2.10.1
+	github.com/paketo-buildpacks/packit/v2 v2.11.0
 	github.com/pierrec/lz4/v4 v4.1.17 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/sclevine/spec v1.4.0
@@ -88,7 +88,6 @@ require (
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/go-containerregistry v0.15.1 // indirect
 	github.com/google/licensecheck v0.3.1 // indirect
-	github.com/google/pprof v0.0.0-20221118152302-e6195bd50e26 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
