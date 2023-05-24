@@ -58,7 +58,7 @@ func testLogging(t *testing.T, context spec.G, it spec.S) {
 				fmt.Sprintf("%s 1.2.3", settings.Buildpack.Name),
 				"  Resolving Nginx Server version",
 				"    Candidate version sources (in priority order):",
-				`      buildpack.yml -> "1.21.*"`,
+				`      buildpack.yml -> "1.25.*"`,
 			))
 			Expect(logs).To(matchers.ContainLines(
 				MatchRegexp(`    Selected Nginx Server version \(using buildpack\.yml\): 1\.21\.\d+`),
@@ -99,8 +99,8 @@ func testLogging(t *testing.T, context spec.G, it spec.S) {
 				fmt.Sprintf("%s 1.2.3", settings.Buildpack.Name),
 				"  Resolving Nginx Server version",
 				"    Candidate version sources (in priority order):",
-				`      BP_NGINX_VERSION -> "1.22.*"`,
-				`      buildpack.yml    -> "1.21.*"`,
+				`      BP_NGINX_VERSION -> "1.24.*"`,
+				`      buildpack.yml    -> "1.25.*"`,
 			))
 			Expect(logs).To(matchers.ContainLines(
 				MatchRegexp(`    Selected Nginx Server version \(using BP_NGINX_VERSION\): 1\.22\.\d+`),
