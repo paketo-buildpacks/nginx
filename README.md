@@ -57,7 +57,7 @@ use templated variables like `{{port}}`, `{{env "FOO"}}` and `{{module
 "ngx_stream_module"}}` in your `nginx.conf` to use values known at launch time.
 
 A usage example can be found in the [`samples` repository under the `nginx`
-directory](https://github.com/paketo-buildpacks/samples/tree/main/nginx).
+directory](https://github.com/paketo-buildpacks/samples/tree/main/web-servers/nginx-sample).
 
 #### PORT
 
