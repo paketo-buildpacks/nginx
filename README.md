@@ -141,6 +141,10 @@ nginx:
   # any valid semver constraints (e.g. 1.* and 1.21.*) are also acceptable
   version: "1.21.0"
 ```
+### `BP_WEB_SERVER_ENABLE_PUSH_STATE`
+The `BP_WEB_SERVER_ENABLE_PUSH_STATE` variable enables push state based routing for Single-page applications relying on browser history API.
+NGINX Server will send the content at / in response to *any* requested endpoint.
+Usefull for React, Angular, Vue and other SPA applications.
 
 ### `BP_NGINX_STUB_STATUS_PORT`
 The `BP_NGINX_STUB_STATUS_PORT` variable exposes a handful of NGINX Server metrics via the [`stub_status`](https://nginx.org/en/docs/http/ngx_http_stub_status_module.html#stub_status) module which provides basic status information on provided port.
