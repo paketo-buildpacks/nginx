@@ -19,7 +19,7 @@ require (
 	github.com/jinzhu/copier v0.4.0 // indirect
 	github.com/klauspost/compress v1.16.5 // indirect
 	github.com/knqyf263/go-rpmdb v0.0.0-20230301153543-ba94b245509b // indirect
-	github.com/mattn/go-runewidth v0.0.14 // indirect
+	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/microsoft/go-rustaudit v0.0.0-20220808201409-204dfee52032 // indirect
 	github.com/moby/term v0.5.0 // indirect
 	github.com/nwaples/rardecode v1.1.3 // indirect
