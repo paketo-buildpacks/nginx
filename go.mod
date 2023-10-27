@@ -11,8 +11,8 @@ require (
 	github.com/Netflix/go-env v0.0.0-20220526054621-78278af1949d
 	github.com/anchore/syft v0.80.0 // indirect
 	github.com/bmatcuk/doublestar/v4 v4.6.1 // indirect
-	github.com/docker/cli v24.0.6+incompatible // indirect
-	github.com/docker/docker v24.0.6+incompatible // indirect
+	github.com/docker/cli v24.0.7+incompatible // indirect
+	github.com/docker/docker v24.0.7+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.8.0 // indirect
 	github.com/facebookincubator/nvdtools v0.1.5 // indirect
 	github.com/imdario/mergo v0.3.15 // indirect
@@ -68,7 +68,7 @@ require (
 	github.com/becheran/wildmatch-go v1.0.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/cloudflare/circl v1.3.5 // indirect
-	github.com/containerd/containerd v1.7.7 // indirect
+	github.com/containerd/containerd v1.7.8 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.14.3 // indirect
 	github.com/cpuguy83/dockercfg v0.3.1 // indirect
@@ -94,7 +94,7 @@ require (
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/go-containerregistry v0.16.1 // indirect
 	github.com/google/licensecheck v0.3.1 // indirect
-	github.com/google/uuid v1.3.1 // indirect
+	github.com/google/uuid v1.4.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/huandu/xstrings v1.4.0 // indirect
@@ -128,7 +128,7 @@ require (
 	github.com/skeema/knownhosts v1.2.1 // indirect
 	github.com/spf13/cast v1.5.1 // indirect
 	github.com/sylabs/squashfs v0.6.1 // indirect
-	github.com/testcontainers/testcontainers-go v0.25.0 // indirect
+	github.com/testcontainers/testcontainers-go v0.26.0 // indirect
 	github.com/therootcompany/xz v1.0.1 // indirect
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
