@@ -28,7 +28,7 @@ require (
 	github.com/opencontainers/runc v1.1.10 // indirect
 	github.com/paketo-buildpacks/occam v0.18.0
 	github.com/paketo-buildpacks/packit/v2 v2.12.0
-	github.com/pierrec/lz4/v4 v4.1.18 // indirect
+	github.com/pierrec/lz4/v4 v4.1.19 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/sclevine/spec v1.4.0
 	github.com/shopspring/decimal v1.3.1 // indirect
