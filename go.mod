@@ -36,7 +36,7 @@ require (
 	github.com/spf13/afero v1.11.0 // indirect
 	github.com/sylabs/sif/v2 v2.15.1 // indirect
 	github.com/vbatts/go-mtree v0.5.3 // indirect
-	github.com/vifraa/gopom v0.2.1 // indirect
+	github.com/vifraa/gopom v1.0.0 // indirect
 	github.com/wagoodman/go-progress v0.0.0-20230301185719-21920a456ad5 // indirect
 	golang.org/x/crypto v0.18.0 // indirect
 	golang.org/x/net v0.20.0 // indirect
