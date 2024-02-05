@@ -25,7 +25,7 @@ require (
 	github.com/nwaples/rardecode v1.1.3 // indirect
 	github.com/onsi/gomega v1.31.1
 	github.com/opencontainers/image-spec v1.1.0-rc5 // indirect
-	github.com/opencontainers/runc v1.1.11 // indirect
+	github.com/opencontainers/runc v1.1.12 // indirect
 	github.com/paketo-buildpacks/occam v0.18.1
 	github.com/paketo-buildpacks/packit/v2 v2.12.0
 	github.com/pierrec/lz4/v4 v4.1.21 // indirect
