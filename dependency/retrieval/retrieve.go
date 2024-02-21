@@ -158,10 +158,12 @@ func getGPGKeys() ([]string, error) {
 	var nginxGPGKeys []string
 	for _, keyURL := range []string{
 		// Key URLs from https://nginx.org/en/pgp_keys.html
-		"http://nginx.org/keys/mdounin.key",
-		"http://nginx.org/keys/maxim.key",
-		"http://nginx.org/keys/sb.key",
-		"http://nginx.org/keys/thresh.key",
+		"http://nginx.org/keys/mdounin.key",        // Maxim Dounin’s PGP public key
+		"http://nginx.org/keys/maxim.key",          // Maxim Konovalov’s PGP public key
+		"https://nginx.org/keys/pluknet.key",       // Sergey Kandaurov’s PGP public key
+		"http://nginx.org/keys/sb.key",             // Sergey Budnevitch’s PGP public key
+		"http://nginx.org/keys/thresh.key",         // Konstantin Pavlov’s PGP public key
+		"https://nginx.org/keys/nginx_signing.key", // nginx public key
 	} {
 		body, err := httpGet(keyURL)
 		if err != nil {
