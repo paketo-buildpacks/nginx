@@ -76,9 +76,7 @@ func TestIntegration(t *testing.T) {
 		Execute(root)
 	Expect(err).NotTo(HaveOccurred())
 
-	settings.Buildpacks.Watchexec.Online, err = libpakBuildpackStore.Get.
-		Execute(settings.Config.Watchexec)
-	Expect(err).ToNot(HaveOccurred())
+	settings.Buildpacks.Watchexec.Online = settings.Config.Watchexec
 
 	settings.Buildpacks.BuildPlan.Online, err = libpakBuildpackStore.Get.
 		Execute(settings.Config.BuildPlan)
