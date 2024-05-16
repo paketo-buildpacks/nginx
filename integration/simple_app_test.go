@@ -184,7 +184,7 @@ func testSimpleApp(t *testing.T, context spec.G, it spec.S) {
 					settings.Buildpacks.Watchexec.Online,
 					settings.Buildpacks.NGINX.Online,
 				).
-				WithPullPolicy("never").
+				WithPullPolicy("if-not-present").
 				WithEnv(map[string]string{
 					"BP_LIVE_RELOAD_ENABLED": "true",
 				}).
@@ -235,7 +235,7 @@ func testSimpleApp(t *testing.T, context spec.G, it spec.S) {
 					settings.Buildpacks.Watchexec.Online,
 					settings.Buildpacks.NGINX.Online,
 				).
-				WithPullPolicy("never").
+				WithPullPolicy("if-not-present").
 				WithEnv(map[string]string{
 					"BP_LIVE_RELOAD_ENABLED": "not-a-bool",
 				}).

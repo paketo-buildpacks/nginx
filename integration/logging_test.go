@@ -99,11 +99,11 @@ func testLogging(t *testing.T, context spec.G, it spec.S) {
 				fmt.Sprintf("%s 1.2.3", settings.Buildpack.Name),
 				"  Resolving Nginx Server version",
 				"    Candidate version sources (in priority order):",
-				`      BP_NGINX_VERSION -> "1.24.*"`,
+				`      BP_NGINX_VERSION -> "1.26.*"`,
 				`      buildpack.yml    -> "1.25.*"`,
 			))
 			Expect(logs).To(matchers.ContainLines(
-				MatchRegexp(`    Selected Nginx Server version \(using BP_NGINX_VERSION\): 1\.24\.\d+`),
+				MatchRegexp(`    Selected Nginx Server version \(using BP_NGINX_VERSION\): 1\.26\.\d+`),
 			))
 			Expect(logs).To(matchers.ContainLines(
 				"  Executing build process",

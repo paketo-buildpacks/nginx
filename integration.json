@@ -4,5 +4,5 @@
     "index.docker.io/paketobuildpacks/builder-jammy-buildpackless-base:latest"
   ],
   "build-plan": "github.com/paketo-community/build-plan",
-  "watchexec": "github.com/paketo-buildpacks/watchexec"
+  "watchexec": "index.docker.io/paketobuildpacks/watchexec"
 }
