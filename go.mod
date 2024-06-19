@@ -157,3 +157,5 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/CycloneDX/cyclonedx-go => github.com/CycloneDX/cyclonedx-go v0.7.2
