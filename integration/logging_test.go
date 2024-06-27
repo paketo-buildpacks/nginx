@@ -100,7 +100,7 @@ func testLogging(t *testing.T, context spec.G, it spec.S) {
 				"  Resolving Nginx Server version",
 				"    Candidate version sources (in priority order):",
 				`      BP_NGINX_VERSION -> "1.26.*"`,
-				`      buildpack.yml    -> "1.25.*"`,
+				`      buildpack.yml    -> "1.27.*"`,
 			))
 			Expect(logs).To(matchers.ContainLines(
 				MatchRegexp(`    Selected Nginx Server version \(using BP_NGINX_VERSION\): 1\.26\.\d+`),
