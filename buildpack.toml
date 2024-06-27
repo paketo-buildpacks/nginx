@@ -15,6 +15,32 @@ api = "0.7"
     nginx = "1.27.*"
 
   [[metadata.dependencies]]
+    checksum = "sha256:b41783e9cfecacf228a19290741c66b21549daa8f9aaeffef59b4bf0d74d1e0d"
+    cpe = "cpe:2.3:a:nginx:nginx:1.27.0:*:*:*:*:*:*:*"
+    id = "nginx"
+    licenses = ["BSD-2-Clause"]
+    name = "Nginx Server"
+    purl = "pkg:generic/nginx@1.27.0?checksum=b7230e3cf87eaa2d4b0bc56aadc920a960c7873b9991a1b66ffcc08fc650129c&download_url=https://nginx.org/download/nginx-1.27.0.tar.gz"
+    source = "https://nginx.org/download/nginx-1.27.0.tar.gz"
+    source-checksum = "sha256:b7230e3cf87eaa2d4b0bc56aadc920a960c7873b9991a1b66ffcc08fc650129c"
+    stacks = ["io.buildpacks.stacks.bionic"]
+    uri = "https://artifacts.paketo.io/nginx/nginx_1.27.0_linux_x64_bionic_b41783e9.tgz"
+    version = "1.27.0"
+
+  [[metadata.dependencies]]
+    checksum = "sha256:a1c92ac0b4aa06b8b0306e18b6e656f32040efca436935dc952a142b26fb96c0"
+    cpe = "cpe:2.3:a:nginx:nginx:1.27.0:*:*:*:*:*:*:*"
+    id = "nginx"
+    licenses = ["BSD-2-Clause"]
+    name = "Nginx Server"
+    purl = "pkg:generic/nginx@1.27.0?checksum=b7230e3cf87eaa2d4b0bc56aadc920a960c7873b9991a1b66ffcc08fc650129c&download_url=https://nginx.org/download/nginx-1.27.0.tar.gz"
+    source = "https://nginx.org/download/nginx-1.27.0.tar.gz"
+    source-checksum = "sha256:b7230e3cf87eaa2d4b0bc56aadc920a960c7873b9991a1b66ffcc08fc650129c"
+    stacks = ["io.buildpacks.stacks.jammy"]
+    uri = "https://artifacts.paketo.io/nginx/nginx_1.27.0_linux_x64_jammy_a1c92ac0.tgz"
+    version = "1.27.0"
+
+  [[metadata.dependencies]]
     checksum = "sha256:af58bf806b74fe14d8a69653da066b625c8f5a15c9dc4697bc4a217166290ca5"
     cpe = "cpe:2.3:a:nginx:nginx:1.26.0:*:*:*:*:*:*:*"
     id = "nginx"
@@ -75,7 +101,6 @@ api = "0.7"
     constraint = "1.26.*"
     id = "nginx"
     patches = 2
-
   [metadata.version-lines]
     mainline = "1.27.*"
     stable = "1.26.*"
