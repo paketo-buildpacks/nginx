@@ -149,3 +149,11 @@ Usefull for React, Angular, Vue and other SPAs.
 ### `BP_NGINX_STUB_STATUS_PORT`
 The `BP_NGINX_STUB_STATUS_PORT` variable exposes a handful of NGINX Server metrics via the [`stub_status`](https://nginx.org/en/docs/http/ngx_http_stub_status_module.html#stub_status) module which provides basic status information on provided port.
 This comes handy for monitoring the server. For example using [NGINX Prometheus Exporter](https://github.com/nginxinc/nginx-prometheus-exporter)
+
+### `BP_WEB_SERVER_INCLUDES`
+The `BP_WEB_SERVER_INCLUDES` variable allows including configuration into generated `nginx.conf`, when no `nginx.conf` file is provided.
+It will include these snippet into generated config server section:
+
+```
+   include <BP_WEB_SERVER_INCLUDES>;
+```
