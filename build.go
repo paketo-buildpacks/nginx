@@ -1,6 +1,7 @@
 package nginx
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -84,6 +85,14 @@ func Build(config Configuration,
 			err = configGenerator.Generate(config)
 			if err != nil {
 				return packit.BuildResult{}, fmt.Errorf("failed to generate nginx.conf : %w", err)
+			}
+		}
+
+		if config.WebServerIncludeFilePath != "" {
+			includeFilePath := filepath.Join(context.WorkingDir, config.WebServerIncludeFilePath)
+			_, err := os.Stat(includeFilePath)
+			if err != nil && errors.Is(err, os.ErrNotExist) {
+				return packit.BuildResult{}, fmt.Errorf("file %s doesn't exist within app dir", config.WebServerIncludeFilePath)
 			}
 		}
 

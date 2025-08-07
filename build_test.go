@@ -635,6 +635,38 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			Expect(len(result.Layers)).To(Equal(1))
 			Expect(result.Launch.Processes).To(BeEmpty())
 		})
+
+	})
+
+	context("when BP_WEB_SERVER_INCLUDE_FILE_PATH", func() {
+		it.Before(func() {
+			Expect(os.WriteFile(filepath.Join(workspaceDir, "included-file.conf"), []byte(""), 0644)).To(Succeed())
+
+			build = nginx.Build(
+				nginx.Configuration{
+					NGINXConfLocation:        "./nginx.conf",
+					WebServer:                "nginx",
+					WebServerRoot:            "custom",
+					WebServerIncludeFilePath: "./included-file.conf",
+				},
+				dependencyService,
+				configGenerator,
+				calculator,
+				sbomGenerator,
+				scribe.NewEmitter(buffer),
+				chronos.DefaultClock,
+			)
+		})
+
+		it("included file exists", func() {
+			_, err := build(buildContext)
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+
+	context("when BP_WEB_SERVER_INCLUDE_FILE_PATH is set", func() {
+		it.Before(func() {
+		})
 	})
 
 	context("failure cases", func() {
@@ -742,6 +774,28 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			it("returns an error", func() {
 				_, err := build(buildContext)
 				Expect(err).To(MatchError("unsupported SBOM format: 'random-format'"))
+			})
+		})
+
+		context("when BP_WEB_SERVER_INCLUDE_FILE_PATH is set", func() {
+			it.Before(func() {
+				build = nginx.Build(
+					nginx.Configuration{
+						WebServer:                "nginx",
+						WebServerRoot:            "custom",
+						WebServerIncludeFilePath: "./included-file.conf",
+					},
+					dependencyService,
+					configGenerator,
+					calculator,
+					sbomGenerator,
+					scribe.NewEmitter(buffer),
+					chronos.DefaultClock,
+				)
+			})
+			it("included file is not present", func() {
+				_, err := build(buildContext)
+				Expect(err).To(MatchError("file ./included-file.conf doesn't exist within app dir"))
 			})
 		})
 	})

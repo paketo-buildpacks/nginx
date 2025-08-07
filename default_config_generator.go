@@ -55,8 +55,8 @@ func (g DefaultConfigGenerator) Generate(config Configuration) error {
 		g.logs.Subprocess("Enabling basic status information with stub_status module")
 	}
 
-	if config.WebServerIncludes != "" {
-		g.logs.Subprocess("Enabling including custom configurations")
+	if config.WebServerIncludeFilePath != "" {
+		g.logs.Subprocess("Enabling including custom config")
 	}
 
 	g.logs.Break()

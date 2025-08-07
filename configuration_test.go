@@ -40,7 +40,7 @@ func testConfiguration(t *testing.T, context spec.G, it spec.S) {
 				"BP_WEB_SERVER_ENABLE_PUSH_STATE=true",
 				"BP_WEB_SERVER_ROOT=some-root",
 				"BP_WEB_SERVER_LOCATION_PATH=some-location-path",
-				"BP_WEB_SERVER_INCLUDES=some-location-includes",
+				"BP_WEB_SERVER_INCLUDE_FILE_PATH=some-location-include",
 				"BP_NGINX_STUB_STATUS_PORT=8083",
 			}, bindingsResolver, "some-platform-path")
 			Expect(err).NotTo(HaveOccurred())
@@ -53,7 +53,7 @@ func testConfiguration(t *testing.T, context spec.G, it spec.S) {
 				WebServerEnablePushState: true,
 				WebServerRoot:            "some-root",
 				WebServerLocationPath:    "some-location-path",
-				WebServerIncludes:        "some-location-includes",
+				WebServerIncludeFilePath: "some-location-include",
 				NGINXStubStatusPort:      "8083",
 			}))
 		})
