@@ -272,6 +272,17 @@ error_log stderr;
 				To(matchers.BeAFileMatching(ContainSubstring(`location /path {`)))
 		})
 
+		it("writes a nginx.conf including custom file", func() {
+			err := generator.Generate(nginx.Configuration{
+				NGINXConfLocation:        filepath.Join(workingDir, "nginx.conf"),
+				WebServerLocationPath:    "/path",
+				WebServerIncludeFilePath: "./custom-include.conf",
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(filepath.Join(workingDir, "nginx.conf")).
+				To(matchers.BeAFileMatching(ContainSubstring(`include ./custom-include.conf;`)))
+		})
+
 		it("writes an nginx.conf that conditionally includes the PushState content", func() {
 			err := generator.Generate(nginx.Configuration{
 				NGINXConfLocation:        filepath.Join(workingDir, "nginx.conf"),
@@ -311,7 +322,7 @@ error_log stderr;
 `)))
 		})
 
-    it("writes an nginx.conf that conditionally includes the stub_status module for basic status information", func() {
+		it("writes an nginx.conf that conditionally includes the stub_status module for basic status information", func() {
 			err := generator.Generate(nginx.Configuration{
 				NGINXConfLocation:   filepath.Join(workingDir, "nginx.conf"),
 				NGINXStubStatusPort: "8083",

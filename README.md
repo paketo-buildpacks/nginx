@@ -149,3 +149,47 @@ Usefull for React, Angular, Vue and other SPAs.
 ### `BP_NGINX_STUB_STATUS_PORT`
 The `BP_NGINX_STUB_STATUS_PORT` variable exposes a handful of NGINX Server metrics via the [`stub_status`](https://nginx.org/en/docs/http/ngx_http_stub_status_module.html#stub_status) module which provides basic status information on provided port.
 This comes handy for monitoring the server. For example using [NGINX Prometheus Exporter](https://github.com/nginxinc/nginx-prometheus-exporter)
+
+### `BP_WEB_SERVER_INCLUDE_FILE_PATH`
+The `BP_WEB_SERVER_INCLUDE_FILE_PATH` variable allows including configuration into generated `nginx.conf`, when no `nginx.conf` file is provided.
+It will include these snippet into generated config server section:
+
+```
+   include <BP_WEB_SERVER_INCLUDE_FILE_PATH>;
+```
+
+The file to be included must be inside the path to app dir (like the `--path` switch when using the pack binary) and the value should be relative to that directory.
+
+Example: including proxy.conf file within APP_DIR
+
+```
+| APP_DIR
+  |- public
+  |- proxy.conf
+```
+
+with this content:
+```
+# proxy.conf
+location ~* ^/api(.*) {
+        proxy_pass  http://another_backend_server:8080/api$1$is_args$args;
+        proxy_http_version 1.1;
+        proxy_read_timeout 60s;
+        proxy_buffer_size 4096;
+        proxy_buffering on;
+        proxy_buffers 8 4096;
+        proxy_busy_buffers_size 8192;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $http_connection;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Port $server_port;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Request-Start $msec;
+    }
+```
+
+We can set the relative path into the BP_WEB_SERVER_INCLUDE_FILE_PATH env
+```
+BP_WEB_SERVER_INCLUDE_FILE_PATH=./proxy.conf
+```

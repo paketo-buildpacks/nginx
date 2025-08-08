@@ -101,6 +101,7 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 					"BP_WEB_SERVER_ROOT":              "custom_root",
 					"BP_WEB_SERVER_LOCATION_PATH":     "/custom_path",
 					"BP_WEB_SERVER_ENABLE_PUSH_STATE": "true",
+					"BP_WEB_SERVER_INCLUDE_FILE_PATH": "custom-include.conf",
 				}).
 				WithPullPolicy("never").
 				Execute(name, source)
@@ -117,10 +118,12 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 				`    Setting server root directory to '{{ env "APP_ROOT" }}/custom_root'`,
 				"    Setting server location path to '/custom_path'",
 				"    Enabling push state routing",
+				"    Enabling including custom config",
 			))
 
 			Eventually(container).Should(Serve(ContainSubstring("<p>Hello World!</p>")).OnPort(8080).WithEndpoint("/custom_path"))
 			Eventually(container).Should(Serve(ContainSubstring("<p>Hello World!</p>")).OnPort(8080).WithEndpoint("/custom_path/test"))
+			Eventually(container).Should(Serve(ContainSubstring("Hello Custom Include World")).OnPort(8080).WithEndpoint("/custom"))
 		})
 	})
 

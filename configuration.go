@@ -24,6 +24,7 @@ type Configuration struct {
 	WebServerEnablePushState bool   `env:"BP_WEB_SERVER_ENABLE_PUSH_STATE"`
 	WebServerRoot            string `env:"BP_WEB_SERVER_ROOT"`
 	WebServerLocationPath    string `env:"BP_WEB_SERVER_LOCATION_PATH"`
+	WebServerIncludeFilePath string `env:"BP_WEB_SERVER_INCLUDE_FILE_PATH"`
 	NGINXStubStatusPort      string `env:"BP_NGINX_STUB_STATUS_PORT"`
 
 	BasicAuthFile string
