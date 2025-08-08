@@ -86,9 +86,6 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 		it.Before(func() {
 			Expect(fs.Copy(filepath.Join(source, "public"), filepath.Join(source, "custom_root"))).To(Succeed())
 			Expect(os.RemoveAll(filepath.Join(source, "public"))).To(Succeed())
-			var err error
-			_, err = os.Create(filepath.Join(source, "custom_includes"))
-			Expect(err).ToNot(HaveOccurred())
 		})
 
 		it("generates an nginx.conf with the configuration", func() {
@@ -104,7 +101,7 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 					"BP_WEB_SERVER_ROOT":              "custom_root",
 					"BP_WEB_SERVER_LOCATION_PATH":     "/custom_path",
 					"BP_WEB_SERVER_ENABLE_PUSH_STATE": "true",
-					"BP_WEB_SERVER_INCLUDE_FILE_PATH": "custom_includes",
+					"BP_WEB_SERVER_INCLUDE_FILE_PATH": "custom-include.conf",
 				}).
 				WithPullPolicy("never").
 				Execute(name, source)
@@ -126,6 +123,7 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 
 			Eventually(container).Should(Serve(ContainSubstring("<p>Hello World!</p>")).OnPort(8080).WithEndpoint("/custom_path"))
 			Eventually(container).Should(Serve(ContainSubstring("<p>Hello World!</p>")).OnPort(8080).WithEndpoint("/custom_path/test"))
+			Eventually(container).Should(Serve(ContainSubstring("Hello Custom Include World")).OnPort(8080).WithEndpoint("/custom"))
 		})
 	})
 

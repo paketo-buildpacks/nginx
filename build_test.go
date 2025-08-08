@@ -664,11 +664,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		})
 	})
 
-	context("when BP_WEB_SERVER_INCLUDE_FILE_PATH is set", func() {
-		it.Before(func() {
-		})
-	})
-
 	context("failure cases", func() {
 		context("when the dependency cannot be resolved", func() {
 			it.Before(func() {
@@ -795,7 +790,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			})
 			it("included file is not present", func() {
 				_, err := build(buildContext)
-				Expect(err).To(MatchError("file ./included-file.conf doesn't exist within app dir"))
+				Expect(err).To(MatchError("file ./included-file.conf (BP_WEB_SERVER_INCLUDE_FILE_PATH) doesn't exist within app dir"))
 			})
 		})
 	})
