@@ -211,7 +211,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					"Organization: Anchore, Inc",
 					"Tool: -"
 				],
-				"licenseListVersion": "3.25"
+				"licenseListVersion": "3.27"
 			},
             "packages": [
                 {
@@ -226,7 +226,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
                 }
               ],
 			"dataLicense": "CC0-1.0",
-            "documentNamespace": "https://paketo.io/unknown-source-type/unknown-9ecf240a-d971-5a3c-8e7b-6d3f3ea4d9c2",
+            "documentNamespace": "https://paketo.io/unknown-source-type/unknown-33ef57ff-45c2-53a8-8899-1c2b7e94d0dd",
 			"name": "unknown",
 			"relationships": [
 				{
