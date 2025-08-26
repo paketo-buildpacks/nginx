@@ -360,6 +360,53 @@ error_log stderr;
 `)))
 		})
 
+		context("existing nginx.conf, BP_WEB_SERVER=nginx", func() {
+			it("doesn't overwrite an existing nginx.conf", func() {
+				confPath := filepath.Join(workingDir, "nginx-exists-non-empty.conf")
+				Expect(os.WriteFile(confPath, []byte("port {{port}};"), 0644)).To(Succeed())
+
+				Expect(generator.Generate(nginx.Configuration{
+					NGINXConfLocation: confPath,
+					WebServer:         "htdocs",
+				})).To(Succeed())
+
+				Expect(confPath).
+					To(matchers.BeAFileMatching(ContainSubstring(string("port {{port}}"))))
+
+				Expect(os.Remove(confPath)).To(Succeed())
+			})
+
+			it("sets variables inside the supplied nginx.conf", func() {
+				confPath := filepath.Join(workingDir, "nginx-exists.conf")
+				Expect(os.WriteFile(confPath, []byte("root $(( .WebServerRoot -));"), 0644)).To(Succeed())
+
+				Expect(generator.Generate(nginx.Configuration{
+					NGINXConfLocation: confPath,
+					WebServerRoot:     "/a/very/specific/path",
+				})).To(Succeed())
+
+				Expect(confPath).
+					To(matchers.BeAFileMatching(ContainSubstring("root /a/very/specific/path;")))
+
+				Expect(os.Remove(confPath)).To(Succeed())
+			})
+
+			it("overwrites an empty nginx.conf", func() {
+				confPath := filepath.Join(workingDir, "nginx-exists-empty.conf")
+				Expect(os.WriteFile(confPath, []byte(""), 0644)).To(Succeed())
+
+				Expect(generator.Generate(nginx.Configuration{
+					NGINXConfLocation: confPath,
+				})).To(Succeed())
+
+				// check that there's anything inthere
+				Expect(confPath).
+					To(matchers.BeAFileMatching(BeEquivalentTo(`root {{ env "APP_ROOT" }};`)))
+
+				Expect(os.Remove(confPath)).To(Succeed())
+			})
+		})
+
 		context("failure cases", func() {
 			context("destination file already exists and it's read-only", func() {
 				it.Before(func() {

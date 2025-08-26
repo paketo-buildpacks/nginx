@@ -24,6 +24,21 @@ func NewDefaultConfigGenerator(logs scribe.Emitter) DefaultConfigGenerator {
 }
 
 func (g DefaultConfigGenerator) Generate(config Configuration) error {
+	g.logs.Process("Check: %s", config.NGINXConfLocation)
+	if info, err := os.Stat(config.NGINXConfLocation); err == nil {
+		g.logs.Subprocess("Configuration file already exists")
+		if info.Size() > 0 {
+			userConf, err := os.ReadFile(config.NGINXConfLocation)
+			if err != nil {
+				return err
+			}
+
+			g.logs.Subprocess("Set configuration (in %s) as template", config.NGINXConfLocation)
+
+			DefaultConfigTemplate = string(userConf)
+		}
+	}
+
 	g.logs.Process("Generating %s", config.NGINXConfLocation)
 	t := template.Must(template.New("template.conf").Delims("$((", "))").Parse(DefaultConfigTemplate))
 
