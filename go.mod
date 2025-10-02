@@ -8,7 +8,7 @@ require (
 	github.com/Netflix/go-env v0.1.2
 	github.com/onsi/gomega v1.38.2
 	github.com/paketo-buildpacks/occam v0.30.1
-	github.com/paketo-buildpacks/packit/v2 v2.25.0
+	github.com/paketo-buildpacks/packit/v2 v2.25.1
 	github.com/sclevine/spec v1.4.0
 	gopkg.in/yaml.v2 v2.4.0
 )
