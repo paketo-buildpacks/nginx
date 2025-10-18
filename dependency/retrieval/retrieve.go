@@ -78,22 +78,15 @@ func generateMetadata(hasVersion versionology.VersionFetcher) ([]versionology.De
 		Licenses:        retrieve.LookupLicenses(nginxURL, decompress),
 		PURL:            retrieve.GeneratePURL("nginx", nginxVersion, sourceSHA, nginxURL),
 		CPE:             fmt.Sprintf("cpe:2.3:a:nginx:nginx:%s:*:*:*:*:*:*:*", nginxVersion),
-		Stacks:          []string{"io.buildpacks.stacks.bionic"},
+		Stacks:          []string{"io.buildpacks.stacks.jammy"},
 	}
-
-	bionicDependency, err := versionology.NewDependency(dep, "bionic")
-	if err != nil {
-		return nil, fmt.Errorf("could get sha: %w", err)
-	}
-
-	dep.Stacks = []string{"io.buildpacks.stacks.jammy"}
 
 	jammyDependency, err := versionology.NewDependency(dep, "jammy")
 	if err != nil {
 		return nil, fmt.Errorf("could get sha: %w", err)
 	}
 
-	return []versionology.Dependency{bionicDependency, jammyDependency}, nil
+	return []versionology.Dependency{jammyDependency}, nil
 }
 
 func httpGet(url string) ([]byte, error) {

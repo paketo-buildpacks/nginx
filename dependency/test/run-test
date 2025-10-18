@@ -32,11 +32,7 @@ main() {
     exit 1
   fi
 
-  if [[ $(basename -- "${tarball_path}") == *"bionic"* ]]; then
-    echo "Running bionic test..."
-    docker build -t test -f bionic/Dockerfile bionic/
-    docker run --rm -v "$(dirname -- "${tarball_path}"):/tarball_path" test --version "${version}"
-  elif [[ $(basename -- "${tarball_path}") == *"jammy"* ]]; then
+  if [[ $(basename -- "${tarball_path}") == *"jammy"* ]]; then
     echo "Running jammy test..."
     docker build -t test -f jammy/Dockerfile jammy/
     docker run --rm -v "$(dirname -- "${tarball_path}"):/tarball_path" test --version "${version}"
