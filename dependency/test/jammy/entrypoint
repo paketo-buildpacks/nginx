@@ -7,7 +7,7 @@ parent_dir="$(cd "$(dirname "$0")" && pwd)"
 extract_tarball() {
   rm -rf nginx
   mkdir nginx
-  tar -xf "tarball_path/nginx_${version}_linux_x64_jammy_"*".tgz" -C nginx
+  tar -xf "tarball_path/nginx_${version}_${os}_${arch}_jammy_"*".tgz" -C nginx
 }
 
 check_version() {
@@ -49,21 +49,35 @@ check_server() {
 }
 
 main() {
-  local version
+  local version os arch
   version=
+
+  # default values
+  os="linux"
+  arch="x64"
 
   while test $# -gt 0; do
     case $1 in
       --version)
         version=$2
-        shift
+        shift 2
         ;;
+
+      --os)
+        os="${2}"
+        shift 2
+        ;;
+
+      --arch)
+        arch="${2}"
+        shift 2
+        ;;
+
       *)
         echo >&2 "Invalid argument: $1"
         exit 1
         ;;
     esac
-    shift
   done
 
   if [[ "${version}" == "" ]]; then
