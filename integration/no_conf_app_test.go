@@ -164,6 +164,11 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 			}
 
 			response, err := client.Get(fmt.Sprintf("http://localhost:%s", container.HostPort("8080")))
+			if err != nil {
+				logs, err = docker.Container.Logs.Execute(container.ID)
+				Expect(err).NotTo(HaveOccurred())
+				fmt.Println("Container Logs:", logs.String())
+			}
 			Expect(err).NotTo(HaveOccurred())
 			defer response.Body.Close()
 			Expect(response.StatusCode).To(Equal(http.StatusMovedPermanently))
