@@ -1,4 +1,6 @@
-FROM paketobuildpacks/build-jammy-base:0.1.14
+FROM ubuntu:jammy
+
+ENV DEBIAN_FRONTEND=noninteractive
 
 ARG cnb_uid=0
 ARG cnb_gid=0

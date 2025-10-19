@@ -13,12 +13,12 @@ import (
 	"strings"
 
 	"github.com/Masterminds/semver/v3"
-	"github.com/joshuatcasey/libdependency/retrieve"
-	"github.com/joshuatcasey/libdependency/versionology"
+	"github.com/ProtonMail/go-crypto/openpgp"
+	"github.com/paketo-buildpacks/libdependency/retrieve"
+	"github.com/paketo-buildpacks/libdependency/versionology"
 	"github.com/paketo-buildpacks/packit/v2/cargo"
 	"github.com/paketo-buildpacks/packit/v2/fs"
 	"github.com/paketo-buildpacks/packit/v2/vacation"
-	"golang.org/x/crypto/openpgp"
 )
 
 type GithubTagReponse struct {
@@ -205,7 +205,13 @@ func verifyASC(version, path string) error {
 			return fmt.Errorf("could not read armored key ring: %w", err)
 		}
 
-		_, err = openpgp.CheckArmoredDetachedSignature(keyring, file, strings.NewReader(asc))
+		// Reset file pointer to beginning for each key attempt
+		_, err = file.Seek(0, 0)
+		if err != nil {
+			return fmt.Errorf("could not reset file position: %w", err)
+		}
+
+		_, err = openpgp.CheckArmoredDetachedSignature(keyring, file, strings.NewReader(asc), nil)
 		if err != nil {
 			log.Printf("failed to check signature: %s", err.Error())
 			continue
