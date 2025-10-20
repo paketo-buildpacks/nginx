@@ -117,7 +117,6 @@ func generateMetadata(hasVersion versionology.VersionFetcher) ([]versionology.De
 	}
 
 	cpe := fmt.Sprintf("cpe:2.3:a:nginx:nginx:%s:*:*:*:*:*:*:*", nginxVersion)
-	licenses := retrieve.LookupLicenses(nginxSourceURL, decompress)
 	purl := retrieve.GeneratePURL("nginx", nginxVersion, sourceSHA, nginxSourceURL)
 
 	return collections.TransformFuncWithError(getSuportedPlatformStackTargets(), func(platformTarget PlatformStackTarget) (versionology.Dependency, error) {
@@ -125,7 +124,7 @@ func generateMetadata(hasVersion versionology.VersionFetcher) ([]versionology.De
 		configMetadataDependency := cargo.ConfigMetadataDependency{
 			CPE:             cpe,
 			ID:              "nginx",
-			Licenses:        licenses,
+			Licenses:        []interface{}{"BSD-2-Clause", "BSD-2-Clause-NetBSD"},
 			Name:            "Nginx Server",
 			PURL:            purl,
 			Source:          nginxSourceURL,
