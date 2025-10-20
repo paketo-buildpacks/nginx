@@ -5,7 +5,7 @@ id:
 
 test:
 	@cd test; \
-	./run-test --version $(version) --tarballPath $(tarballPath)
+	./run-test --version $(version) --tarballPath $(tarballPath) --os $(os) --arch $(arch)
 
 retrieve:
 	@cd retrieval; \
