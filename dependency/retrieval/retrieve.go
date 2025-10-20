@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 	"time"
 
@@ -133,11 +132,6 @@ func generateMetadata(hasVersion versionology.VersionFetcher) ([]versionology.De
 			Stacks:          platformTarget.stacks,
 			OS:              platformTarget.os,
 			Arch:            platformTarget.arch,
-		}
-
-		if slices.Contains(platformTarget.stacks, "*") {
-			configMetadataDependency.Checksum = configMetadataDependency.SourceChecksum
-			configMetadataDependency.URI = configMetadataDependency.Source
 		}
 
 		return versionology.NewDependency(configMetadataDependency, platformTarget.target)
