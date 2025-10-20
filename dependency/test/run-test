@@ -58,7 +58,7 @@ main() {
     fi
 
     docker build -t test -f jammy/Dockerfile ${docker_platform_arg} jammy/
-    docker run --rm -v "$(dirname -- "${tarball_path}"):/tarball_path" ${docker_platform_arg} test --version "${version}"
+    docker run --rm -v "$(dirname -- "${tarball_path}"):/tarball_path" ${docker_platform_arg} test --version "${version}" --os "${os}" --arch "${arch}"
   fi
 
 }
