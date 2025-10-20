@@ -10,10 +10,13 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
+	"time"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/ProtonMail/go-crypto/openpgp"
+	"github.com/joshuatcasey/collections"
 	"github.com/paketo-buildpacks/libdependency/retrieve"
 	"github.com/paketo-buildpacks/libdependency/versionology"
 	"github.com/paketo-buildpacks/packit/v2/cargo"
@@ -31,6 +34,46 @@ type NginxMetadata struct {
 
 func (nginxMetadata NginxMetadata) Version() *semver.Version {
 	return nginxMetadata.SemverVersion
+}
+
+type StackAndTargetPair struct {
+	stacks []string
+	target string
+}
+
+var supportedStacks = []StackAndTargetPair{
+	{stacks: []string{"io.buildpacks.stacks.jammy"}, target: "jammy"},
+	{stacks: []string{"*"}, target: "NONE"},
+}
+
+var supportedPlatforms = map[string][]string{
+	"linux": {"amd64", "arm64"},
+}
+
+type PlatformStackTarget struct {
+	stacks []string
+	target string
+	os     string
+	arch   string
+}
+
+func getSuportedPlatformStackTargets() []PlatformStackTarget {
+	var platformStackTargets []PlatformStackTarget
+
+	for os, architectures := range supportedPlatforms {
+		for _, arch := range architectures {
+			for _, pair := range supportedStacks {
+				platformStackTargets = append(platformStackTargets, PlatformStackTarget{
+					stacks: pair.stacks,
+					target: pair.target,
+					os:     os,
+					arch:   arch,
+				})
+			}
+		}
+	}
+
+	return platformStackTargets
 }
 
 func main() {
@@ -61,32 +104,46 @@ func getNginxVersions() (versionology.VersionFetcherArray, error) {
 
 func generateMetadata(hasVersion versionology.VersionFetcher) ([]versionology.Dependency, error) {
 	nginxVersion := hasVersion.Version().String()
-	nginxURL := fmt.Sprintf("https://nginx.org/download/nginx-%s.tar.gz", nginxVersion)
+	nginxSourceURL := fmt.Sprintf("https://nginx.org/download/nginx-%s.tar.gz", nginxVersion)
 
 	sourceSHA, err := getDependencySHA(nginxVersion)
 	if err != nil {
 		return nil, fmt.Errorf("could get sha: %w", err)
 	}
 
-	dep := cargo.ConfigMetadataDependency{
-		Version:         nginxVersion,
-		ID:              "nginx",
-		Name:            "Nginx Server",
-		Source:          nginxURL,
-		SourceChecksum:  fmt.Sprintf("sha256:%s", sourceSHA),
-		DeprecationDate: nil,
-		Licenses:        retrieve.LookupLicenses(nginxURL, decompress),
-		PURL:            retrieve.GeneratePURL("nginx", nginxVersion, sourceSHA, nginxURL),
-		CPE:             fmt.Sprintf("cpe:2.3:a:nginx:nginx:%s:*:*:*:*:*:*:*", nginxVersion),
-		Stacks:          []string{"io.buildpacks.stacks.jammy"},
-	}
-
-	jammyDependency, err := versionology.NewDependency(dep, "jammy")
+	eolDate, err := getEOL(hasVersion.Version())
 	if err != nil {
-		return nil, fmt.Errorf("could get sha: %w", err)
+		return nil, err
 	}
 
-	return []versionology.Dependency{jammyDependency}, nil
+	cpe := fmt.Sprintf("cpe:2.3:a:nginx:nginx:%s:*:*:*:*:*:*:*", nginxVersion)
+	licenses := retrieve.LookupLicenses(nginxSourceURL, decompress)
+	purl := retrieve.GeneratePURL("nginx", nginxVersion, sourceSHA, nginxSourceURL)
+
+	return collections.TransformFuncWithError(getSuportedPlatformStackTargets(), func(platformTarget PlatformStackTarget) (versionology.Dependency, error) {
+		fmt.Printf("Generating metadata for %s %s %s %s\n", platformTarget.os, platformTarget.arch, platformTarget.target, nginxVersion)
+		configMetadataDependency := cargo.ConfigMetadataDependency{
+			CPE:             cpe,
+			ID:              "nginx",
+			Licenses:        licenses,
+			Name:            "Nginx Server",
+			PURL:            purl,
+			Source:          nginxSourceURL,
+			SourceChecksum:  fmt.Sprintf("sha256:%s", sourceSHA),
+			Version:         nginxVersion,
+			DeprecationDate: eolDate,
+			Stacks:          platformTarget.stacks,
+			OS:              platformTarget.os,
+			Arch:            platformTarget.arch,
+		}
+
+		if slices.Contains(platformTarget.stacks, "*") {
+			configMetadataDependency.Checksum = configMetadataDependency.SourceChecksum
+			configMetadataDependency.URI = configMetadataDependency.Source
+		}
+
+		return versionology.NewDependency(configMetadataDependency, platformTarget.target)
+	})
 }
 
 func httpGet(url string) ([]byte, error) {
@@ -232,4 +289,41 @@ func decompress(artifact io.Reader, destination string) error {
 	}
 
 	return nil
+}
+
+func getEOL(version *semver.Version) (*time.Time, error) {
+	minorVersion := fmt.Sprintf("%d.%d", version.Major(), version.Minor())
+	endpoint := fmt.Sprintf("https://endoflife.date/api/nginx/%s.json", minorVersion)
+	resp, err := http.Get(endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query url %q: %w", endpoint, err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to query url %q with: status code %d", endpoint, resp.StatusCode)
+	}
+
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	type eolData struct {
+		EolString string `json:"eol"`
+	}
+
+	d := eolData{}
+
+	err = json.Unmarshal(body, &d)
+	if err != nil {
+		return nil, fmt.Errorf("could not unmarshal eol metadata: %w", err)
+	}
+
+	eol, err := time.Parse(time.DateOnly, d.EolString)
+	if err != nil {
+		return nil, fmt.Errorf("could not parse eol %q: %w", d.EolString, err)
+	}
+
+	return &eol, nil
 }
