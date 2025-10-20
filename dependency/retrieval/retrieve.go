@@ -43,7 +43,6 @@ type StackAndTargetPair struct {
 
 var supportedStacks = []StackAndTargetPair{
 	{stacks: []string{"io.buildpacks.stacks.jammy"}, target: "jammy"},
-	{stacks: []string{"*"}, target: "NONE"},
 }
 
 var supportedPlatforms = map[string][]string{
