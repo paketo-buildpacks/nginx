@@ -103,7 +103,7 @@ func testLogging(t *testing.T, context spec.G, it spec.S) {
 				`      buildpack.yml    -> "1.29.*"`,
 			))
 			Expect(logs).To(matchers.ContainLines(
-				MatchRegexp(`    Selected Nginx Server version \(using BP_NGINX_VERSION\): 1\.26\.\d+`),
+				MatchRegexp(`    Selected Nginx Server version \(using BP_NGINX_VERSION\): 1\.28\.\d+`),
 			))
 			Expect(logs).To(matchers.ContainLines(
 				"  Executing build process",
