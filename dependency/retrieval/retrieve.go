@@ -285,7 +285,7 @@ func decompress(artifact io.Reader, destination string) error {
 
 func getEOL(version *semver.Version) (*time.Time, error) {
 	minorVersion := fmt.Sprintf("%d.%d", version.Major(), version.Minor())
-	endpoint := fmt.Sprintf("https://endoflife.date/api/nginx/%s.json", minorVersion)
+	endpoint := fmt.Sprintf("https://endoflife.date/api/v1/products/nginx/releases/%s", minorVersion)
 	resp, err := http.Get(endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query url %q: %w", endpoint, err)
@@ -302,7 +302,10 @@ func getEOL(version *semver.Version) (*time.Time, error) {
 	}
 
 	type eolData struct {
-		EolString string `json:"eol"`
+		Result struct {
+			ReleaseDate string `json:"releaseDate"`
+			EolFrom     string `json:"eolFrom"`
+		} `json:"result"`
 	}
 
 	d := eolData{}
@@ -312,9 +315,30 @@ func getEOL(version *semver.Version) (*time.Time, error) {
 		return nil, fmt.Errorf("could not unmarshal eol metadata: %w", err)
 	}
 
-	eol, err := time.Parse(time.DateOnly, d.EolString)
-	if err != nil {
-		return nil, fmt.Errorf("could not parse eol %q: %w", d.EolString, err)
+	var eol time.Time
+
+	dateString := strings.TrimSpace(d.Result.EolFrom)
+	if dateString != "" {
+		eol, err = time.Parse(time.DateOnly, dateString)
+		if err != nil {
+			return nil, fmt.Errorf("could not parse eol %q: %w", dateString, err)
+		}
+	} else {
+		dateString = strings.TrimSpace(d.Result.ReleaseDate)
+		if dateString == "" {
+			return nil, nil
+		}
+
+		releaseDate, err := time.Parse(time.DateOnly, dateString)
+		if err != nil {
+			return nil, fmt.Errorf("could not parse release date %q: %w", dateString, err)
+		}
+
+		// this is a fallback in case endoflife.date does not provide an EOL date
+		// nginx minor versions are supported for 1 year after their release date, which typically happens in April
+		// so as the fallback, we are just bumping the release date by one year
+		nextYear := releaseDate.AddDate(1, 0, 0)
+		eol = time.Date(nextYear.Year(), time.April, 30, 0, 0, 0, 0, nextYear.Location())
 	}
 
 	return &eol, nil
