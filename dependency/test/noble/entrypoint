@@ -9,6 +9,7 @@ extract_tarball() {
   rm -rf nginx
   mkdir nginx
   tar -xf "tarball_path/nginx_${version}_${os}_${arch}_noble_"*".tgz" -C nginx
+  export LD_LIBRARY_PATH="$PWD/nginx/lib"
 }
 
 check_version() {

@@ -6,7 +6,7 @@ ARG cnb_uid=0
 ARG cnb_gid=0
 
 RUN apt-get -y update
-RUN apt-get -y install curl libpcre3-dev
+RUN apt-get -y install curl
 
 USER ${cnb_uid}:${cnb_gid}
 

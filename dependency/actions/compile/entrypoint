@@ -122,6 +122,8 @@ function main() {
   pushd "${dest_dir}"
     rm -Rf ./html ./conf
     mkdir conf
+    mkdir lib
+    cp /lib/aarch64-linux-gnu/libpcre.so.3 ./lib/
     tar zcvf "${output_dir}/temp.tgz" .
   popd
 
