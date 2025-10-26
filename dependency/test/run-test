@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -euo pipefail
+set -x
 
 if [[ "$(uname)" != "Darwin" ]]; then
   shopt -s inherit_errexit
@@ -57,7 +58,9 @@ main() {
       echo "docker commands will be called with ${docker_platform_arg}"
     fi
 
+    echo 'Building...'
     docker build -t test -f noble/Dockerfile ${docker_platform_arg} noble/
+    echo 'Running...'
     docker run --rm -v "$(dirname -- "${tarball_path}"):/tarball_path" ${docker_platform_arg} test --version "${version}" --os "${os}" --arch "${arch}"
   fi
 
