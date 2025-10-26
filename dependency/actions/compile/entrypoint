@@ -123,7 +123,7 @@ function main() {
     rm -Rf ./html ./conf
     mkdir conf
     mkdir lib
-    cp /lib/aarch64-linux-gnu/libpcre.so.3 ./lib/
+    find / -name "libpcre.so.3*" -exec cp {} ./lib/ \;
     tar zcvf "${output_dir}/temp.tgz" .
   popd
 
