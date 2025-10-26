@@ -20,7 +20,6 @@ import (
 	"github.com/paketo-buildpacks/libdependency/versionology"
 	"github.com/paketo-buildpacks/packit/v2/cargo"
 	"github.com/paketo-buildpacks/packit/v2/fs"
-	"github.com/paketo-buildpacks/packit/v2/vacation"
 )
 
 type GithubTagReponse struct {
@@ -42,6 +41,7 @@ type StackAndTargetPair struct {
 
 var supportedStacks = []StackAndTargetPair{
 	{stacks: []string{"io.buildpacks.stacks.jammy"}, target: "jammy"},
+	{stacks: []string{"io.buildpacks.stacks.noble"}, target: "noble"},
 }
 
 var supportedPlatforms = map[string][]string{
@@ -270,17 +270,6 @@ func verifyASC(version, path string) error {
 	}
 
 	return errors.New("no valid pgp keys provided")
-}
-
-func decompress(artifact io.Reader, destination string) error {
-	archive := vacation.NewArchive(artifact)
-
-	err := archive.StripComponents(1).Decompress(destination)
-	if err != nil {
-		return fmt.Errorf("failed to decompress source file: %w", err)
-	}
-
-	return nil
 }
 
 func getEOL(version *semver.Version) (*time.Time, error) {
