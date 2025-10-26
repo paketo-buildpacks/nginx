@@ -4,43 +4,13 @@ The NGINX buildpack provides the [NGINX](https://www.nginx.com/) binary distribu
 The buildpack installs the NGINX binary distribution onto the `$PATH` which
 makes it available for subsequent buildpacks and/or the application image.
 
-#### The NGINX buildpack is compatible with the following builder(s):
-- [Paketo Full Builder](https://github.com/paketo-buildpacks/full-builder)
-- [Paketo Base Builder](https://github.com/paketo-buildpacks/base-builder)
+#### The NGINX buildpack is compatible with the following builders:
 
-## Integration
-
-The NGINX CNB provides nginx as a dependency. Downstream buildpacks, like
-[PHP Web CNB](https://github.com/paketo-buildpacks/php-web) can require the nginx
-dependency by generating a [Build Plan
-TOML](https://github.com/buildpacks/spec/blob/master/buildpack.md#build-plan-toml)
-file that looks like the following:
-
-```toml
-[[requires]]
-
-  # The name of the NGINX dependency is "nginx". This value is considered
-  # part of the public API for the buildpack and will not change without a plan
-  # for deprecation.
-  name = "nginx"
-
-  # The version of the NGINX dependency is not required. In the case it
-  # is not specified, the buildpack will provide the default version, which can
-  # be seen in the buildpack.toml file.
-  # If you wish to request a specific version, the buildpack supports
-  # specifying a semver constraint in the form of "1.*", "1.17.*", or even
-  # "1.17.9".
-  version = "1.17.9"
-
-  # The NGINX buildpack supports some non-required metadata options.
-  [requires.metadata]
-
-    # Setting the launch flag to true will ensure that the NGINX
-    # dependency is available on the $PATH for the running application. If you are
-    # writing an application that needs to run NGINX at runtime, this flag should
-    # be set to true.
-    launch = true
-```
+- Paketo Jammy
+  - `docker.io/paketobuildpacks/builder-jammy-base`
+  - `docker.io/paketobuildpacks/builder-jammy-full`
+- Paketo Noble
+  - `docker.io/paketobuildpacks/ubuntu-noble-builder`
 
 ## Usage
 
@@ -192,4 +162,38 @@ location ~* ^/api(.*) {
 We can set the relative path into the BP_WEB_SERVER_INCLUDE_FILE_PATH env
 ```
 BP_WEB_SERVER_INCLUDE_FILE_PATH=./proxy.conf
+```
+
+## Integration
+
+The NGINX CNB provides nginx as a dependency. Downstream buildpacks, like
+[PHP Web CNB](https://github.com/paketo-buildpacks/php-web) can require the nginx
+dependency by generating a [Build Plan
+TOML](https://github.com/buildpacks/spec/blob/master/buildpack.md#build-plan-toml)
+file that looks like the following:
+
+```toml
+[[requires]]
+
+  # The name of the NGINX dependency is "nginx". This value is considered
+  # part of the public API for the buildpack and will not change without a plan
+  # for deprecation.
+  name = "nginx"
+
+  # The version of the NGINX dependency is not required. In the case it
+  # is not specified, the buildpack will provide the default version, which can
+  # be seen in the buildpack.toml file.
+  # If you wish to request a specific version, the buildpack supports
+  # specifying a semver constraint in the form of "1.*", "1.17.*", or even
+  # "1.17.9".
+  version = "1.17.9"
+
+  # The NGINX buildpack supports some non-required metadata options.
+  [requires.metadata]
+
+    # Setting the launch flag to true will ensure that the NGINX
+    # dependency is available on the $PATH for the running application. If you are
+    # writing an application that needs to run NGINX at runtime, this flag should
+    # be set to true.
+    launch = true
 ```

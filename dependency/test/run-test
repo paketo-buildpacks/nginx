@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -euo pipefail
+set -x
 
 if [[ "$(uname)" != "Darwin" ]]; then
   shopt -s inherit_errexit
@@ -46,8 +47,8 @@ main() {
     exit 1
   fi
 
-  if [[ $(basename -- "${tarball_path}") == *"jammy"* ]]; then
-    echo "Running jammy test..."
+  if [[ $(basename -- "${tarball_path}") == *"noble"* ]]; then
+    echo "Running noble test..."
 
     # When --os and --arch are provided, the --platform arg is passed to docker build and run commands.
     # This assumes the runner has qemu and buildkit set up, and that the docker daemon and cli experimental features are enabled.
@@ -57,7 +58,9 @@ main() {
       echo "docker commands will be called with ${docker_platform_arg}"
     fi
 
-    docker build -t test -f jammy/Dockerfile ${docker_platform_arg} jammy/
+    echo 'Building...'
+    docker build -t test -f noble/Dockerfile ${docker_platform_arg} noble/
+    echo 'Running...'
     docker run --rm -v "$(dirname -- "${tarball_path}"):/tarball_path" ${docker_platform_arg} test --version "${version}" --os "${os}" --arch "${arch}"
   fi
 
