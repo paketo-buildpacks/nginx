@@ -9,7 +9,17 @@ api = "0.7"
   sbom-formats = ["application/vnd.cyclonedx+json", "application/spdx+json", "application/vnd.syft+json"]
 
 [metadata]
-  include-files = ["bin/build", "bin/detect", "bin/run", "bin/configure", "buildpack.toml"]
+  include-files = [
+    "buildpack.toml",
+    "linux/amd64/bin/build",
+    "linux/amd64/bin/detect",
+    "linux/amd64/bin/run",
+    "linux/arm64/bin/configure",
+    "linux/arm64/bin/build",
+    "linux/arm64/bin/detect",
+    "linux/arm64/bin/run",
+    "linux/amd64/bin/configure"
+  ]
   pre-package = "./scripts/build.sh --target linux/amd64 --target linux/arm64"
   [metadata.default-versions]
     nginx = "1.29.*"
