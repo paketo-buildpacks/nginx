@@ -1,7 +1,7 @@
 {
   "builders": [
     "index.docker.io/paketobuildpacks/builder-jammy-buildpackless-base:latest",
-    "docker.io/paketobuildpacks/ubuntu-noble-builder-buildpackless:latest"
+    "index.docker.io/paketobuildpacks/ubuntu-noble-builder-buildpackless:latest"
   ],
   "build-plan": "index.docker.io/paketocommunity/build-plan",
   "watchexec": "index.docker.io/paketobuildpacks/watchexec"
