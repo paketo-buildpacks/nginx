@@ -170,7 +170,7 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 				fmt.Println("Container Logs:", logs.String())
 			}
 			Expect(err).NotTo(HaveOccurred())
-			defer response.Body.Close()
+			defer func() { Expect(response.Body.Close()).NotTo(HaveOccurred()) }()
 			Expect(response.StatusCode).To(Equal(http.StatusMovedPermanently))
 
 			// Assert that the server attempts to hit HTTPS URL instead of HTTP
@@ -224,7 +224,7 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 				response, err = http.Get(fmt.Sprintf("http://localhost:%s", container.HostPort("8080")))
 				return err
 			}).Should(Succeed())
-			defer response.Body.Close()
+			defer func() { Expect(response.Body.Close()).NotTo(HaveOccurred()) }()
 
 			Expect(response.StatusCode).To(Equal(http.StatusUnauthorized))
 
@@ -239,7 +239,7 @@ func testNoConfApp(t *testing.T, context spec.G, it spec.S) {
 				response, err = http.DefaultClient.Do(req)
 				return err
 			}).Should(Succeed())
-			defer response.Body.Close()
+			defer func() { Expect(response.Body.Close()).NotTo(HaveOccurred()) }()
 
 			contents, err := io.ReadAll(response.Body)
 			Expect(err).NotTo(HaveOccurred())

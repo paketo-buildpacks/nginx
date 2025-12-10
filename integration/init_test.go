@@ -51,14 +51,14 @@ func TestIntegration(t *testing.T) {
 
 	file, err := os.Open("../buildpack.toml")
 	Expect(err).NotTo(HaveOccurred())
-	defer file.Close()
+	defer func() { Expect(file.Close()).To(Succeed()) }()
 
 	_, err = toml.NewDecoder(file).Decode(&settings)
 	Expect(err).NotTo(HaveOccurred())
 
 	file, err = os.Open("../integration.json")
 	Expect(err).NotTo(HaveOccurred())
-	defer file.Close()
+	defer func() { Expect(file.Close()).To(Succeed()) }()
 
 	Expect(json.NewDecoder(file).Decode(&settings.Config)).To(Succeed())
 
