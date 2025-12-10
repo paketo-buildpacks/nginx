@@ -49,19 +49,18 @@ func TestIntegration(t *testing.T) {
 	root, err := filepath.Abs("./..")
 	Expect(err).ToNot(HaveOccurred())
 
-	file, err := os.Open("../buildpack.toml")
+	buildpackTomlFile, err := os.Open("../buildpack.toml")
 	Expect(err).NotTo(HaveOccurred())
-	defer file.Close()
+	defer func() { Expect(buildpackTomlFile.Close()).To(Succeed()) }()
 
-	_, err = toml.NewDecoder(file).Decode(&settings)
+	_, err = toml.NewDecoder(buildpackTomlFile).Decode(&settings)
 	Expect(err).NotTo(HaveOccurred())
 
-	file, err = os.Open("../integration.json")
+	integrationJsonFile, err := os.Open("../integration.json")
 	Expect(err).NotTo(HaveOccurred())
-	defer file.Close()
+	defer func() { Expect(integrationJsonFile.Close()).To(Succeed()) }()
 
-	Expect(json.NewDecoder(file).Decode(&settings.Config)).To(Succeed())
-
+	Expect(json.NewDecoder(integrationJsonFile).Decode(&settings.Config)).To(Succeed())
 	buildpackStore := occam.NewBuildpackStore()
 	libpakBuildpackStore := occam.NewBuildpackStore().WithPackager(packagers.NewLibpak())
 

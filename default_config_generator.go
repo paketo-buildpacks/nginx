@@ -72,7 +72,11 @@ func (g DefaultConfigGenerator) Generate(config Configuration) error {
 	if err != nil {
 		return fmt.Errorf("failed to create %s: %w", config.NGINXConfLocation, err)
 	}
-	defer f.Close()
+	defer func() {
+		if err := f.Close(); err != nil {
+			fmt.Fprintf(os.Stderr, "failed to close file: %v\n", err)
+		}
+	}()
 
 	_, err = io.Copy(f, &b)
 	if err != nil {
