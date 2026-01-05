@@ -169,7 +169,6 @@ function util::tools::pack::install() {
     if [[ "${pack_config_enable_experimental}" == "true" ]]; then
       "${dir}"/pack config experimental true
     fi
-
   else
     util::print::info "Using pack $("${dir}"/pack version)"
   fi
