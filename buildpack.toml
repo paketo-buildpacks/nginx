@@ -16,70 +16,6 @@ api = "0.7"
 
   [[metadata.dependencies]]
     arch = "amd64"
-    checksum = "sha256:7b4c9607ecf151bc8b12e06dff93766d903ca1c9938ed855826988bbddbb1acd"
-    cpe = "cpe:2.3:a:nginx:nginx:1.29.4:*:*:*:*:*:*:*"
-    deprecation_date = "2026-04-30T00:00:00Z"
-    id = "nginx"
-    licenses = ["BSD-2-Clause", "BSD-2-Clause-NetBSD"]
-    name = "Nginx Server"
-    os = "linux"
-    purl = "pkg:generic/nginx@1.29.4?checksum=5a7d37eee505866fbab5810fa9f78247d6d5d9157a595c4e7a72043141ddab25&download_url=https://nginx.org/download/nginx-1.29.4.tar.gz"
-    source = "https://nginx.org/download/nginx-1.29.4.tar.gz"
-    source-checksum = "sha256:5a7d37eee505866fbab5810fa9f78247d6d5d9157a595c4e7a72043141ddab25"
-    stacks = ["io.buildpacks.stacks.jammy"]
-    uri = "https://artifacts.paketo.io/nginx/nginx_1.29.4_linux_amd64_jammy_7b4c9607.tgz"
-    version = "1.29.4"
-
-  [[metadata.dependencies]]
-    arch = "arm64"
-    checksum = "sha256:b594ee363130d7c19417a25ec71cefab90c4d34ef9f7084500c519f80d997814"
-    cpe = "cpe:2.3:a:nginx:nginx:1.29.4:*:*:*:*:*:*:*"
-    deprecation_date = "2026-04-30T00:00:00Z"
-    id = "nginx"
-    licenses = ["BSD-2-Clause", "BSD-2-Clause-NetBSD"]
-    name = "Nginx Server"
-    os = "linux"
-    purl = "pkg:generic/nginx@1.29.4?checksum=5a7d37eee505866fbab5810fa9f78247d6d5d9157a595c4e7a72043141ddab25&download_url=https://nginx.org/download/nginx-1.29.4.tar.gz"
-    source = "https://nginx.org/download/nginx-1.29.4.tar.gz"
-    source-checksum = "sha256:5a7d37eee505866fbab5810fa9f78247d6d5d9157a595c4e7a72043141ddab25"
-    stacks = ["io.buildpacks.stacks.jammy"]
-    uri = "https://artifacts.paketo.io/nginx/nginx_1.29.4_linux_arm64_jammy_b594ee36.tgz"
-    version = "1.29.4"
-
-  [[metadata.dependencies]]
-    arch = "amd64"
-    checksum = "sha256:c71a83a095f8ecbc45ca707a89e5db9f43548f0f34b4f8d06a9e3bc1792e6d2d"
-    cpe = "cpe:2.3:a:nginx:nginx:1.29.4:*:*:*:*:*:*:*"
-    deprecation_date = "2026-04-30T00:00:00Z"
-    id = "nginx"
-    licenses = ["BSD-2-Clause", "BSD-2-Clause-NetBSD"]
-    name = "Nginx Server"
-    os = "linux"
-    purl = "pkg:generic/nginx@1.29.4?checksum=5a7d37eee505866fbab5810fa9f78247d6d5d9157a595c4e7a72043141ddab25&download_url=https://nginx.org/download/nginx-1.29.4.tar.gz"
-    source = "https://nginx.org/download/nginx-1.29.4.tar.gz"
-    source-checksum = "sha256:5a7d37eee505866fbab5810fa9f78247d6d5d9157a595c4e7a72043141ddab25"
-    stacks = ["io.buildpacks.stacks.noble"]
-    uri = "https://artifacts.paketo.io/nginx/nginx_1.29.4_linux_amd64_noble_c71a83a0.tgz"
-    version = "1.29.4"
-
-  [[metadata.dependencies]]
-    arch = "arm64"
-    checksum = "sha256:6ed4479aa300ffb18d90730c14da4afc9190f13554b804765ca4409541888b3b"
-    cpe = "cpe:2.3:a:nginx:nginx:1.29.4:*:*:*:*:*:*:*"
-    deprecation_date = "2026-04-30T00:00:00Z"
-    id = "nginx"
-    licenses = ["BSD-2-Clause", "BSD-2-Clause-NetBSD"]
-    name = "Nginx Server"
-    os = "linux"
-    purl = "pkg:generic/nginx@1.29.4?checksum=5a7d37eee505866fbab5810fa9f78247d6d5d9157a595c4e7a72043141ddab25&download_url=https://nginx.org/download/nginx-1.29.4.tar.gz"
-    source = "https://nginx.org/download/nginx-1.29.4.tar.gz"
-    source-checksum = "sha256:5a7d37eee505866fbab5810fa9f78247d6d5d9157a595c4e7a72043141ddab25"
-    stacks = ["io.buildpacks.stacks.noble"]
-    uri = "https://artifacts.paketo.io/nginx/nginx_1.29.4_linux_arm64_noble_6ed4479a.tgz"
-    version = "1.29.4"
-
-  [[metadata.dependencies]]
-    arch = "amd64"
     checksum = "sha256:ada6df892c7ae35ffa32f0224b10fdaf93360717ffb7cde4f88c9aa4359522d5"
     cpe = "cpe:2.3:a:nginx:nginx:1.29.5:*:*:*:*:*:*:*"
     deprecation_date = "2026-04-30T00:00:00Z"
@@ -141,6 +77,70 @@ api = "0.7"
     stacks = ["io.buildpacks.stacks.noble"]
     uri = "https://artifacts.paketo.io/nginx/nginx_1.29.5_linux_arm64_noble_16b2519c.tgz"
     version = "1.29.5"
+
+  [[metadata.dependencies]]
+    arch = "amd64"
+    checksum = "sha256:4e60a2107ffde2098824bec232f9bc6c9561c73c47c26cf210c5f6607d1cc09b"
+    cpe = "cpe:2.3:a:nginx:nginx:1.29.6:*:*:*:*:*:*:*"
+    deprecation_date = "2026-04-30T00:00:00Z"
+    id = "nginx"
+    licenses = ["BSD-2-Clause", "BSD-2-Clause-NetBSD"]
+    name = "Nginx Server"
+    os = "linux"
+    purl = "pkg:generic/nginx@1.29.6?checksum=316f298cd9f061d6d0679696152710285b72f75d88eb1f7e323f40c5c52fe0d7&download_url=https://nginx.org/download/nginx-1.29.6.tar.gz"
+    source = "https://nginx.org/download/nginx-1.29.6.tar.gz"
+    source-checksum = "sha256:316f298cd9f061d6d0679696152710285b72f75d88eb1f7e323f40c5c52fe0d7"
+    stacks = ["io.buildpacks.stacks.jammy"]
+    uri = "https://artifacts.paketo.io/nginx/nginx_1.29.6_linux_amd64_jammy_4e60a210.tgz"
+    version = "1.29.6"
+
+  [[metadata.dependencies]]
+    arch = "arm64"
+    checksum = "sha256:e13fecbec125e7f2028fa80bcb4e5f202247feda25559bcd8f65a7022463ff7d"
+    cpe = "cpe:2.3:a:nginx:nginx:1.29.6:*:*:*:*:*:*:*"
+    deprecation_date = "2026-04-30T00:00:00Z"
+    id = "nginx"
+    licenses = ["BSD-2-Clause", "BSD-2-Clause-NetBSD"]
+    name = "Nginx Server"
+    os = "linux"
+    purl = "pkg:generic/nginx@1.29.6?checksum=316f298cd9f061d6d0679696152710285b72f75d88eb1f7e323f40c5c52fe0d7&download_url=https://nginx.org/download/nginx-1.29.6.tar.gz"
+    source = "https://nginx.org/download/nginx-1.29.6.tar.gz"
+    source-checksum = "sha256:316f298cd9f061d6d0679696152710285b72f75d88eb1f7e323f40c5c52fe0d7"
+    stacks = ["io.buildpacks.stacks.jammy"]
+    uri = "https://artifacts.paketo.io/nginx/nginx_1.29.6_linux_arm64_jammy_e13fecbe.tgz"
+    version = "1.29.6"
+
+  [[metadata.dependencies]]
+    arch = "amd64"
+    checksum = "sha256:2110190ea4f3b2eac93776315730ea340e15e232d391c629dbe605f2c67e3ed0"
+    cpe = "cpe:2.3:a:nginx:nginx:1.29.6:*:*:*:*:*:*:*"
+    deprecation_date = "2026-04-30T00:00:00Z"
+    id = "nginx"
+    licenses = ["BSD-2-Clause", "BSD-2-Clause-NetBSD"]
+    name = "Nginx Server"
+    os = "linux"
+    purl = "pkg:generic/nginx@1.29.6?checksum=316f298cd9f061d6d0679696152710285b72f75d88eb1f7e323f40c5c52fe0d7&download_url=https://nginx.org/download/nginx-1.29.6.tar.gz"
+    source = "https://nginx.org/download/nginx-1.29.6.tar.gz"
+    source-checksum = "sha256:316f298cd9f061d6d0679696152710285b72f75d88eb1f7e323f40c5c52fe0d7"
+    stacks = ["io.buildpacks.stacks.noble"]
+    uri = "https://artifacts.paketo.io/nginx/nginx_1.29.6_linux_amd64_noble_2110190e.tgz"
+    version = "1.29.6"
+
+  [[metadata.dependencies]]
+    arch = "arm64"
+    checksum = "sha256:2046806263b8b84e4b5f0f98088c8f3ab363d70b1c19b07247813111d4802279"
+    cpe = "cpe:2.3:a:nginx:nginx:1.29.6:*:*:*:*:*:*:*"
+    deprecation_date = "2026-04-30T00:00:00Z"
+    id = "nginx"
+    licenses = ["BSD-2-Clause", "BSD-2-Clause-NetBSD"]
+    name = "Nginx Server"
+    os = "linux"
+    purl = "pkg:generic/nginx@1.29.6?checksum=316f298cd9f061d6d0679696152710285b72f75d88eb1f7e323f40c5c52fe0d7&download_url=https://nginx.org/download/nginx-1.29.6.tar.gz"
+    source = "https://nginx.org/download/nginx-1.29.6.tar.gz"
+    source-checksum = "sha256:316f298cd9f061d6d0679696152710285b72f75d88eb1f7e323f40c5c52fe0d7"
+    stacks = ["io.buildpacks.stacks.noble"]
+    uri = "https://artifacts.paketo.io/nginx/nginx_1.29.6_linux_arm64_noble_20468062.tgz"
+    version = "1.29.6"
 
   [[metadata.dependencies]]
     arch = "amd64"
