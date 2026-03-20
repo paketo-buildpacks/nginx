@@ -56,6 +56,8 @@ main() {
     target="jammy"
   elif [[ $(basename -- "${tarball_path}") == *"cflinuxfs4"* ]]; then
     target="cflinuxfs4"
+  elif [[ $(basename -- "${tarball_path}") == *"cflinuxfs5"* ]]; then
+    target="cflinuxfs5"
   else
     echo "Could not infer target from tarball name: ${tarball_path}"
     exit 1

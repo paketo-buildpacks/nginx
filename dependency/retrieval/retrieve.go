@@ -44,6 +44,7 @@ var supportedStacks = []StackAndTargetPair{
 	{stacks: []string{"io.buildpacks.stacks.jammy"}, target: "jammy", arches: []string{"amd64", "arm64"}},
 	{stacks: []string{"io.buildpacks.stacks.noble"}, target: "noble", arches: []string{"amd64", "arm64"}},
 	{stacks: []string{"cflinuxfs4"}, target: "cflinuxfs4", arches: []string{"amd64"}},
+	{stacks: []string{"cflinuxfs5"}, target: "cflinuxfs5", arches: []string{"amd64"}},
 }
 
 var supportedPlatforms = map[string][]string{
