@@ -47,22 +47,34 @@ main() {
     exit 1
   fi
 
+  local target
+  target=""
+
   if [[ $(basename -- "${tarball_path}") == *"noble"* ]]; then
-    echo "Running noble test..."
-
-    # When --os and --arch are provided, the --platform arg is passed to docker build and run commands.
-    # This assumes the runner has qemu and buildkit set up, and that the docker daemon and cli experimental features are enabled.
-    docker_platform_arg=""
-    if [[ "${os}" != "" && "${arch}" != "" ]]; then
-      docker_platform_arg="--platform ${os}/${arch}"
-      echo "docker commands will be called with ${docker_platform_arg}"
-    fi
-
-    echo 'Building...'
-    docker build -t test -f noble/Dockerfile ${docker_platform_arg} noble/
-    echo 'Running...'
-    docker run --rm -v "$(dirname -- "${tarball_path}"):/tarball_path" ${docker_platform_arg} test --version "${version}" --os "${os}" --arch "${arch}"
+    target="noble"
+  elif [[ $(basename -- "${tarball_path}") == *"jammy"* ]]; then
+    target="jammy"
+  elif [[ $(basename -- "${tarball_path}") == *"cflinuxfs4"* ]]; then
+    target="cflinuxfs4"
+  else
+    echo "Could not infer target from tarball name: ${tarball_path}"
+    exit 1
   fi
+
+  echo "Running ${target} test..."
+
+  # When --os and --arch are provided, the --platform arg is passed to docker build and run commands.
+  # This assumes the runner has qemu and buildkit set up, and that the docker daemon and cli experimental features are enabled.
+  docker_platform_arg=""
+  if [[ "${os}" != "" && "${arch}" != "" ]]; then
+    docker_platform_arg="--platform ${os}/${arch}"
+    echo "docker commands will be called with ${docker_platform_arg}"
+  fi
+
+  echo 'Building...'
+  docker build -t test -f "${target}/Dockerfile" ${docker_platform_arg} "${target}/"
+  echo 'Running...'
+  docker run --rm -v "$(dirname -- "${tarball_path}"):/tarball_path" ${docker_platform_arg} test --version "${version}" --os "${os}" --arch "${arch}"
 
 }
 

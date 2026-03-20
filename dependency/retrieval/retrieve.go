@@ -37,11 +37,13 @@ func (nginxMetadata NginxMetadata) Version() *semver.Version {
 type StackAndTargetPair struct {
 	stacks []string
 	target string
+	arches []string
 }
 
 var supportedStacks = []StackAndTargetPair{
-	{stacks: []string{"io.buildpacks.stacks.jammy"}, target: "jammy"},
-	{stacks: []string{"io.buildpacks.stacks.noble"}, target: "noble"},
+	{stacks: []string{"io.buildpacks.stacks.jammy"}, target: "jammy", arches: []string{"amd64", "arm64"}},
+	{stacks: []string{"io.buildpacks.stacks.noble"}, target: "noble", arches: []string{"amd64", "arm64"}},
+	{stacks: []string{"cflinuxfs4"}, target: "cflinuxfs4", arches: []string{"amd64"}},
 }
 
 var supportedPlatforms = map[string][]string{
@@ -58,9 +60,9 @@ type PlatformStackTarget struct {
 func getSuportedPlatformStackTargets() []PlatformStackTarget {
 	var platformStackTargets []PlatformStackTarget
 
-	for os, architectures := range supportedPlatforms {
-		for _, arch := range architectures {
-			for _, pair := range supportedStacks {
+	for os := range supportedPlatforms {
+		for _, pair := range supportedStacks {
+			for _, arch := range pair.arches {
 				platformStackTargets = append(platformStackTargets, PlatformStackTarget{
 					stacks: pair.stacks,
 					target: pair.target,

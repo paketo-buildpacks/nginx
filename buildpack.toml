@@ -284,6 +284,9 @@ api = "0.7"
     stable = "1.28.*"
 
 [[stacks]]
+  id = "cflinuxfs4"
+
+[[stacks]]
   id = "io.buildpacks.stacks.jammy"
 
 [[stacks]]
