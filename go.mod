@@ -53,7 +53,7 @@ require (
 	github.com/anchore/go-version v1.2.2-0.20200701162849-18adb9c92b9b // indirect
 	github.com/anchore/packageurl-go v0.2.0 // indirect
 	github.com/anchore/stereoscope v0.1.23 // indirect
-	github.com/anchore/syft v1.43.0 // indirect
+	github.com/anchore/syft v1.44.0 // indirect
 	github.com/andybalholm/brotli v1.2.1 // indirect
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
 	github.com/aquasecurity/go-pep440-version v0.0.1 // indirect
@@ -95,7 +95,7 @@ require (
 	github.com/clipperhouse/displaywidth v0.11.0 // indirect
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
 	github.com/cloudflare/circl v1.6.3 // indirect
-	github.com/cncf/xds/go v0.0.0-20251210132809-ee656c7534f5 // indirect
+	github.com/cncf/xds/go v0.0.0-20260202195803-dba9d589def2 // indirect
 	github.com/containerd/cgroups/v3 v3.1.3 // indirect
 	github.com/containerd/containerd/api v1.11.0 // indirect
 	github.com/containerd/containerd/v2 v2.3.0 // indirect
@@ -115,7 +115,7 @@ require (
 	github.com/deitch/magic v0.0.0-20230404182410-1ff89d7342da // indirect
 	github.com/diskfs/go-diskfs v1.7.0 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
-	github.com/docker/cli v29.4.1+incompatible // indirect
+	github.com/docker/cli v29.4.2+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.9.6 // indirect
 	github.com/docker/go-connections v0.7.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
@@ -155,7 +155,7 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.15 // indirect
 	github.com/googleapis/gax-go/v2 v2.22.0 // indirect
-	github.com/gookit/color v1.6.0 // indirect
+	github.com/gookit/color v1.6.1 // indirect
 	github.com/gpustack/gguf-parser-go v0.24.0 // indirect
 	github.com/hashicorp/aws-sdk-go-base/v2 v2.0.0-beta.72 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
@@ -221,9 +221,9 @@ require (
 	github.com/paketo-buildpacks/freezer v0.2.3 // indirect
 	github.com/pborman/indent v1.2.1 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
-	github.com/pelletier/go-toml/v2 v2.3.0 // indirect
+	github.com/pelletier/go-toml/v2 v2.3.1 // indirect
 	github.com/pierrec/lz4/v4 v4.1.26 // indirect
-	github.com/pjbgf/sha1cd v0.5.0 // indirect
+	github.com/pjbgf/sha1cd v0.6.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pkg/profile v1.7.0 // indirect
 	github.com/pkg/xattr v0.4.12 // indirect
@@ -300,7 +300,7 @@ require (
 	google.golang.org/genproto v0.0.0-20260319201613-d00831a3d3e7 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260401024825-9d38bb4040a9 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260427160629-7cedc36a6bc4 // indirect
-	google.golang.org/grpc v1.80.0 // indirect
+	google.golang.org/grpc v1.81.0 // indirect
 	google.golang.org/protobuf v1.36.12-0.20260120151049-f2248ac996af // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
