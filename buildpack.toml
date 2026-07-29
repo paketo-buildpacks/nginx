@@ -12,7 +12,7 @@ api = "0.7"
   include-files = ["buildpack.toml", "linux/amd64/bin/build", "linux/amd64/bin/detect", "linux/amd64/bin/run", "linux/arm64/bin/configure", "linux/arm64/bin/build", "linux/arm64/bin/detect", "linux/arm64/bin/run", "linux/amd64/bin/configure"]
   pre-package = "./scripts/build.sh --target linux/amd64 --target linux/arm64"
   [metadata.default-versions]
-    nginx = "1.29.*"
+    nginx = "1.31.*"
 
   [[metadata.dependencies]]
     arch = "amd64"
@@ -269,6 +269,16 @@ api = "0.7"
     stacks = ["io.buildpacks.stacks.noble"]
     uri = "https://artifacts.paketo.io/nginx/nginx_1.28.3_linux_arm64_noble_2af64c15.tgz"
     version = "1.28.3"
+    
+  [[metadata.dependency-constraints]]
+    constraint = "1.31.*"
+    id = "nginx"
+    patches = 2
+
+  [[metadata.dependency-constraints]]
+    constraint = "1.30.*"
+    id = "nginx"
+    patches = 2
 
   [[metadata.dependency-constraints]]
     constraint = "1.29.*"
@@ -280,8 +290,8 @@ api = "0.7"
     id = "nginx"
     patches = 2
   [metadata.version-lines]
-    mainline = "1.29.*"
-    stable = "1.28.*"
+    mainline = "1.31.*"
+    stable = "1.30.*"
 
 [[stacks]]
   id = "io.buildpacks.stacks.jammy"
