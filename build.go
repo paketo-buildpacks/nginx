@@ -81,9 +81,13 @@ func Build(config Configuration,
 			config.NGINXConfLocation = filepath.Join(context.WorkingDir, config.NGINXConfLocation)
 		}
 
-		if config.WebServer == "nginx" {
-			err = configGenerator.Generate(config)
-			if err != nil {
+		var hasNGINXConf bool
+		if _, err := os.Stat(config.NGINXConfLocation); err == nil {
+			hasNGINXConf = true
+		}
+
+		if config.WebServer == "nginx" && !hasNGINXConf {
+			if err := configGenerator.Generate(config); err != nil {
 				return packit.BuildResult{}, fmt.Errorf("failed to generate nginx.conf : %w", err)
 			}
 		}
@@ -94,11 +98,6 @@ func Build(config Configuration,
 			if err != nil && errors.Is(err, os.ErrNotExist) {
 				return packit.BuildResult{}, fmt.Errorf("file %s (BP_WEB_SERVER_INCLUDE_FILE_PATH) doesn't exist within app dir", config.WebServerIncludeFilePath)
 			}
-		}
-
-		var hasNGINXConf bool
-		if _, err := os.Stat(config.NGINXConfLocation); err == nil {
-			hasNGINXConf = true
 		}
 
 		if hasNGINXConf {
