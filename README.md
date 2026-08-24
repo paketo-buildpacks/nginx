@@ -11,6 +11,8 @@ makes it available for subsequent buildpacks and/or the application image.
   - `docker.io/paketobuildpacks/builder-jammy-full`
 - Paketo Noble
   - `docker.io/paketobuildpacks/ubuntu-noble-builder`
+- Paketo Resolute
+  - `docker.io/paketobuildpacks/ubuntu-resolute-builder`
 
 ## Usage
 
