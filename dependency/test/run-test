@@ -62,6 +62,19 @@ main() {
     docker build -t test -f noble/Dockerfile ${docker_platform_arg} noble/
     echo 'Running...'
     docker run --rm -v "$(dirname -- "${tarball_path}"):/tarball_path" ${docker_platform_arg} test --version "${version}" --os "${os}" --arch "${arch}"
+  elif [[ $(basename -- "${tarball_path}") == *"resolute"* ]]; then
+    echo "Running resolute test..."
+
+    docker_platform_arg=""
+    if [[ "${os}" != "" && "${arch}" != "" ]]; then
+      docker_platform_arg="--platform ${os}/${arch}"
+      echo "docker commands will be called with ${docker_platform_arg}"
+    fi
+
+    echo 'Building...'
+    docker build -t test -f resolute/Dockerfile ${docker_platform_arg} resolute/
+    echo 'Running...'
+    docker run --rm -v "$(dirname -- "${tarball_path}"):/tarball_path" ${docker_platform_arg} test --version "${version}" --os "${os}" --arch "${arch}"
   fi
 
 }
