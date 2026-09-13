@@ -2,6 +2,7 @@ package integration_test
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -152,7 +153,8 @@ func testSimpleApp(t *testing.T, context spec.G, it spec.S) {
 			Expect(err).ToNot(HaveOccurred())
 
 			Eventually(container).Should(BeAvailable())
-			Eventually(container).Should(Serve(ContainSubstring("Exciting Content")).WithEndpoint("/index.html"))
+			Eventually(container).Should(Serve(ContainSubstring("Exciting Content")).WithEndpoint("/index.html").
+				WithClient(&http.Client{Transport: &http.Transport{DisableKeepAlives: true}}))
 
 			logs, err := docker.Container.Logs.Execute(container.ID)
 			Expect(err).NotTo(HaveOccurred())
