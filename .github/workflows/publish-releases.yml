@@ -8,6 +8,9 @@ on:
 concurrency:
   group: publish-release
 
+permissions:
+  contents: read
+
 jobs:
   publish:
     name: Publish
@@ -17,7 +20,7 @@ jobs:
         id: drafts
         env:
           GITHUB_TOKEN: ${{ secrets.PAKETO_BOT_GITHUB_TOKEN }}
-        uses: paketo-buildpacks/github-config/actions/release/publish-drafts@main
+        uses: paketo-buildpacks/github-config/actions/release/publish-drafts@95db4417114813f5661189259ba2caa93f76c6b9 # main
         with:
           repo: ${{ github.repository }}
 
@@ -26,9 +29,12 @@ jobs:
     runs-on: ubuntu-24.04
     needs: [ publish ]
     if: ${{ always() && needs.publish.result == 'failure' }}
+    permissions:
+      contents: read
+      issues: write
     steps:
       - name: File Failure Alert Issue
-        uses: paketo-buildpacks/github-config/actions/issue/file@main
+        uses: paketo-buildpacks/github-config/actions/issue/file@95db4417114813f5661189259ba2caa93f76c6b9 # main
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           repo: ${{ github.repository }}
