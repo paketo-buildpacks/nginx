@@ -12,7 +12,12 @@ on:
         description: 'Version of the release to cut (e.g. 1.2.3)'
         required: false
 
-concurrency: release
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
 
 jobs:
   unit:
@@ -22,9 +27,11 @@ jobs:
       builders: ${{ steps.builders.outputs.builders }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
     - name: Setup Go
-      uses: actions/setup-go@v7
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
       with:
         go-version-file: go.mod
     - name: Run Unit Tests
@@ -32,8 +39,8 @@ jobs:
     - name: Get builders from integration.json
       id: builders
       run: |
-        source "${{ github.workspace }}/scripts/.util/builders.sh"
-        builders="$(util::builders::list "${{ github.workspace }}/integration.json")"
+        source "${GITHUB_WORKSPACE}/scripts/.util/builders.sh"
+        builders="$(util::builders::list "${GITHUB_WORKSPACE}/integration.json")"
         printf "Output: %s\n" "${builders}"
         printf "builders=%s\n" "${builders}" >> "$GITHUB_OUTPUT"
 
@@ -41,15 +48,20 @@ jobs:
     name: Integration Tests
     runs-on: ubuntu-24.04
     needs: unit
+    permissions:
+      contents: read
+      packages: read # pull builder images for integration tests
     strategy:
       matrix:
         builder: ${{ fromJSON(needs.unit.outputs.builders) }}
       fail-fast: false  # don't cancel all test jobs when one fails
     steps:
     - name: Checkout
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
     - name: Setup Go
-      uses: actions/setup-go@v7
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
       with:
         go-version-file: go.mod
     - name: Free Disk Space
@@ -71,8 +83,9 @@ jobs:
         sudo systemctl restart docker
 
     - name: Run Integration Tests
-      run: ./scripts/integration.sh --builder ${{ matrix.builder }} --token ${{ github.token }}
+      run: ./scripts/integration.sh --builder "${BUILDER}" --token "${GIT_TOKEN}"
       env:
+        BUILDER: ${{ matrix.builder }}
         TMPDIR: "${{ runner.temp }}"
         GIT_TOKEN: ${{ github.token }}
 
@@ -80,20 +93,23 @@ jobs:
     name: Release
     runs-on: ubuntu-24.04
     needs: integration
+    permissions:
+      contents: write # create and update the draft release
     services:
       registry:
-        image: registry:3
+        image: registry:3@sha256:fd374bae807c225661adfe2c0c1f9970a0b8fab1761fd7dfb91e0fd9a8748f9b
         ports:
           - 5000:5000
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
+        persist-credentials: false
         fetch-tags: true
 
     - name: Setup Go
-      uses: actions/setup-go@v7
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
       with:
         go-version-file: go.mod
 
@@ -115,15 +131,20 @@ jobs:
 
     - name: Set Release Tag
       id: tag
+      env:
+        INPUT_VERSION: ${{ github.event.inputs.version }}
+        SEMVER_TAG: ${{ steps.semver.outputs.tag }}
       run: |
-        tag="${{ github.event.inputs.version }}"
+        tag="${INPUT_VERSION}"
         if [ -z "${tag}" ]; then
-          tag="${{ steps.semver.outputs.tag }}"
+          tag="${SEMVER_TAG}"
         fi
         echo "tag=${tag}" >> "$GITHUB_OUTPUT"
 
     - name: Package
-      run: ./scripts/package.sh --version "${{ steps.tag.outputs.tag }}"
+      env:
+        TAG: ${{ steps.tag.outputs.tag }}
+      run: ./scripts/package.sh --version "${TAG}"
 
     - name: Get buildpack type
       id: get_buildpack_type
@@ -156,28 +177,36 @@ jobs:
 
     - name: Get Image Digest
       id: image_digest
+      env:
+        BUILDPACK_TYPE: ${{ steps.get_buildpack_type.outputs.buildpack_type }}
       run: |
         image_name="localhost:5000/buildpack:latest"
 
         ./scripts/publish.sh \
-          --buildpack-type ${{ steps.get_buildpack_type.outputs.buildpack_type }} \
+          --buildpack-type "${BUILDPACK_TYPE}" \
           --image-ref $image_name
 
         echo "digest=$(sudo skopeo inspect "docker://${image_name}" --tls-verify=false | jq -r .Digest)" >> "$GITHUB_OUTPUT"
 
     - name: Set Correct Image Digest on the Release notes
+      env:
+        RELEASE_BODY: ${{ steps.create-release-notes.outputs.release_body }}
+        IMAGE_DIGEST: ${{ steps.image_digest.outputs.digest }}
       run: |
-          printf '${{ steps.create-release-notes.outputs.release_body }}' \
-            | sed -E \
-              "s/\*\*Digest:\*\* \`sha256:[a-f0-9]{64}\`/\*\*Digest:\*\* \`${{ steps.image_digest.outputs.digest }}\`/" \
-              > ./release_notes
+        printf '%s' "${RELEASE_BODY}" \
+          | sed -E \
+            "s/\*\*Digest:\*\* \`sha256:[a-f0-9]{64}\`/\*\*Digest:\*\* \`${IMAGE_DIGEST}\`/" \
+            > ./release_notes
 
-          printf '${{ steps.image_digest.outputs.digest }}' > ./index-digest.sha256
+        printf '%s' "${IMAGE_DIGEST}" > ./index-digest.sha256
 
     - name: Create release assets
       id: create_release_assets
+      env:
+        REPO_NAME: ${{ github.event.repository.name }}
+        TAG: ${{ steps.tag.outputs.tag }}
       run: |
-        release_assets=$(jq -n --arg repo_name "${{ github.event.repository.name }}" --arg tag "${{ steps.tag.outputs.tag }}" '
+        release_assets=$(jq -n --arg repo_name "${REPO_NAME}" --arg tag "${TAG}" '
         [
           {
             "path": "build/buildpack.tgz",
@@ -195,12 +224,12 @@ jobs:
           filename=$(basename "$filepath")
           asset_name=""
           if [[ "$filename" == "buildpackage-linux-amd64.cnb" ]]; then
-            asset_name="${{ github.event.repository.name }}-${{ steps.tag.outputs.tag }}.cnb"
+            asset_name="${REPO_NAME}-${TAG}.cnb"
           elif [[ "$filename" == "buildpackage.cnb" ]]; then
-            asset_name="${{ github.event.repository.name }}-${{ steps.tag.outputs.tag }}.cnb"
+            asset_name="${REPO_NAME}-${TAG}.cnb"
           else
             formatted_filename="${filename#buildpackage-}"
-            asset_name="${{ github.event.repository.name }}-${{ steps.tag.outputs.tag }}-${formatted_filename}"
+            asset_name="${REPO_NAME}-${TAG}-${formatted_filename}"
           fi
 
           release_assets=$(echo "$release_assets" | jq --arg asset_name "${asset_name}" --arg filepath "$filepath" '
@@ -233,6 +262,9 @@ jobs:
     runs-on: ubuntu-24.04
     needs: [ unit, integration, release ]
     if: ${{ always() && needs.unit.result == 'failure' || needs.integration.result == 'failure' || needs.release.result == 'failure' }}
+    permissions:
+      contents: read
+      issues: write
     steps:
     - name: File Failure Alert Issue
       uses: paketo-buildpacks/github-config/actions/issue/file@main
