@@ -309,7 +309,7 @@ require (
 	modernc.org/libc v1.77.1 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.12.1 // indirect
-	modernc.org/sqlite v1.59.0 // indirect
+	modernc.org/sqlite v1.60.0 // indirect
 )
 
 replace github.com/anchore/stereoscope v0.0.1 => github.com/anchore/stereoscope v0.0.0-20230412183729-8602f1afc574
