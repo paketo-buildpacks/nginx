@@ -211,26 +211,26 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					"Organization: Anchore, Inc",
 					"Tool: -"
 				],
-				"licenseListVersion": "3.28"
+				"licenseListVersion": "3.29"
 			},
             "packages": [
                 {
-                  "SPDXID": "SPDXRef-DocumentRoot-Unknown-",
+                  "SPDXID": "SPDXRef-DocumentRoot-Unknown-unknown",
                   "copyrightText": "NOASSERTION",
                   "downloadLocation": "NOASSERTION",
                   "filesAnalyzed": false,
                   "licenseConcluded": "NOASSERTION",
                   "licenseDeclared": "NOASSERTION",
-                  "name": "",
+                  "name": "unknown",
                   "supplier": "NOASSERTION"
                 }
               ],
 			"dataLicense": "CC0-1.0",
-            "documentNamespace": "https://paketo.io/unknown-source-type/unknown-139eda9a-585c-5678-88d8-988131078801",
+            "documentNamespace": "https://paketo.io/unknown-source-type/unknown-65c712f7-b28c-5f6b-87e4-ed3b0898b7bf",
 			"name": "unknown",
 			"relationships": [
 				{
-				    "relatedSpdxElement": "SPDXRef-DocumentRoot-Unknown-",
+				    "relatedSpdxElement": "SPDXRef-DocumentRoot-Unknown-unknown",
 					"relationshipType": "DESCRIBES",
 					"spdxElementId": "SPDXRef-DOCUMENT"
 				}
