@@ -22,6 +22,11 @@ updates:
   directory: "/dependency/retrieval"
   schedule:
     interval: daily
+  ignore:
+  # packit v2.26.0 added a MarshalJSON that drops "target" from libdependency
+  # output. Remove once libdependency handles it.
+  - dependency-name: "github.com/paketo-buildpacks/packit/v2"
+    versions: [">=2.26.0"]
   allow:
   # Allow both direct and indirect updates for all packages
   - dependency-type: "all"
